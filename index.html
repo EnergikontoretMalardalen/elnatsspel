@@ -97,6 +97,9 @@ svg .mono{font-family:var(--f-mono)}
 .build svg{touch-action:none}
 .dragline{stroke:var(--accent);stroke-width:3.5;stroke-dasharray:8 5;pointer-events:none;fill:none}
 .station.hot .box,.leaf.hot .box{stroke:var(--accent);stroke-width:3}
+.klabel{font-size:11.5px;font-weight:500;fill:var(--ink2);text-anchor:middle;pointer-events:none}
+.stations svg{cursor:crosshair} .stations .land:hover{fill:var(--accent-t)} .stations .station{cursor:default}
+.wsmsg{color:var(--bad)!important;margin-top:6px}
 .bbox{margin:0 0 12px;padding-bottom:12px;border-bottom:1px solid var(--rule)}
 .bhead{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:6px}
 .bbox small{display:block;color:var(--ink2)}
@@ -357,6 +360,15 @@ dialog#help[open]{display:flex;flex-direction:column}
       <li><b>Ta bort</b> en åtgärd med knappen i listan. Vissa uppdrag tillåter bara ett visst antal åtgärder.</li>
     </ul>
 
+    <h3 id="h-workshop">Workshop: bygg ert eget nät</h3>
+    <p>Fliken <b>Workshop</b> börjar med en tom karta, så att ni bestämmer själva hur regionnätet ska se ut. Använd den till exempel tillsammans med en verklig karta på projektorn.</p>
+    <ol>
+      <li><b>Stationer:</b> välj <i>Stamnätsstation</i> och klicka där stamnätet ska komma in (högst fyra). Välj sedan <i>Regionstation i kommun</i> och klicka inne i varje kommun som ska vara med. En station per kommun. <i>Ta bort</i> i listan flyttar en station.</li>
+      <li><b>Ledningar:</b> dra från en grå punkt på en station till en annan. Välj kapacitet (60–300 MW). Klicka på en ledning för att förstärka den. En kommun som inte nås av någon ledning visas som <i>Ej ansluten</i> och har 0 MW. Stamnätsstationer kopplas inte ihop med varandra.</li>
+      <li><b>Etableringar:</b> placera datacenter, vindpark med mera och se hur ledig kapacitet ändras i er egen kommun och hos grannarna. Använd <i>N-1</i> under Avancerat för att se om nätet klarar att en ledning faller bort.</li>
+    </ol>
+    <p>Stationernas lägen och ledningarnas längd är bara spelets egna: längden räknas från avståndet på kartan och ger ledningens reaktans.</p>
+
     <h3 id="h-avancerat">Avancerat</h3>
     <ul>
       <li><b>N-0</b> (förvalt) räknar bara normal drift. <b>N-1</b> kräver att nätet klarar att en ledning åt gången är ur drift, och i en stjärna finns ingen reserv. Då blir alla 0 MW tills ni byggt ledningar som ger en andra väg.</li>
@@ -403,14 +415,30 @@ const MISSIONS = [
       {label:'Inga ledningar överbelastas', test:m=>m.overloads===0},
       {label:'Älvkarleby har minst 40 MW ledigt för produktion', test:m=>m.mineI>=40}]}
 ];
-const TAB_ORDER=[1,2,3,4,0];
+MISSIONS.push({title:'Workshop: bygg ert eget regionnät', short:'Workshop', mine:null, metric:null, goal:null, ws:true,
+    text:'Kartan är tom. Bestäm tillsammans var stamnätet kommer in i länet, var varje kommun har sin regionstation och hur ledningarna dras. Sedan kan ni placera etableringar och se hur grannarna påverkas. Stationer, ledningar och siffror är påhittade.', queue:null, goals:[]});
+const TAB_ORDER=[1,2,3,4,0,5];
 
 const $ = s=>document.querySelector(s);
-const state = {mission:1, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'place', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:60, upunit:'pct', upval:50};
+const state = {mission:1, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'place', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:60, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:''};
 
 const BW=108, BH=68;
-const L = {G:{x:MAP.G.x-50,y:MAP.G.y-17,w:100,h:34}};
-LOADS.forEach(n=>{const s=MAP.stations[n.id];L[n.id]={x:s.x-BW/2,y:s.y-BH/2,w:BW,h:BH}});
+const L0 = {G:{x:MAP.G.x-50,y:MAP.G.y-17,w:100,h:34}};
+LOADS.forEach(n=>{const s=MAP.stations[n.id];L0[n.id]={x:s.x-BW/2,y:s.y-BH/2,w:BW,h:BH}});
+const L = {...L0};
+const ws = ()=>!!MISSIONS[state.mission].ws;
+const VL = ()=>ws()?LOADS.filter(n=>state.kst[n.id]):LOADS;
+const posOf = ()=>{const o={}; state.gst.forEach(g=>o[g.id]={x:g.x,y:g.y}); for(const k in state.kst)o[k]=state.kst[k]; return o};
+let layoutKey='d';
+function syncLayout(){
+  const key=ws()?JSON.stringify([state.gst,state.kst]):'d';
+  if(key===layoutKey)return; layoutKey=key;
+  for(const k of Object.keys(L)) delete L[k];
+  for(const k of Object.keys(ROUTES)) delete ROUTES[k];
+  if(!ws()){Object.assign(L,L0);return}
+  state.gst.forEach(g=>{L[g.id]={x:g.x-50,y:g.y-17,w:100,h:34}});
+  for(const id in state.kst){const p=state.kst[id];L[id]={x:p.x-BW/2,y:p.y-BH/2,w:BW,h:BH}}
+}
 const ctr = id=>({x:L[id].x+L[id].w/2,y:L[id].y+L[id].h/2});
 const f0 = v=>Math.round(v);
 const cap1 = s=>s.charAt(0).toUpperCase()+s.slice(1);
@@ -455,7 +483,7 @@ function chipLayout(lines){
   }
   return out;
 }
-const MAPSVG=`<rect class="sea" width="${MAP.w}" height="${MAP.h}"/>`+MAP.paths.filter(p=>!p.in).map(p=>`<path class="land2" d="${p.d}"/>`).join('')+MAP.paths.filter(p=>p.in).map(p=>`<path class="land" d="${p.d}"><title>${p.name}</title></path>`).join('');
+const MAPSVG=`<rect class="sea" width="${MAP.w}" height="${MAP.h}"/>`+MAP.paths.filter(p=>!p.in).map(p=>`<path class="land2" d="${p.d}"/>`).join('')+MAP.paths.filter(p=>p.in).map(p=>`<path class="land" data-k="${(LOADS.find(n=>n.name===p.name)||{}).id||''}" d="${p.d}"><title>${p.name}</title></path>`).join('');
 const hh = h=>String(h).padStart(2,'0')+':00';
 function bindTxt(b){
   if(!b) return '';
@@ -464,7 +492,7 @@ function bindTxt(b){
 }
 const thr = v=>v>=20?'ok':(v>=1?'warn':'bad');
 const val = (res,id)=>avl(res[MET[state.metric].key][id]);
-const gname = id=>byId[id].name;
+const gname = id=>byId[id]?byId[id].name:stName(id);
 const gen = n=>/[sxz]$/i.test(n)?n:n+'s';
 
 function currentConsumer(){
@@ -475,28 +503,34 @@ function currentConsumer(){
 function upExtra(l){return Math.max(1,state.upunit==='pct'?Math.round(l.cap*state.upval/100):Math.round(state.upval))}
 function upRange(l){return state.upunit==='pct'?{min:10,max:200,step:10}:{min:5,max:Math.max(10,Math.round(l.cap*2/5)*5),step:5}}
 function upInfo(l,ex){return `Klarar idag ${l.cap} MW. Efter förstärkning: ${l.cap+ex} MW (+${ex} MW, +${Math.round(ex/l.cap*100)} %).`}
-function nMeasures(){return Object.keys(state.up).length+state.add.length}
+function nMeasures(){return ws()?0:Object.keys(state.up).length+state.add.length}
+function wsCfg(){return {up:{},add:state.add.map(a=>({...a})),base:'none',ks:Object.keys(state.kst),pos:posOf()}}
+const ORIGN = ()=>ws()?makeNet(wsCfg()):ORIG;
+function bLine(){const i=state.bline; if(i==null)return null; return ws()?(makeNet(wsCfg()).lines[i]||null):(ORIG.lines[i]||null)}
 function pendingMeasure(){
   if(state.tab!=='build')return null;
   const M=MISSIONS[state.mission], full=!!(M.limit&&nMeasures()>=M.limit);
   if(state.bline!=null){
-    const l=ORIG.lines[state.bline]; if(!l)return null;
-    if(state.up[l.id]) return {type:'dup'};
+    const l=bLine(); if(!l)return null;
+    if(!ws()&&state.up[l.id]) return {type:'dup'};
     return full?{type:'full'}:{type:'up',id:l.id,extra:upExtra(l)};
   }
   if(state.bnodes.length===2){
     const [a,b]=state.bnodes;
-    if([...ORIG.lines,...state.add].some(l=>(l.a===a&&l.b===b)||(l.a===b&&l.b===a))) return {type:'exists'};
+    if(a[0]==='G'&&b[0]==='G') return {type:'gg'};
+    if((ws()?state.add:[...ORIG.lines,...state.add]).some(l=>(l.a===a&&l.b===b)||(l.a===b&&l.b===a))) return {type:'exists'};
     return full?{type:'full'}:{type:'add',a,b,cap:state.ncap};
   }
   return null;
 }
 function cfgOf(pend){
-  const cfg={up:{...state.up},add:state.add.map(a=>({...a}))};
-  if(pend){const p=pendingMeasure(); if(p&&p.type==='up')cfg.up[p.id]=p.extra; if(p&&p.type==='add')cfg.add.push({id:'NP',a:p.a,b:p.b,cap:p.cap})}
+  const cfg=ws()?wsCfg():{up:{...state.up},add:state.add.map(a=>({...a}))};
+  if(pend){const p=pendingMeasure(); if(p&&p.type==='up'){if(ws())cfg.add=cfg.add.map(a=>a.id===p.id?{...a,extra:(a.extra||0)+p.extra}:a); else cfg.up[p.id]=p.extra} if(p&&p.type==='add')cfg.add.push({id:'NP',a:p.a,b:p.b,cap:p.cap})}
   return cfg;
 }
+function ensureMine(){const vl=VL(); if(ws()&&vl.length&&!vl.some(n=>n.id===state.mine)) state.mine=vl[0].id}
 function getView(){
+  syncLayout(); ensureMine();
   const pend=pendingMeasure(), live=pend&&(pend.type==='up'||pend.type==='add');
   setCfg(cfgOf(true));
   const cnet=makeNet(cfgOf(false));
@@ -505,8 +539,8 @@ function getView(){
   const consumers=preview?[...state.placed,preview]:[...state.placed];
   const hasM=nMeasures()>0||!!live;
   const cur=compute(consumers,state.mode,state.hour,state.crit);
-  const base=compute([],state.mode,state.hour,state.crit,ORIG);
-  const nomeas=hasM?compute(consumers,state.mode,state.hour,state.crit,ORIG):cur;
+  const base=compute([],state.mode,state.hour,state.crit,ORIGN());
+  const nomeas=hasM?compute(consumers,state.mode,state.hour,state.crit,ORIGN()):cur;
   const cres=live?compute(consumers,state.mode,state.hour,state.crit,cnet):cur;
   const q=MISSIONS[state.mission].queue;
   const rc=compute(state.placed,'worst',0,state.crit,cnet);
@@ -519,6 +553,11 @@ function mostUtil(res){let b=0;res.lines.forEach((r,i)=>{if(r.util>res.lines[b].
 
 /* ---------- result ---------- */
 function renderResult(v){
+  if(ws()&&!VL().length){
+    $('#headline').innerHTML='Placera en regionstation i en kommun för att börja.'; $('#meter').innerHTML=''; $('#alert').hidden=true; $('#basis').textContent='';
+    document.querySelectorAll('#metricseg button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.metric===state.metric)));
+    return;
+  }
   const m=state.mine, M=byId[m], word=MET[state.metric].word;
   const b=val(v.base,m), c=val(v.cur,m), d=c-b, cons=v.consumers;
   document.querySelectorAll('#metricseg button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.metric===state.metric)));
@@ -538,6 +577,7 @@ function renderResult(v){
     }
     if(v.hasM) hl+=` Utan nätåtgärder hade ${M.name} haft <b>${n} MW</b>.`;
   }
+  if(ws()&&NET.iso0.includes(m)&&!cons.length) hl=`${M.name} är inte ansluten till stamnätet. Dra en ledning från kommunens station till en stamnätsstation, eller via en granne.`;
   $('#headline').innerHTML=hl;
   const MI=MISSIONS[state.mission];
   const goal=(MI.goal&&MI.goal.metric===state.metric)?MI.goal.mw:null;
@@ -565,7 +605,7 @@ function renderDiagram(v){
   const bld=state.tab==='build';
   LINES.forEach((ln,i)=>{
     const r=cur.lines[i], cls=r.flow>ln.cap+0.05?'bad':(r.util>0.8?'warn':'ok');
-    const ex=(ln.added?' new':'')+(ln.up?' up':'')+(ln.id==='NP'?' pend':'');
+    const ex=((ln.added&&!ws())||ln.id==='NP'?' new':'')+(ln.up?' up':'')+(ln.id==='NP'?' pend':'');
     if(bld&&state.bline===i) s+=`<path class="pickl" d="${wirePath(ln)}"/>`;
     s+=`<path class="wire ${cls}${ex}" d="${wirePath(ln)}"/>`;
   });
@@ -576,9 +616,12 @@ function renderDiagram(v){
     LINES.forEach((ln,i)=>{const w=Math.abs(pt[i]); if(w>=0.08){anyShare=true;s+=`<path class="share" d="${wirePath(ln)}" stroke-width="${(3+w*11).toFixed(1)}"/>`}});
   }
   if(bld) LINES.forEach((ln,i)=>{s+=`<path class="hit" data-wire="${i}" d="${wirePath(ln)}"><title>${cap1(ln.label)}${ln.added?'':': klicka för att förstärka'}</title></path>`});
-  s+=`<g><rect class="box" x="${L.G.x}" y="${L.G.y}" width="${L.G.w}" height="${L.G.h}" rx="4"/><text x="${L.G.x+L.G.w/2}" y="${L.G.y+22}" text-anchor="middle" font-size="13" font-weight="600">Stamnätet</text></g>`;
-  for(const n of LOADS){
-    const b=L[n.id], vv=val(cur,n.id), bv=val(base,n.id), d=vv-bv, tcls=thr(vv);
+  if(ws()){
+    for(const n of LOADS) if(!state.kst[n.id]){const c=MAP.stations[n.id]; s+=`<text class="klabel" x="${c.x}" y="${c.y+4}">${n.name}</text>`}
+    for(const g of state.gst){const gb=L[g.id]; s+=`<g class="station" data-station="${g.id}" tabindex="0" role="button" aria-label="${stName(g.id)}"><rect class="box" x="${gb.x}" y="${gb.y}" width="${gb.w}" height="${gb.h}" rx="4"/><text x="${gb.x+gb.w/2}" y="${gb.y+22}" text-anchor="middle" font-size="13" font-weight="600">${stName(g.id)}</text></g>`}
+  }else s+=`<g><rect class="box" x="${L.G.x}" y="${L.G.y}" width="${L.G.w}" height="${L.G.h}" rx="4"/><text x="${L.G.x+L.G.w/2}" y="${L.G.y+22}" text-anchor="middle" font-size="13" font-weight="600">Stamnätet</text></g>`;
+  for(const n of VL()){
+    const b=L[n.id], vv=val(cur,n.id), bv=val(base,n.id), d=vv-bv, tcls=thr(vv), iso=ws()&&cur.iso.includes(n.id);
     const list=kids[n.id]||[]; const sum=list.reduce((x,p)=>x+p.mw,0);
     const isSel=bld?state.bnodes.includes(n.id):state.sel===n.id, host=list.some(p=>p.id!==0), mine=state.mine===n.id;
     const gs=[...new Set(n.gen.map(g=>KINDS[g.kind].short.toLowerCase()))];
@@ -591,9 +634,9 @@ function renderDiagram(v){
       <rect class="box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="4"/>
       <text x="${b.x+8}" y="${b.y+17}" font-size="12.5" font-weight="600">${n.name}</text>
       <text class="muted" x="${b.x+8}" y="${b.y+30}" font-size="10">${desc}</text>
-      <text class="mono avail-num n-${tcls}" x="${b.x+8}" y="${b.y+56}" style="font-size:24px">${vv}</text>
-      ${d!==0?`<text class="mono ${d<0?'lost':'gain'}" x="${b.x+b.w-8}" y="${b.y+44}" text-anchor="end" font-size="12">${sg(d)}</text>`:''}
-      <text class="muted" x="${b.x+b.w-8}" y="${b.y+60}" text-anchor="end" font-size="10">MW ledigt</text>
+      ${iso?`<text class="mono avail-num n-bad" x="${b.x+8}" y="${b.y+54}" style="font-size:13px">Ej ansluten</text>`:`<text class="mono avail-num n-${tcls}" x="${b.x+8}" y="${b.y+56}" style="font-size:24px">${vv}</text>`}
+      ${iso?'':`${d!==0?`<text class="mono ${d<0?'lost':'gain'}" x="${b.x+b.w-8}" y="${b.y+44}" text-anchor="end" font-size="12">${sg(d)}</text>`:''}
+      <text class="muted" x="${b.x+b.w-8}" y="${b.y+60}" text-anchor="end" font-size="10">MW ledigt</text>`}
       ${list.length?`<g class="tag new"><rect x="${b.x}" y="${b.y-14}" width="${tw}" height="17" rx="3"/><text x="${b.x+tw/2}" y="${b.y-2}" text-anchor="middle" font-size="11">${newTxt}</text></g>`:''}
       ${mine?`<g class="tag"><rect x="${b.x+b.w-34}" y="${b.y-14}" width="34" height="17" rx="3"/><text x="${b.x+b.w-17}" y="${b.y-2}" text-anchor="middle" font-size="11">Er</text></g>`:''}
     </g>`;
@@ -613,31 +656,33 @@ function renderDiagram(v){
     </g>`;
   });
   if(bld){
-    for(const id of LOADS.map(n=>n.id)){
+    for(const id of (ws()?Object.keys(L):LOADS.map(n=>n.id))){
       const b=L[id];
       for(const [px,py] of [[b.x+b.w/2,b.y],[b.x+b.w,b.y+b.h/2],[b.x+b.w/2,b.y+b.h],[b.x,b.y+b.h/2]])
-        s+=`<circle class="port" data-port="${id}" cx="${px}" cy="${py}" r="6.5"><title>Dra till en annan kommun för att dra en ny ledning</title></circle>`;
+        s+=`<circle class="port" data-port="${id}" cx="${px}" cy="${py}" r="6.5"><title>Dra till en annan station för att dra en ny ledning</title></circle>`;
     }
   }
-  $('#diagram').innerHTML=`<svg viewBox="0 0 ${MAP.w} ${MAP.h}" role="group" aria-label="Karta över Uppsala län med åtta kommuner och ett fiktivt regionnät">${s}</svg>`;
-  $('#maplegend').innerHTML=`<span><i class="ok"></i>20 MW ledigt eller mer</span><span><i class="warn"></i>1–19 MW</span><span><i class="bad"></i>0 MW</span>`+(anyShare?`<span><i class="acc"></i>Vägarna den nya effekten tar (tjockare = större andel)</span>`:'')+(Object.keys(state.up).length||(v.pend&&v.pend.type==='up')?`<span><i class="thick"></i>Förstärkt ledning</span>`:'')+(state.add.length||(v.pend&&v.pend.type==='add')?`<span><i class="dash"></i>Ny ledning</span>`:'');
+  $('#diagram').innerHTML=`<svg viewBox="0 0 ${MAP.w} ${MAP.h}" role="group" aria-label="Karta över Uppsala län med ${ws()?'stationer som deltagarna placerar':'åtta kommuner och ett fiktivt regionnät'}">${s}</svg>`;
+  $('#maplegend').innerHTML=`<span><i class="ok"></i>20 MW ledigt eller mer</span><span><i class="warn"></i>1–19 MW</span><span><i class="bad"></i>0 MW</span>`+(anyShare?`<span><i class="acc"></i>Vägarna den nya effekten tar (tjockare = större andel)</span>`:'')+(LINES.some(l=>l.up)?`<span><i class="thick"></i>Förstärkt ledning</span>`:'')+((!ws()&&LINES.some(l=>l.added))||(v.pend&&v.pend.type==='add')?`<span><i class="dash"></i>Ny ledning</span>`:'');
 }
 
 /* ---------- action bar ---------- */
 function effText(v){
   const w=MET[state.metric].word;
-  const rows=LOADS.map(n=>({n,d:val(v.cur,n.id)-val(v.cres,n.id)}));
+  const rows=VL().map(n=>({n,d:val(v.cur,n.id)-val(v.cres,n.id)}));
   const cell=o=>`${o.n.name.replace('Kommun ','')} <b class="${o.d<0?'neg':o.d>0?'pos':''}">${sg(o.d)}</b>`;
   return `<p class="eff">Så ändras ledig kapacitet för ${w} (MW): ${rows.map(cell).join(' · ')}. <b class="${val(v.cur,state.mine)-val(v.cres,state.mine)<0?'neg':'pos'}">${byId[state.mine].name}: ${val(v.cres,state.mine)} → ${val(v.cur,state.mine)} MW</b></p>`;
 }
 function renderBuild(v){
-  const box=$('#buildbox'); box.hidden=state.tab!=='build'; $('#actionbar').hidden=state.tab!=='place';
+  const box=$('#buildbox'); box.hidden=state.tab!=='build'&&state.tab!=='stations'; $('#actionbar').hidden=state.tab!=='place';
   document.querySelector('#mapcard').classList.toggle('build',state.tab==='build');
+  document.querySelector('#mapcard').classList.toggle('stations',state.tab==='stations');
+  if(state.tab==='stations'){box.innerHTML=stationsHtml();return}
   if(state.tab!=='build')return;
   const M=MISSIONS[state.mission], p=v.pend, n=nMeasures();
-  let h=`<div class="bhead"><strong>Bygg ut nätet</strong><span class="val">${n}${M.limit?' av '+M.limit:''} åtgärd${n===1&&!M.limit?'':'er'}</span></div>`;
+  let h=ws()?`<div class="bhead"><strong>Dra ledningar</strong><span class="val">${state.add.length} ledning${state.add.length===1?'':'ar'}</span></div>`:`<div class="bhead"><strong>Bygg ut nätet</strong><span class="val">${n}${M.limit?' av '+M.limit:''} åtgärd${n===1&&!M.limit?'':'er'}</span></div>`;
   if(p&&p.type==='up'){
-    const l=ORIG.lines[state.bline];
+    const l=bLine();
     const r=upRange(l);
     h+=`<div><strong>${cap1(l.label)}</strong><small id="upinfo">${upInfo(l,p.extra)}</small></div>
       <div class="seg" role="group" aria-label="Enhet för förstärkning" style="margin-top:8px;max-width:260px"><button type="button" data-upunit="pct" aria-pressed="${state.upunit==='pct'}">Procent</button><button type="button" data-upunit="mw" aria-pressed="${state.upunit==='mw'}">MW</button></div>
@@ -646,7 +691,9 @@ function renderBuild(v){
       <div id="upeff">${effText(v)}</div><div class="bact"><button class="primary" type="button" data-act="upg" id="upbtn">Förstärk med ${p.extra} MW</button></div>`;
   }else if(p&&p.type==='add'){
     h+=`<div><strong>Ny ledning ${gname(p.a)} – ${gname(p.b)}</strong><small>Välj hur mycket effekt den ska klara.</small></div>
-      <div class="seg" role="group" aria-label="Ny ledning, kapacitet">${[40,60,80,100].map(c=>`<button type="button" data-ncap="${c}" aria-pressed="${c===state.ncap}">${c} MW</button>`).join('')}</div>${effText(v)}<div class="bact"><button class="primary" type="button" data-act="newline">Dra ny ledning</button></div>`;
+      <div class="seg" role="group" aria-label="Ny ledning, kapacitet">${(ws()?[60,100,150,200,300]:[40,60,80,100]).map(c=>`<button type="button" data-ncap="${c}" aria-pressed="${c===state.ncap}">${c} MW</button>`).join('')}</div>${effText(v)}<div class="bact"><button class="primary" type="button" data-act="newline">Dra ny ledning</button></div>`;
+  }else if(p&&p.type==='gg'){
+    h+=`<small>Två stamnätsstationer kopplas inte ihop här. Dra ledningen till en regionstation i en kommun.</small>`;
   }else if(p&&p.type==='dup'){
     h+=`<small>Den här ledningen är redan förstärkt. Välj en annan ledning, eller ta bort förstärkningen nedan.</small>`;
   }else if(p&&p.type==='exists'){
@@ -655,12 +702,50 @@ function renderBuild(v){
     h+=`<small>Uppdraget tillåter högst ${M.limit} åtgärd${M.limit===1?'':'er'}. Ta bort en nedan för att pröva en annan.</small>`;
   }else if(state.bnodes.length===1){
     h+=`<small>${gname(state.bnodes[0])} är vald. Klicka på en andra kommun för att dra en ny ledning dit.</small>`;
+  }else if(ws()){
+    h+=`<small>Dra från en grå punkt på en station till en annan för att bygga en ledning (eller klicka på två stationer). Klicka på en ledning för att förstärka den. <button type="button" class="linkbtn" data-help="h-workshop">Hur gör jag?</button></small>`;
   }else{
     h+=`<small>Klicka på en <b>ledning</b> för att förstärka den. För en ny ledning: dra från en grå punkt på en kommun till en annan (eller klicka på två). <button type="button" class="linkbtn" data-help="h-bygg">Hur gör jag?</button></small>`;
   }
-  const items=[...Object.keys(state.up).map(id=>({key:'up:'+id,t:(()=>{const l=ORIG.lines.find(x=>x.id===id),ex=state.up[id]===true?Math.round(l.cap*(UPG-1)):state.up[id];return `Förstärkt: ${l.label}, +${ex} MW (till ${l.cap+ex} MW)`})()})),...state.add.map(a=>({key:'add:'+a.id,t:`Ny ledning ${gname(a.a)} – ${gname(a.b)}, ${a.cap} MW`}))];
+  const items=[...Object.keys(state.up).map(id=>({key:'up:'+id,t:(()=>{const l=ORIG.lines.find(x=>x.id===id),ex=state.up[id]===true?Math.round(l.cap*(UPG-1)):state.up[id];return `Förstärkt: ${l.label}, +${ex} MW (till ${l.cap+ex} MW)`})()})),...state.add.map(a=>({key:'add:'+a.id,t:`${ws()?'Ledning':'Ny ledning'} ${gname(a.a)} – ${gname(a.b)}, ${a.cap+(a.extra||0)} MW`}))];
   if(items.length) h+=`<ul class="placed">${items.map(o=>`<li><span>${o.t}</span><button type="button" data-rm="${o.key}">Ta bort</button></li>`).join('')}</ul>`;
   box.innerHTML=h;
+}
+function stationsHtml(){
+  const nk=Object.keys(state.kst).length, none=!state.gst.length&&!nk;
+  let h=`<div class="bhead"><strong>Placera stationer</strong><span class="val">${state.gst.length} stamnät · ${nk} av ${LOADS.length} kommuner</span></div>
+    <div class="seg" role="group" aria-label="Typ av station" style="max-width:480px"><button type="button" data-tool="g" aria-pressed="${state.tool==='g'}">Stamnätsstation</button><button type="button" data-tool="k" aria-pressed="${state.tool==='k'}">Regionstation i kommun</button></div>
+    <small style="margin-top:8px">${state.tool==='g'?'Klicka var som helst på kartan för att placera en stamnätsstation (högst 4). Där kommer stamnätet in i länet.':'Klicka inne i en kommun för att placera dess regionstation. En station per kommun.'}</small>`;
+  if(state.wsmsg) h+=`<small class="wsmsg" role="status">${state.wsmsg}</small>`;
+  const items=[...state.gst.map(g=>({id:g.id,t:stName(g.id)})),...LOADS.filter(n=>state.kst[n.id]).map(n=>({id:n.id,t:'Regionstation '+n.name}))];
+  if(items.length) h+=`<ul class="placed">${items.map(o=>`<li><span>${o.t}</span><button type="button" data-rmst="${o.id}">Ta bort</button></li>`).join('')}</ul>`;
+  h+=`<div class="bact"><button class="primary" type="button" data-act="tolines" ${state.gst.length&&nk?'':'disabled'}>Klart, dra ledningar</button><button type="button" data-act="clearmap" ${none?'disabled':''}>Rensa kartan</button></div>`;
+  return h;
+}
+function removeStation(id){
+  if(id[0]==='G') state.gst=state.gst.filter(g=>g.id!==id); else {delete state.kst[id]; state.placed=state.placed.filter(p=>p.node!==id)}
+  state.add=state.add.filter(a=>a.a!==id&&a.b!==id); state.sel=null; state.bline=null; state.bnodes=[]; state.chartLine=null;
+}
+function wsClear(){state.gst=[];state.kst={};state.add=[];state.placed=[];state.tool='g';state.wsmsg='';state.sel=null;state.bline=null;state.bnodes=[];state.chartLine=null}
+function stationClick(e){
+  const t=e.target; if(!t.closest||t.closest('[data-station],[data-leaf]'))return;
+  const svg=$('#diagram svg'), p=svgPt(svg,e);
+  const hw=state.tool==='g'?50:BW/2, hh2=state.tool==='g'?17:BH/2;
+  const x=Math.min(MAP.w-hw-6,Math.max(hw+6,p.x)), y=Math.min(MAP.h-hh2-6,Math.max(hh2+6,p.y));
+  const clash=Object.values(L).some(b=>x+hw+6>b.x&&x-hw-6<b.x+b.w&&y+hh2+6>b.y&&y-hh2-6<b.y+b.h);
+  let msg='';
+  if(state.tool==='g'){
+    if(state.gst.length>=4) msg='Högst fyra stamnätsstationer.';
+    else if(clash) msg='För nära en annan station. Klicka en bit därifrån.';
+    else{const id=['G1','G2','G3','G4'].find(i=>!state.gst.some(g=>g.id===i)); state.gst.push({id,x:Math.round(x),y:Math.round(y)})}
+  }else{
+    const k=t.closest('[data-k]'), id=k&&k.dataset.k;
+    if(!id) msg='Klicka inne i en av kommunerna med namn på kartan.';
+    else if(state.kst[id]) msg=`${gname(id)} har redan en station. Ta bort den först.`;
+    else if(clash) msg='För nära en annan station. Klicka en bit därifrån.';
+    else state.kst[id]={x:Math.round(x),y:Math.round(y)};
+  }
+  state.wsmsg=msg; render();
 }
 function renderAction(v){
   const c=v.c, btn=$('#connect');
@@ -678,13 +763,15 @@ function renderAction(v){
 /* ---------- why ---------- */
 function names(list){return list.length<2?list.join(''):list.slice(0,-1).join(', ')+' och '+list[list.length-1]}
 function renderWhy(v){
+  if(!LINES.length||!VL().length){$('#why').innerHTML=ws()?'<p>Placera stationer och dra ledningar så visas här varför kapaciteten blir som den blir.</p>':'';return}
   const cons=v.consumers, M=byId[state.mine];
   if(!cons.length&&v.hasM){
-    const rows=LOADS.map(l=>({l,d:val(v.cur,l.id)-val(v.base,l.id)}));
+    const rows=VL().map(l=>({l,d:val(v.cur,l.id)-val(v.base,l.id)}));
     $('#why').innerHTML=`<p>En förstärkt eller ny ledning ger effekten fler eller bredare vägar. Ledig kapacitet bestäms av den ledning som först blir full i något driftfall, så en åtgärd hjälper bara om den ligger på just den vägen. Den kan också flytta flöden så att en annan kommun förlorar kapacitet.</p><p>Mot dagens nät (${MET[state.metric].word}): ${names(rows.map(o=>`${o.l.name} ${sg(o.d)} MW`))}.</p>`;
     return;
   }
   if(!cons.length){
+    if(ws()){$('#why').innerHTML=`<p>Nätet är det ni själva byggt. Ledig kapacitet i en kommun bestäms av den ledning som först blir full när effekten delar sig över alla vägar. Placera en etablering så visas vägarna den tar och vilka grannar som påverkas.</p>`;return}
     $('#why').innerHTML=`<p>I startnätet är nätet en stjärna: varje kommun har bara sin egen ledning till stamnätet, så en etablering påverkar bara den egna kommunen. När ni bygger ledningar mellan kommuner delar de på kapaciteten, och då kan en etablering i en kommun ändra vad grannarna kan ansluta. Välj en plats på kartan, så visas vägarna och orsaken här.</p>`;
     return;
   }
@@ -705,9 +792,9 @@ function renderWhy(v){
   }
   const bd=cur[MET[state.metric].bind][m];
   if(bd) h+=`<p>Det som begränsar er ledig kapacitet för ${MET[state.metric].word} är ${bindTxt(bd)}.</p>`;
-  const others=LOADS.filter(l=>l.id!==host.id&&l.id!==m).map(l=>({l,d:val(cur,l.id)-val(before,l.id)})).filter(o=>o.d!==0);
+  const others=VL().filter(l=>l.id!==host.id&&l.id!==m).map(l=>({l,d:val(cur,l.id)-val(before,l.id)})).filter(o=>o.d!==0);
   if(others.length) h+=`<p>Övriga kommuner (${MET[state.metric].word}): ${names(others.map(o=>`${o.l.name} ${sg(o.d)} MW`))}.</p>`;
-  if(v.hasM){const md=LOADS.map(l=>({l,d:val(cur,l.id)-val(v.nomeas,l.id)})).filter(o=>o.d!==0);
+  if(v.hasM){const md=VL().map(l=>({l,d:val(cur,l.id)-val(v.nomeas,l.id)})).filter(o=>o.d!==0);
     h+=`<p>Nätåtgärderna ändrar ledig kapacitet (${MET[state.metric].word}) jämfört med att inte bygga: ${md.length?names(md.map(o=>`${o.l.name} ${sg(o.d)} MW`)):'ingen förändring'}.</p>`}
   const t=mostUtil(cur),r=cur.lines[t];
   h+=`<p>Mest belastad är ${LINES[t].label}, som används till ${f0(r.util*100)} %${state.crit==='n1'&&r.out>=0?` när ${LINES[r.out].label} är ur drift`:''}.</p>`;
@@ -721,7 +808,13 @@ function barRow(v,max){
   return `<div class="sbar" aria-hidden="true"><i class="zero"></i>${v===0?'':`<b class="${v<0?'neg':'pos'}" style="width:${w}%"></b>`}${lab}</div>`;
 }
 function renderSens(v){
-  const c=v.c, m=state.mine, M=byId[m], host=$('#sens'), word=MET[state.metric].word;
+  const c=v.c, m=state.mine, host=$('#sens'), word=MET[state.metric].word;
+  const targets=VL().filter(n=>!NET.iso0.includes(n.id));
+  if(ws()&&(!targets.length||!byId[m])){
+    $('#senscard').hidden=false; $('#senstitle').textContent='Spelar platsen roll?'; $('#senssub').textContent='';
+    host.innerHTML='<p class="help">Koppla minst en kommunstation till stamnätet först.</p>'; return;
+  }
+  const M=byId[m];
   $('#senstitle').textContent=`Spelar platsen roll för ${M.name}?`;
   $('#senscard').hidden=!c&&MISSIONS[state.mission].queue&&MISSIONS[state.mission].queue.length===0;
   if(!c){
@@ -730,12 +823,13 @@ function renderSens(v){
     return;
   }
   const ref=compute(state.placed,state.mode,state.hour,state.crit);
-  const rows=LOADS.map(k=>{
+  const rows=targets.map(k=>{
     const r=compute([...state.placed,{...c,node:k.id,id:0}],state.mode,state.hour,state.crit);
     return {id:k.id,d:val(r,m)-val(ref,m)};
   });
   const max=Math.max(10,...rows.map(r=>Math.abs(r.d)));
   const others=rows.filter(r=>r.id!==m);
+  if(!others.length){$('#senssub').textContent='';host.innerHTML='<p class="help">Det behövs minst två anslutna kommuner för att jämföra platser.</p>';return}
   const lo=others.reduce((a,b)=>b.d<a.d?b:a,others[0]), hi=others.reduce((a,b)=>b.d>a.d?b:a,others[0]);
   let ins='';
   if(lo.d<0) ins=` Ligger den i ${gname(lo.id)} förlorar ni mest (${sg(lo.d)} MW)`+(hi.id!==lo.id?`, i ${gname(hi.id)} minst (${sg(hi.d)} MW).`:'.');
@@ -745,6 +839,7 @@ function renderSens(v){
 
 /* ---------- chart ---------- */
 function renderChart(v){
+  if(!LINES.length){$('#charttitle').textContent='';$('#chart').innerHTML='';return}
   const i=state.chartLine==null?mostUtil(v.cur):state.chartLine, ln=LINES[i];
   const cs=v.cur.lines[i].series, bs=(v.base.lines[i]||{series:HRS.map(()=>0)}).series;
   $('#charttitle').textContent=cap1(ln.label)+(state.crit==='n1'?' (värsta bortfall). ':' (normaldrift). ')+'Grått: utan nya etableringar. Blå linje: med.';
@@ -790,7 +885,7 @@ function renderMission(v){
 }
 function renderControls(v){
   const M=MISSIONS[state.mission], locked=!!M.queue, c=v.c;
-  $('#mineseg').innerHTML=LOADS.map(n=>`<button type="button" data-mine="${n.id}" aria-label="${n.name}" aria-pressed="${n.id===state.mine}" ${locked?'disabled':''}>${n.name.replace('Kommun ','')}</button>`).join('');
+  $('#mineseg').innerHTML=VL().map(n=>`<button type="button" data-mine="${n.id}" aria-label="${n.name}" aria-pressed="${n.id===state.mine}" ${locked?'disabled':''}>${n.name.replace('Kommun ','')}</button>`).join('');
   $('#minehelp').textContent=locked?'Bestämd av uppdraget. Siffrorna utgår från den här kommunen.':'Siffrorna utgår från den här kommunen.';
   const box=$('#kindbox');
   if(locked){
@@ -808,11 +903,11 @@ function renderControls(v){
   $('#flexrow').hidden=!!(c&&isGen(c.kind))||!c;
   $('#flex').checked=state.flex;
   const buildOnly=!!(M.queue&&M.queue.length===0);
-  $('#tabseg').innerHTML=`<button type="button" data-tab="place" aria-pressed="${state.tab==='place'}" ${buildOnly?'disabled':''}>Placera etablering</button><button type="button" data-tab="build" aria-pressed="${state.tab==='build'}">Bygg ut nätet</button>`;
+  $('#tabseg').innerHTML=ws()?`<button type="button" data-tab="stations" aria-pressed="${state.tab==='stations'}">1 Stationer</button><button type="button" data-tab="build" aria-pressed="${state.tab==='build'}">2 Ledningar</button><button type="button" data-tab="place" aria-pressed="${state.tab==='place'}" ${VL().some(n=>!NET.iso0.includes(n.id))?'':'disabled'}>3 Etableringar</button>`:`<button type="button" data-tab="place" aria-pressed="${state.tab==='place'}" ${buildOnly?'disabled':''}>Placera etablering</button><button type="button" data-tab="build" aria-pressed="${state.tab==='build'}">Bygg ut nätet</button>`;
   const isHour=state.mode==='hour';
   document.querySelectorAll('#critseg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.crit===state.crit)));
   document.querySelectorAll('#modeseg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===state.mode)));
-  $('#crithelp').textContent=state.crit==='n1'?'N-1: nätet ska klara att en ledning åt gången är ur drift. I en stjärna finns ingen reserv, så alla kommuner får 0 MW tills ni byggt ledningar som ger en andra väg.':'N-0: bara normal drift med alla ledningar i drift. Ger mer ledig kapacitet än N-1.';
+  $('#crithelp').textContent=state.crit==='n1'?'N-1: nätet ska klara att en ledning åt gången är ur drift. Utan en andra väg (ring eller dubbla ledningar) finns ingen reserv och kommunen får 0 MW.':'N-0: bara normal drift med alla ledningar i drift. Ger mer ledig kapacitet än N-1.';
   $('#hour').disabled=!isHour; $('#hour').value=state.hour;
   $('#hourval').textContent=hh(state.hour);
   $('#showloads').checked=state.showLoads;
@@ -830,11 +925,11 @@ function openHelp(id){
 $('#helpbtn').addEventListener('click',()=>openHelp());
 $('#helpclose').addEventListener('click',()=>$('#help').close());
 $('#help').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.close()});
-function selectLeaf(id){if(!currentConsumer())return;state.sel=state.sel===id?null:id;render()}
+function selectLeaf(id){if(!currentConsumer()||(ws()&&NET.iso0.includes(id)))return;state.sel=state.sel===id?null:id;render()}
 function selectLine(i){state.chartLine=i;render()}
 function pickLine(i){
   state.chartLine=i; state.bnodes=[];
-  if(LINES[i]&&LINES[i].added) state.bline=null; else state.bline=state.bline===i?null:i;
+  if(LINES[i]&&((LINES[i].added&&!ws())||LINES[i].id==='NP')) state.bline=null; else state.bline=state.bline===i?null:i;
   render();
 }
 function pickNode(id){
@@ -887,7 +982,7 @@ function diagramAct(t){
   const st=t.closest('[data-station]'); if(st&&bld){pickNode(st.dataset.station);return}
   const lf=t.closest('[data-leaf]'); if(lf){bld?pickNode(lf.dataset.leaf):selectLeaf(lf.dataset.leaf)}
 }
-$('#diagram').addEventListener('click',e=>diagramAct(e.target));
+$('#diagram').addEventListener('click',e=>{if(state.tab==='stations'){stationClick(e);return} diagramAct(e.target)});
 $('#diagram').addEventListener('keydown',e=>{
   if(e.key!=='Enter'&&e.key!==' ')return;
   const el=e.target.closest('[data-line],[data-leaf],[data-station]'); if(!el)return;
@@ -900,24 +995,29 @@ $('#buildbox').addEventListener('input',e=>{
   state.upval=+e.target.value;
   const v=getView(); renderMission(v);renderResult(v);renderDiagram(v);renderAction(v);renderSens(v);renderWhy(v);renderChart(v);
   const p=v.pend; if(p&&p.type==='up'){
-    const l=ORIG.lines[state.bline];
+    const l=bLine();
     $('#upinfo').textContent=upInfo(l,p.extra); $('#upval').textContent=state.upunit==='pct'?state.upval+' %':state.upval+' MW';
     $('#upeff').innerHTML=effText(v); $('#upbtn').textContent=`Förstärk med ${p.extra} MW`;
   }
 });
 $('#tabseg').addEventListener('click',e=>{
   const b=e.target.closest('[data-tab]'); if(!b||b.disabled)return;
-  state.tab=b.dataset.tab; state.sel=null; state.bline=null; state.bnodes=[]; render();
+  state.tab=b.dataset.tab; state.sel=null; state.bline=null; state.bnodes=[]; state.wsmsg=''; render();
 });
 $('#buildbox').addEventListener('click',e=>{
   const M=MISSIONS[state.mission];
   const un=e.target.closest('[data-upunit]');
   if(un&&un.dataset.upunit!==state.upunit){
-    const l=ORIG.lines[state.bline];
+    const l=bLine();
     if(un.dataset.upunit==='mw'){state.upval=Math.max(5,Math.round(l.cap*state.upval/100/5)*5);state.upunit='mw'}
     else{state.upval=Math.min(200,Math.max(10,Math.round(state.upval/l.cap*100/10)*10));state.upunit='pct'}
     render();return;
   }
+  const tl=e.target.closest('[data-tool]'); if(tl){state.tool=tl.dataset.tool;state.wsmsg='';render();return}
+  const rs=e.target.closest('[data-rmst]'); if(rs){removeStation(rs.dataset.rmst);state.wsmsg='';render();return}
+  const ac=e.target.closest('[data-act]');
+  if(ac&&ac.dataset.act==='clearmap'){wsClear();render();return}
+  if(ac&&ac.dataset.act==='tolines'){state.tab='build';state.wsmsg='';render();return}
   const nc=e.target.closest('[data-ncap]'); if(nc){state.ncap=+nc.dataset.ncap;render();return}
   const rm=e.target.closest('[data-rm]');
   if(rm){
@@ -928,7 +1028,7 @@ $('#buildbox').addEventListener('click',e=>{
   const hp=e.target.closest('[data-help]'); if(hp){openHelp(hp.dataset.help);return}
   const act=e.target.closest('[data-act]'); if(!act)return;
   const p=pendingMeasure(); if(!p)return;
-  if(act.dataset.act==='upg'&&p.type==='up'){state.up[p.id]=p.extra;state.bline=null}
+  if(act.dataset.act==='upg'&&p.type==='up'){if(ws()){const a=state.add.find(x=>x.id===p.id); if(a)a.extra=(a.extra||0)+p.extra}else state.up[p.id]=p.extra;state.bline=null}
   else if(act.dataset.act==='newline'&&p.type==='add'){state.add.push({id:'N'+state.nid++,a:p.a,b:p.b,cap:p.cap});state.bnodes=[]}
   else return;
   state.chartLine=null; render();
@@ -945,13 +1045,13 @@ $('#undo').addEventListener('click',()=>{
   if(MISSIONS[state.mission].queue) state.qi--; state.flex=p.flex; render();
 });
 function resetAll(){state.placed=[];state.qi=0;state.sel=null;state.flex=false;state.up={};state.add=[];state.bline=null;state.bnodes=[];state.chartLine=null}
-$('#reset').addEventListener('click',()=>{resetAll();render()});
+$('#reset').addEventListener('click',()=>{if(ws()){state.placed=[];state.qi=0;state.sel=null;state.flex=false}else resetAll();render()});
 $('#missionseg').addEventListener('click',e=>{
   const b=e.target.closest('[data-mission]'); if(!b)return;
   state.mission=+b.dataset.mission; const m=MISSIONS[state.mission];
   if(m.mine) state.mine=m.mine; if(m.metric) state.metric=m.metric;
   const aq=m.queue&&m.queue.find(q=>q.adjust); if(aq) state.mw=aq.mw;
-  resetAll(); state.tab=(m.queue&&m.queue.length===0)?'build':'place'; render();
+  resetAll(); wsClear(); if(m.ws) state.ncap=150; state.tab=m.ws?'stations':(m.queue&&m.queue.length===0)?'build':'place'; render();
 });
 $('#mineseg').addEventListener('click',e=>{const b=e.target.closest('[data-mine]');if(!b||b.disabled)return;state.mine=b.dataset.mine;render()});
 $('#kindbox').addEventListener('click',e=>{
