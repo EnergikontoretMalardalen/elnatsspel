@@ -378,8 +378,8 @@ const MISSIONS = [
   {title:'Prova själv', short:'Prova själv', mine:null, metric:null, goal:null,
     text:'Välj er kommun, en etablering och en plats på kartan. Se vad det gör med er lediga kapacitet. Under Bygg ut nätet kan ni förstärka ledningar och dra nya mellan kommuner.', queue:null, goals:[]},
   {title:'Var får datacentret plats?', short:'Uppdrag 1', mine:'KNI', metric:'U', goal:{metric:'U',mw:40},
-    text:'Ett datacenter på 50 MW ska ligga i någon av kommunerna. Nätet är en stjärna: varje kommun har bara en egen ledning till stamnätet. Var får det plats, och vad händer med Knivsta?',
-    queue:[{kind:'dc',mw:50}],
+    text:'Ett datacenter ska ligga i någon av kommunerna. Välj storlek (förvalt 40 MW). Nätet är en stjärna: varje kommun har bara en egen ledning till stamnätet. Var får det plats, och vad händer med Knivsta?',
+    queue:[{kind:'dc',mw:40,adjust:true}],
     goals:[
       {label:'Datacentret är anslutet', test:m=>m.left===0},
       {label:'Inga ledningar överbelastas', test:m=>m.overloads===0},
@@ -389,8 +389,8 @@ const MISSIONS = [
     queue:[],
     goals:[{label:'Knivsta har minst 60 MW ledigt för förbrukning', test:m=>m.mineU>=60}]},
   {title:'Grannens datacenter', short:'Uppdrag 3', mine:'KNI', metric:'U', goal:{metric:'U',mw:60}, limit:1,
-    text:'Ett datacenter på 60 MW ska anslutas någonstans i länet. Knivsta behöver fortfarande minst 60 MW ledigt. Ni får göra en åtgärd i nätet. Hur påverkar placeringen er när kommunerna delar ledningar?',
-    queue:[{kind:'dc',mw:60}],
+    text:'Ett datacenter ska anslutas någonstans i länet. Välj storlek (förvalt 40 MW). Knivsta behöver minst 60 MW ledigt. Ni får göra en åtgärd i nätet. Hur påverkar placeringen er när kommunerna delar ledningar?',
+    queue:[{kind:'dc',mw:40,adjust:true}],
     goals:[
       {label:'Datacentret är anslutet', test:m=>m.left===0},
       {label:'Inga ledningar överbelastas', test:m=>m.overloads===0},
@@ -469,7 +469,7 @@ const gen = n=>/[sxz]$/i.test(n)?n:n+'s';
 
 function currentConsumer(){
   const m=MISSIONS[state.mission];
-  if(m.queue){const q=m.queue[state.qi];return q?{kind:q.kind,mw:q.mw,flex:isGen(q.kind)?false:state.flex}:null}
+  if(m.queue){const q=m.queue[state.qi];return q?{kind:q.kind,mw:q.adjust?state.mw:q.mw,adjust:!!q.adjust,flex:isGen(q.kind)?false:state.flex}:null}
   return {kind:state.kind,mw:state.mw,flex:isGen(state.kind)?false:state.flex};
 }
 function upExtra(l){return Math.max(1,state.upunit==='pct'?Math.round(l.cap*state.upval/100):Math.round(state.upval))}
@@ -794,7 +794,7 @@ function renderControls(v){
   $('#minehelp').textContent=locked?'Bestämd av uppdraget. Siffrorna utgår från den här kommunen.':'Siffrorna utgår från den här kommunen.';
   const box=$('#kindbox');
   if(locked){
-    if(c) box.innerHTML=`<div class="lockedkind"><b>${KINDS[c.kind].name}, ${c.mw} MW</b><small>${KINDS[c.kind].desc}. ${state.qi+1} av ${M.queue.length}.</small></div>`;
+    if(c) box.innerHTML=`<div class="lockedkind"><b>${KINDS[c.kind].name}, ${c.mw} MW</b><small>${KINDS[c.kind].desc}. ${state.qi+1} av ${M.queue.length}.</small></div>${c.adjust?`<div class="row"><label for="mw">Storlek</label><span class="val" id="mwval">${state.mw} MW</span></div><input type="range" id="mw" min="10" max="100" step="5" value="${state.mw}">`:''}`;
     else box.innerHTML=`<div class="lockedkind"><b>${M.queue.length?'Alla etableringar placerade':'Inga etableringar i det här uppdraget'}</b>${M.queue.length?'':'<small>Uppdraget handlar om att bygga ut nätet.</small>'}</div>`;
   }else{
     const kb=(type)=>Object.entries(KINDS).filter(([k,o])=>o.type===type).map(([k,o])=>`<button type="button" data-kind="${k}" aria-pressed="${k===state.kind}"><span class="kn">${o.name}</span><span class="kd">${o.desc}</span></button>`).join('');
@@ -950,6 +950,7 @@ $('#missionseg').addEventListener('click',e=>{
   const b=e.target.closest('[data-mission]'); if(!b)return;
   state.mission=+b.dataset.mission; const m=MISSIONS[state.mission];
   if(m.mine) state.mine=m.mine; if(m.metric) state.metric=m.metric;
+  const aq=m.queue&&m.queue.find(q=>q.adjust); if(aq) state.mw=aq.mw;
   resetAll(); state.tab=(m.queue&&m.queue.length===0)?'build':'place'; render();
 });
 $('#mineseg').addEventListener('click',e=>{const b=e.target.closest('[data-mine]');if(!b||b.disabled)return;state.mine=b.dataset.mine;render()});
