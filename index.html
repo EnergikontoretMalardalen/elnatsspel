@@ -22,6 +22,7 @@
   --accent:#1B4FD6; --accent-t:#DCE6FB; --on-accent:#FFFFFF;
   --ok:#16794F; --warn:#8F5A00; --bad:#BE3434;
   --ok-t:#DDEFE6; --warn-t:#F5E8CB; --bad-t:#F6D9D9; --bar:#8FA3B5;
+  --sea:#DCE7EF; --land:#EEF2EA; --land2:#E6EBEE; --landline:#9FB0A0;
   --f-head:'Barlow Semi Condensed','Arial Narrow',system-ui,sans-serif;
   --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
@@ -32,6 +33,7 @@
     --accent:#7BA7FF; --accent-t:#1B2E55; --on-accent:#0B131B;
     --ok:#50D0A2; --warn:#E6B655; --bad:#FF8078;
     --ok-t:#12342B; --warn-t:#3A3015; --bad-t:#442022; --bar:#4E6478; color-scheme:dark;
+    --sea:#0B141C; --land:#1A2A33; --land2:#15222B; --landline:#3C5360;
   }
 }
 :root[data-theme="dark"]{
@@ -39,6 +41,7 @@
   --accent:#7BA7FF; --accent-t:#1B2E55; --on-accent:#0B131B;
   --ok:#50D0A2; --warn:#E6B655; --bad:#FF8078;
   --ok-t:#12342B; --warn-t:#3A3015; --bad-t:#442022; --bar:#4E6478; color-scheme:dark;
+  --sea:#0B141C; --land:#1A2A33; --land2:#15222B; --landline:#3C5360;
 }
 body{
   background:var(--bg); color:var(--ink); font:14px/1.5 var(--f-body);
@@ -59,7 +62,9 @@ header p{margin:0;max-width:74ch;color:var(--ink2)}
 h2{font:600 11px/1.3 var(--f-body);text-transform:uppercase;letter-spacing:.12em;color:var(--ink2);margin:0 0 10px}
 h2 .n{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--accent);color:var(--on-accent);font-size:11px;letter-spacing:0;margin-right:7px;vertical-align:1px}
 .scroll{overflow-x:auto}
-.scroll svg{display:block;width:100%;min-width:620px;height:auto}
+.scroll svg{display:block;width:100%;min-width:620px;height:auto;border-radius:4px}
+.sea{fill:var(--sea)} .land{fill:var(--land);stroke:var(--landline);stroke-width:1.3;stroke-linejoin:round} .land2{fill:var(--land2);stroke:var(--landline);stroke-width:.7;stroke-linejoin:round;opacity:.9}
+.notice{margin:10px 0 0;padding:6px 10px;border-left:3px solid var(--warn);background:var(--warn-t);font-size:13px;max-width:74ch}
 svg text{font-family:var(--f-body);fill:var(--ink)}
 svg .mono{font-family:var(--f-mono)}
 .muted{fill:var(--ink2)!important}
@@ -216,7 +221,8 @@ dialog#help[open]{display:flex;flex-direction:column}
 <div class="wrap">
   <header>
     <h1>Regionnätsspelet</h1>
-    <p>Hur påverkar en stor etablering i en annan kommun er kommuns möjlighet att få ny förbrukning eller produktion ansluten? Pröva i ett förenklat, fiktivt regionnät.</p>
+    <p>Hur påverkar en stor etablering i en annan kommun er kommuns möjlighet att få ny förbrukning eller produktion ansluten? Pröva i ett förenklat, fiktivt regionnät över Uppsala län.</p>
+    <p class="notice"><b>Det här är ett spel.</b> Stationer, ledningar och siffror är påhittade och speglar inte det verkliga elnätet eller någon kommuns eller nätägares verksamhet.</p>
     <button type="button" class="helpbtn" id="helpbtn" aria-haspopup="dialog">Så fungerar det</button>
   </header>
 
@@ -314,14 +320,14 @@ dialog#help[open]{display:flex;flex-direction:column}
     </main>
   </div>
 
-  <p class="foot">Ledig kapacitet är den största jämna extra last (eller produktion) som kan anslutas i en kommun utan att någon linje överbelastas, räknat på värsta timmen. Med N-1 prövas att en linje åt gången är ur drift. Modellen är ett DC-lastflöde: effekten delar sig mellan parallella vägar efter linjernas reaktans, utan spänning, reaktiv effekt eller förluster. Befintlig vind i Kommun C och D och sol i Kommun F ingår. En förstärkt ledning får 50 % högre kapacitet; en ny ledning byggs med vald kapacitet. Kostnader, ledtider och tillstånd ingår inte. Vind- och solprofilerna är schematiska. Kommunerna, nätet och alla siffror är påhittade och beskriver inget verkligt nät. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
+  <p class="foot">Ledig kapacitet är den största jämna extra last (eller produktion) som kan anslutas i en kommun utan att någon ledning överbelastas, räknat på värsta timmen. Med N-1 prövas att en ledning åt gången är ur drift. Modellen är ett DC-lastflöde: effekten delar sig mellan parallella vägar efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Befintlig vind och sol i vissa kommuner ingår, med schematiska profiler. En förstärkt ledning får den kapacitetsökning du väljer; en ny ledning byggs med vald kapacitet och längden på kartan påverkar dess reaktans. Kostnader, ledtider och tillstånd ingår inte. Kommunnamn används bara som kartunderlag: stationerna, nätet och alla siffror är påhittade och beskriver inget verkligt nät. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät. Karta: förenklade kommungränser från Valmyndigheten via Opendatasoft (okfse/sweden-geojson).</p>
 </div>
 
 <dialog id="help" aria-labelledby="helptitle">
   <div class="hhead"><h2 id="helptitle">Så fungerar det</h2><button type="button" id="helpclose">Stäng</button></div>
   <div class="hbody">
     <h3 id="h-mal">Vad spelet visar</h3>
-    <p>Regionnätet är maskat: effekt delar sig över flera vägar. En ny förbrukare eller producent i en kommun kan därför ändra hur mycket som kan anslutas i en <em>annan</em> kommun. Spelet gör det synligt. Nätet och siffrorna är påhittade.</p>
+    <p>Kartan visar Uppsala län med en station per kommun och stamnätsstationen i mitten. Från början har varje kommun en egen ledning till stamnätet och ingen ledning till grannarna, alltså en stjärna. Bygger ni ledningar mellan kommuner delar effekten på flera vägar, och då kan en ny förbrukare eller producent i en kommun ändra hur mycket som kan anslutas i en <em>annan</em> kommun. Spelet gör det synligt. Kommunnamnen är bara kartunderlag: stationer, ledningar och siffror är påhittade.</p>
 
     <h3 id="h-siffror">Vad siffrorna betyder</h3>
     <ul>
@@ -343,17 +349,17 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p><i>Flexibel last</i> sänker lasten till 25 % klockan 16–20, när nätet är som mest belastat.</p>
 
     <h3 id="h-bygg">Bygg ut nätet</h3>
-    <p>Välj <b>Bygg ut nätet</b> ovanför schemat. Där finns grå punkter på kommuner och stationer.</p>
+    <p>Välj <b>Bygg ut nätet</b> ovanför schemat. Där finns grå punkter på kommunernas stationer.</p>
     <ul>
-      <li><b>Förstärk en ledning:</b> klicka på ledningen eller dess MW-ruta och sedan <i>Förstärk ledningen</i>. Kapaciteten ökar med 50 %. Ledningen ritas tjockare.</li>
-      <li><b>Dra en ny ledning:</b> dra från en grå punkt på en kommun eller station till en annan, eller klicka på två. Välj kapacitet (40–100 MW) och klicka <i>Dra ny ledning</i>. Den ritas streckad och går runt andra kommuner. Mellan två punkter som redan har en ledning går det inte att dra en ny, förstärk den i stället.</li>
+      <li><b>Förstärk en ledning:</b> klicka på ledningen eller dess MW-ruta och sedan <i>Förstärk ledningen</i>. Välj hur mycket kapaciteten ska öka, i procent av ledningens kapacitet eller i MW. Ledningen ritas tjockare.</li>
+      <li><b>Dra en ny ledning:</b> dra från en grå punkt på en kommun till en annan, eller klicka på två. Välj kapacitet (40–100 MW) och klicka <i>Dra ny ledning</i>. Den ritas streckad och går runt andra stationer. Ju längre ledning, desto högre reaktans, och det ger sämre samspel för samma kapacitet. Mellan två punkter som redan har en ledning går det inte att dra en ny, förstärk den i stället.</li>
       <li><b>Förhandsvisning:</b> innan du bygger visas hur ledig kapacitet ändras i alla kommuner. En åtgärd kan hjälpa en kommun och samtidigt minska kapaciteten i en annan.</li>
       <li><b>Ta bort</b> en åtgärd med knappen i listan. Vissa uppdrag tillåter bara ett visst antal åtgärder.</li>
     </ul>
 
     <h3 id="h-avancerat">Avancerat</h3>
     <ul>
-      <li><b>N-1:</b> nätet ska klara att en ledning åt gången är ur drift. Så planeras regionnät. <b>N-0</b> räknar bara normal drift och ger mer ledig kapacitet.</li>
+      <li><b>N-0</b> (förvalt) räknar bara normal drift. <b>N-1</b> kräver att nätet klarar att en ledning åt gången är ur drift, och i en stjärna finns ingen reserv. Då blir alla 0 MW tills ni byggt ledningar som ger en andra väg.</li>
       <li><b>Värsta timmen</b> räknar på den timme på dygnet som är mest belastad. <i>Vald timme</i> visar en timme i taget.</li>
       <li><b>Dygnsprofil:</b> belastningen per timme för en vald ledning, jämfört med dess kapacitet.</li>
     </ul>
@@ -362,6 +368,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
+<script src="map.js"></script>
 <script src="sim.js"></script>
 <script>
 
@@ -369,62 +376,49 @@ const ART = {dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',l
 const MET = {U:{key:'availU',bind:'bindU',word:'förbrukning'},I:{key:'availI',bind:'bindI',word:'produktion'}};
 const MISSIONS = [
   {title:'Prova själv', short:'Prova själv', mine:null, metric:null, goal:null,
-    text:'Välj er kommun, en etablering och en plats i schemat. Se vad det gör med er lediga kapacitet.', queue:null, goals:[]},
-  {title:'Grannens datacenter', short:'Uppdrag 1', mine:'KE', metric:'U', goal:{metric:'U',mw:20},
-    text:'Ett datacenter på 40 MW ska ligga i någon av kommunerna. Var kan det ligga så att Kommun E behåller minst 20 MW ledigt?',
-    queue:[{kind:'dc',mw:40}],
+    text:'Välj er kommun, en etablering och en plats på kartan. Se vad det gör med er lediga kapacitet. Under Bygg ut nätet kan ni förstärka ledningar och dra nya mellan kommuner.', queue:null, goals:[]},
+  {title:'Var får datacentret plats?', short:'Uppdrag 1', mine:'KNI', metric:'U', goal:{metric:'U',mw:40},
+    text:'Ett datacenter ska ligga i någon av kommunerna. Välj storlek (förvalt 40 MW). Nätet är en stjärna: varje kommun har bara en egen ledning till stamnätet. Var får det plats, och vad händer med Knivsta?',
+    queue:[{kind:'dc',mw:40,adjust:true}],
     goals:[
       {label:'Datacentret är anslutet', test:m=>m.left===0},
-      {label:'Inga linjer överbelastas', test:m=>m.overloads===0},
-      {label:'Kommun E har minst 20 MW ledigt', test:m=>m.mineU>=20}]},
-  {title:'Sol och vind', short:'Uppdrag 2', mine:'KF', metric:'I', goal:{metric:'I',mw:40},
-    text:'En vindpark på 60 MW och en solpark på 50 MW ska anslutas. Kommun F vill kunna ansluta egen produktion och behöver minst 40 MW ledigt.',
-    queue:[{kind:'vind',mw:60},{kind:'sol',mw:50}],
-    goals:[
-      {label:'Båda parkerna är anslutna', test:m=>m.left===0},
-      {label:'Inga linjer överbelastas', test:m=>m.overloads===0},
-      {label:'Kommun F har minst 40 MW ledigt för produktion', test:m=>m.mineI>=40}]},
-  {title:'Tre planer', short:'Uppdrag 3', mine:'KD', metric:'U', goal:{metric:'U',mw:20},
-    text:'Ett datacenter (40 MW), en elektrolysör (45 MW) och en vindpark (60 MW) ska anslutas. Kommun D vill behålla minst 20 MW för förbrukning.',
-    queue:[{kind:'dc',mw:40},{kind:'h2',mw:45},{kind:'vind',mw:60}],
-    goals:[
-      {label:'Alla tre är anslutna', test:m=>m.left===0},
-      {label:'Inga linjer överbelastas', test:m=>m.overloads===0},
-      {label:'Kommun D har minst 20 MW ledigt', test:m=>m.mineU>=20}]}
-];
-MISSIONS.push(
-  {title:'Stickledningen i Kommun C', short:'Uppdrag 4', mine:'KC', metric:'I', goal:{metric:'I',mw:40}, limit:1,
-    text:'Kommun C har vind och vill ansluta mer egen produktion, men har bara en enda ledning (till Kommun A). Hur kan ni få minst 40 MW ledigt för produktion? Ni får göra en åtgärd i nätet.',
+      {label:'Inga ledningar överbelastas', test:m=>m.overloads===0},
+      {label:'Knivsta har minst 40 MW ledigt', test:m=>m.mineU>=40}]},
+  {title:'Knivsta växer', short:'Uppdrag 2', mine:'KNI', metric:'U', goal:{metric:'U',mw:60}, limit:1,
+    text:'Knivsta vill ha minst 60 MW ledigt för ny förbrukning, men har bara en ledning till stamnätet. Vilken åtgärd hjälper? Ni får göra en: förstärk ledningen, eller dra en ny ledning till en granne.',
     queue:[],
-    goals:[{label:'Kommun C har minst 40 MW ledigt för produktion', test:m=>m.mineI>=40}]},
-  {title:'Bygg bort flaskhalsen', short:'Uppdrag 5', mine:'KE', metric:'U', goal:{metric:'U',mw:20}, limit:1,
-    text:'Ett datacenter på 60 MW ska anslutas, men det får inte plats i nätet som det är. Kan ni med en åtgärd i nätet ansluta det utan överbelastning och ändå ge Kommun E minst 20 MW ledigt?',
-    queue:[{kind:'dc',mw:60}],
+    goals:[{label:'Knivsta har minst 60 MW ledigt för förbrukning', test:m=>m.mineU>=60}]},
+  {title:'Grannens datacenter', short:'Uppdrag 3', mine:'KNI', metric:'U', goal:{metric:'U',mw:60}, limit:1,
+    text:'Ett datacenter ska anslutas någonstans i länet. Välj storlek (förvalt 40 MW). Knivsta behöver minst 60 MW ledigt. Ni får göra en åtgärd i nätet. Hur påverkar placeringen er när kommunerna delar ledningar?',
+    queue:[{kind:'dc',mw:40,adjust:true}],
     goals:[
       {label:'Datacentret är anslutet', test:m=>m.left===0},
-      {label:'Inga linjer överbelastas', test:m=>m.overloads===0},
-      {label:'Kommun E har minst 20 MW ledigt', test:m=>m.mineU>=20}]});
-const TAB_ORDER=[1,2,3,4,5,0];
+      {label:'Inga ledningar överbelastas', test:m=>m.overloads===0},
+      {label:'Knivsta har minst 60 MW ledigt', test:m=>m.mineU>=60}]},
+  {title:'Vind i grannkommunen', short:'Uppdrag 4', mine:'ALV', metric:'I', goal:{metric:'I',mw:40}, limit:1,
+    text:'En vindpark på 60 MW ska anslutas. Älvkarleby vill kunna ansluta egen produktion och behöver minst 40 MW ledigt. Ni får göra en åtgärd i nätet. Var ska parken ligga, och hjälper det att knyta ihop med en granne?',
+    queue:[{kind:'vind',mw:60}],
+    goals:[
+      {label:'Vindparken är ansluten', test:m=>m.left===0},
+      {label:'Inga ledningar överbelastas', test:m=>m.overloads===0},
+      {label:'Älvkarleby har minst 40 MW ledigt för produktion', test:m=>m.mineI>=40}]}
+];
+const TAB_ORDER=[1,2,3,4,0];
 
 const $ = s=>document.querySelector(s);
-const state = {mission:1, qi:0, placed:[], sel:null, mine:'KE', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n1', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'place', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:60};
+const state = {mission:1, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'place', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:60, upunit:'pct', upval:50};
 
-const BW=112, BH=96;
-const L = {
-  G:{x:300,y:18,w:160,h:36}, T1:{x:10,y:271,w:110,h:46}, T2:{x:640,y:271,w:110,h:46},
-  KA:{x:130,y:70}, KB:{x:518,y:70}, KC:{x:130,y:246}, KD:{x:130,y:422}, KF:{x:324,y:422}, KE:{x:518,y:422}
-};
-LOADS.forEach(n=>{L[n.id].w=BW;L[n.id].h=BH});
+const BW=108, BH=68;
+const L = {G:{x:MAP.G.x-50,y:MAP.G.y-17,w:100,h:34}};
+LOADS.forEach(n=>{const s=MAP.stations[n.id];L[n.id]={x:s.x-BW/2,y:s.y-BH/2,w:BW,h:BH}});
 const ctr = id=>({x:L[id].x+L[id].w/2,y:L[id].y+L[id].h/2});
-const CHIPT = {L3:.4,L4:.5,L5:.5,L6:.5,L7:.5,L8:.5,L9:.5,L10:.5,L11:.5};
 const f0 = v=>Math.round(v);
 const cap1 = s=>s.charAt(0).toUpperCase()+s.slice(1);
 const sg = n=>(n>0?'+':n<0?'−':'±')+Math.abs(n);
 const ARROWS=['→','↗','↑','↖','←','↙','↓','↘'];
 function arrowFor(i,signed){
   if(Math.abs(signed)<0.5) return '·';
-  const ln=LINES[i]; let dx,dy;
-  if(ln.a==='G'){dx=0;dy=1}else{const a=ctr(ln.a),b=ctr(ln.b);dx=b.x-a.x;dy=b.y-a.y}
+  const ln=LINES[i]; const a=ctr(ln.a),b=ctr(ln.b); let dx=b.x-a.x,dy=b.y-a.y;
   if(signed<0){dx=-dx;dy=-dy}
   const ang=Math.atan2(-dy,dx)*180/Math.PI;
   return ARROWS[((Math.round(ang/45)%8)+8)%8];
@@ -433,49 +427,54 @@ const ROUTES={};
 function routeOf(ln){
   const key=ln.a+'-'+ln.b; if(ROUTES[key]) return ROUTES[key];
   const a=ctr(ln.a),b=ctr(ln.b);
-  const rects=Object.keys(L).filter(id=>id!==ln.a&&id!==ln.b).map(id=>({x:L[id].x-8,y:L[id].y-8,w:L[id].w+16,h:L[id].h+16}));
-  const hit=(f)=>{for(let i=1;i<40;i++){const p=f(i/40);if(p.x<8||p.x>752||p.y<4||p.y>556)return true;if(rects.some(r=>p.x>r.x&&p.x<r.x+r.w&&p.y>r.y&&p.y<r.y+r.h))return true}return false};
+  const rects=Object.keys(L).filter(id=>id!==ln.a&&id!==ln.b).map(id=>({x:L[id].x-4,y:L[id].y-4,w:L[id].w+8,h:L[id].h+8}));
+  const hit=(f)=>{for(let i=1;i<40;i++){const p=f(i/40);if(p.x<8||p.x>MAP.w-8||p.y<4||p.y>MAP.h-4)return true;if(rects.some(r=>p.x>r.x&&p.x<r.x+r.w&&p.y>r.y&&p.y<r.y+r.h))return true}return false};
   const straight=t=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t});
-  let res={d:`M${a.x} ${a.y} L${b.x} ${b.y}`,mid:straight(.5)};
+  let res={d:`M${a.x.toFixed(1)} ${a.y.toFixed(1)} L${b.x.toFixed(1)} ${b.y.toFixed(1)}`,mid:straight(.5),at:straight};
   if(hit(straight)){
     const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy),nx=-dy/len,ny=dx/len,mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
-    let found=false;
-    for(const off of [90,-90,130,-130,170,-170,210,-210]){
+    for(const off of [50,-50,80,-80,110,-110,150,-150,190,-190]){
       const cx=mx+nx*off*2,cy=my+ny*off*2;
       const q=t=>({x:(1-t)*(1-t)*a.x+2*(1-t)*t*cx+t*t*b.x,y:(1-t)*(1-t)*a.y+2*(1-t)*t*cy+t*t*b.y});
-      if(!hit(q)){res={d:`M${a.x} ${a.y} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${b.x} ${b.y}`,mid:q(.5)};found=true;break}
+      if(!hit(q)){res={d:`M${a.x.toFixed(1)} ${a.y.toFixed(1)} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}`,mid:q(.5),at:q};break}
     }
   }
   return (ROUTES[key]=res);
 }
-function wirePath(ln){
-  if(ln.id==='L1') return 'M300 36 H65 V271';
-  if(ln.id==='L2') return 'M460 36 H695 V271';
-  const a=ctr(ln.a),b=ctr(ln.b);
-  if(ln.added) return routeOf(ln).d;
-  return `M${a.x} ${a.y} L${b.x} ${b.y}`;
+const wirePath = ln=>routeOf(ln).d;
+/* placerar MW-rutorna längs ledningen så att de varken täcker kommunrutor eller varandra */
+function chipLayout(lines){
+  const W=76,H=34,boxes=Object.values(L).map(b=>({x:b.x-3,y:b.y-3,w:b.w+6,h:b.h+6})),placed=[],out=[];
+  const hitR=(p,r)=>p.x+W/2>r.x&&p.x-W/2<r.x+r.w&&p.y+H/2>r.y&&p.y-H/2<r.y+r.h;
+  for(const ln of lines){
+    const r=routeOf(ln);
+    const ts=ln.a==='G'?[.62,.54,.7,.46,.78,.38,.3]:[.5,.42,.58,.34,.66,.26,.74];
+    let best=null;
+    for(const tt of ts){const p=r.at(tt); if(!boxes.some(b=>hitR(p,b))&&!placed.some(q=>Math.abs(q.x-p.x)<W&&Math.abs(q.y-p.y)<H)){best=p;break}}
+    best=best||r.at(ts[0]); placed.push(best); out.push(best);
+  }
+  return out;
 }
-function chipPos(ln){
-  if(ln.id==='L1') return {x:65,y:150};
-  if(ln.id==='L2') return {x:695,y:150};
-  const a=ctr(ln.a),b=ctr(ln.b);
-  if(ln.added) return routeOf(ln).mid;
-  const t=CHIPT[ln.id]??.5; return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t};
-}
+const MAPSVG=`<rect class="sea" width="${MAP.w}" height="${MAP.h}"/>`+MAP.paths.filter(p=>!p.in).map(p=>`<path class="land2" d="${p.d}"/>`).join('')+MAP.paths.filter(p=>p.in).map(p=>`<path class="land" d="${p.d}"><title>${p.name}</title></path>`).join('');
 const hh = h=>String(h).padStart(2,'0')+':00';
 function bindTxt(b){
   if(!b) return '';
+  if(b.out>=0&&b.line===b.out) return `${LINES[b.out].label}: det finns ingen reservväg när den är ur drift`;
   return `${LINES[b.line].label}${b.out>=0?` när ${LINES[b.out].label} är ur drift`:''}, klockan ${hh(b.h)}`;
 }
 const thr = v=>v>=20?'ok':(v>=1?'warn':'bad');
 const val = (res,id)=>avl(res[MET[state.metric].key][id]);
 const gname = id=>byId[id].name;
+const gen = n=>/[sxz]$/i.test(n)?n:n+'s';
 
 function currentConsumer(){
   const m=MISSIONS[state.mission];
-  if(m.queue){const q=m.queue[state.qi];return q?{kind:q.kind,mw:q.mw,flex:isGen(q.kind)?false:state.flex}:null}
+  if(m.queue){const q=m.queue[state.qi];return q?{kind:q.kind,mw:q.adjust?state.mw:q.mw,adjust:!!q.adjust,flex:isGen(q.kind)?false:state.flex}:null}
   return {kind:state.kind,mw:state.mw,flex:isGen(state.kind)?false:state.flex};
 }
+function upExtra(l){return Math.max(1,state.upunit==='pct'?Math.round(l.cap*state.upval/100):Math.round(state.upval))}
+function upRange(l){return state.upunit==='pct'?{min:10,max:200,step:10}:{min:5,max:Math.max(10,Math.round(l.cap*2/5)*5),step:5}}
+function upInfo(l,ex){return `Klarar idag ${l.cap} MW. Efter förstärkning: ${l.cap+ex} MW (+${ex} MW, +${Math.round(ex/l.cap*100)} %).`}
 function nMeasures(){return Object.keys(state.up).length+state.add.length}
 function pendingMeasure(){
   if(state.tab!=='build')return null;
@@ -483,7 +482,7 @@ function pendingMeasure(){
   if(state.bline!=null){
     const l=ORIG.lines[state.bline]; if(!l)return null;
     if(state.up[l.id]) return {type:'dup'};
-    return full?{type:'full'}:{type:'up',id:l.id};
+    return full?{type:'full'}:{type:'up',id:l.id,extra:upExtra(l)};
   }
   if(state.bnodes.length===2){
     const [a,b]=state.bnodes;
@@ -494,7 +493,7 @@ function pendingMeasure(){
 }
 function cfgOf(pend){
   const cfg={up:{...state.up},add:state.add.map(a=>({...a}))};
-  if(pend){const p=pendingMeasure(); if(p&&p.type==='up')cfg.up[p.id]=true; if(p&&p.type==='add')cfg.add.push({id:'NP',a:p.a,b:p.b,cap:p.cap})}
+  if(pend){const p=pendingMeasure(); if(p&&p.type==='up')cfg.up[p.id]=p.extra; if(p&&p.type==='add')cfg.add.push({id:'NP',a:p.a,b:p.b,cap:p.cap})}
   return cfg;
 }
 function getView(){
@@ -510,7 +509,7 @@ function getView(){
   const nomeas=hasM?compute(consumers,state.mode,state.hour,state.crit,ORIG):cur;
   const cres=live?compute(consumers,state.mode,state.hour,state.crit,cnet):cur;
   const q=MISSIONS[state.mission].queue;
-  const rc=compute(state.placed,'worst',0,'n1',cnet);
+  const rc=compute(state.placed,'worst',0,state.crit,cnet);
   const mm=metrics(rc);
   mm.left=q?q.length-state.qi:0; mm.measures=nMeasures();
   mm.mineU=avl(rc.availU[state.mine]); mm.mineI=avl(rc.availI[state.mine]);
@@ -530,7 +529,7 @@ function renderResult(v){
     else hl=`${M.name} har <b>${b} MW</b> ledigt för ny ${word}. ${v.c?'Välj en plats i schemat för att se vad etableringen gör.':''}`;
   }else{
     const verb=d<0?'minskar':d>0?'ökar':'påverkar inte';
-    const tail=d===0?`${M.name}:s lediga kapacitet för ${word}`:`${M.name}:s lediga kapacitet för ${word} från <b>${b}</b> till <b>${c} MW</b>`;
+    const tail=d===0?`${gen(M.name)} lediga kapacitet för ${word}`:`${gen(M.name)} lediga kapacitet för ${word} från <b>${b}</b> till <b>${c} MW</b>`;
     if(cons.length===1){
       const p=cons[0];
       hl=`${ART[p.kind]} på ${p.mw} MW i ${gname(p.node)}${p.flex?' (flexibel)':''} ${verb} ${tail}.`;
@@ -560,7 +559,7 @@ function renderResult(v){
 
 /* ---------- diagram ---------- */
 function renderDiagram(v){
-  const {cur,base}=v; let s='';
+  const {cur,base}=v; let s=MAPSVG;
   const kids={};
   for(const p of v.consumers){(kids[p.node]=kids[p.node]||[]).push(p)}
   const bld=state.tab==='build';
@@ -577,14 +576,7 @@ function renderDiagram(v){
     LINES.forEach((ln,i)=>{const w=Math.abs(pt[i]); if(w>=0.08){anyShare=true;s+=`<path class="share" d="${wirePath(ln)}" stroke-width="${(3+w*11).toFixed(1)}"/>`}});
   }
   if(bld) LINES.forEach((ln,i)=>{s+=`<path class="hit" data-wire="${i}" d="${wirePath(ln)}"><title>${cap1(ln.label)}${ln.added?'':': klicka för att förstärka'}</title></path>`});
-  s+=`<g><rect class="box" x="${L.G.x}" y="${L.G.y}" width="${L.G.w}" height="${L.G.h}" rx="4"/><text x="${L.G.x+L.G.w/2}" y="${L.G.y+23}" text-anchor="middle" font-size="13" font-weight="600">Stamnät</text></g>`;
-  for(const id of ['T1','T2']){
-    const b=L[id],n=byId[id];
-    const pk=bld&&state.bnodes.includes(id);
-    s+=`<g class="station ${pk?'pickn':''}" ${bld?`data-station="${id}" tabindex="0" role="button" aria-pressed="${pk}" aria-label="${n.name}, välj som ändpunkt för ny ledning"`:''}><rect class="box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="4"/>
-      <text x="${b.x+b.w/2}" y="${b.y+20}" text-anchor="middle" font-size="12.5" font-weight="600">${n.name}</text>
-      <text class="muted" x="${b.x+b.w/2}" y="${b.y+36}" text-anchor="middle" font-size="11.5">regionnät</text></g>`;
-  }
+  s+=`<g><rect class="box" x="${L.G.x}" y="${L.G.y}" width="${L.G.w}" height="${L.G.h}" rx="4"/><text x="${L.G.x+L.G.w/2}" y="${L.G.y+22}" text-anchor="middle" font-size="13" font-weight="600">Stamnätet</text></g>`;
   for(const n of LOADS){
     const b=L[n.id], vv=val(cur,n.id), bv=val(base,n.id), d=vv-bv, tcls=thr(vv);
     const list=kids[n.id]||[]; const sum=list.reduce((x,p)=>x+p.mw,0);
@@ -597,20 +589,21 @@ function renderDiagram(v){
     s+=`<g class="leaf t-${tcls} ${host?'host':''} ${isSel&&!bld?'sel':''} ${isSel&&bld?'pickn':''}" data-leaf="${n.id}" tabindex="0" role="button" aria-label="${lbl}" aria-pressed="${isSel}">
       <title>${n.name}: last ${f0(cur.load[n.id])} MW, produktion ${f0(cur.gen[n.id])} MW. Ledigt för förbrukning ${avl(cur.availU[n.id])} MW, för produktion ${avl(cur.availI[n.id])} MW.</title>
       <rect class="box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="4"/>
-      <text x="${b.x+9}" y="${b.y+19}" font-size="13" font-weight="600">${n.name}</text>
-      <text class="muted" x="${b.x+9}" y="${b.y+34}" font-size="11">${desc}</text>
-      <text class="mono avail-num n-${tcls}" x="${b.x+9}" y="${b.y+68}">${vv}</text>
-      ${d!==0?`<text class="mono ${d<0?'lost':'gain'}" x="${b.x+b.w-9}" y="${b.y+66}" text-anchor="end" font-size="14">${sg(d)}</text>`:''}
-      <text class="muted" x="${b.x+9}" y="${b.y+87}" font-size="11.5">MW ledigt</text>
+      <text x="${b.x+8}" y="${b.y+17}" font-size="12.5" font-weight="600">${n.name}</text>
+      <text class="muted" x="${b.x+8}" y="${b.y+30}" font-size="10">${desc}</text>
+      <text class="mono avail-num n-${tcls}" x="${b.x+8}" y="${b.y+56}" style="font-size:24px">${vv}</text>
+      ${d!==0?`<text class="mono ${d<0?'lost':'gain'}" x="${b.x+b.w-8}" y="${b.y+44}" text-anchor="end" font-size="12">${sg(d)}</text>`:''}
+      <text class="muted" x="${b.x+b.w-8}" y="${b.y+60}" text-anchor="end" font-size="10">MW ledigt</text>
       ${list.length?`<g class="tag new"><rect x="${b.x}" y="${b.y-14}" width="${tw}" height="17" rx="3"/><text x="${b.x+tw/2}" y="${b.y-2}" text-anchor="middle" font-size="11">${newTxt}</text></g>`:''}
       ${mine?`<g class="tag"><rect x="${b.x+b.w-34}" y="${b.y-14}" width="34" height="17" rx="3"/><text x="${b.x+b.w-17}" y="${b.y-2}" text-anchor="middle" font-size="11">Er</text></g>`:''}
     </g>`;
   }
   const sel=state.chartLine==null?mostUtil(cur):state.chartLine;
+  const CP=chipLayout(LINES);
   LINES.forEach((ln,i)=>{
     const r=cur.lines[i], cls=r.flow>ln.cap+0.05?'bad':(r.util>0.8?'warn':'ok');
     if(!(state.showLoads||bld||cls!=='ok')) return;
-    const p=chipPos(ln), w=72,h=30, fw=Math.min(1,r.util)*56;
+    const p=CP[i], w=72,h=30, fw=Math.min(1,r.util)*56;
     s+=`<g class="chip ${cls} ${(bld?state.bline===i:(state.showLoads&&sel===i))?'on':''}" data-line="${i}" tabindex="0" role="button" aria-label="${cap1(ln.label)}: ${f0(r.flow)} av ${ln.cap} MW">
       <title>${cap1(ln.label)}: ${f0(r.flow)} av ${ln.cap} MW (${f0(r.util*100)} %)${state.crit==='n1'&&r.out>=0?`, värsta fall när ${LINES[r.out].label} är ur drift`:''}</title>
       <rect class="cb" x="${p.x-w/2}" y="${p.y-h/2}" width="${w}" height="${h}" rx="4"/>
@@ -620,13 +613,13 @@ function renderDiagram(v){
     </g>`;
   });
   if(bld){
-    for(const id of ['T1','T2',...LOADS.map(n=>n.id)]){
+    for(const id of LOADS.map(n=>n.id)){
       const b=L[id];
       for(const [px,py] of [[b.x+b.w/2,b.y],[b.x+b.w,b.y+b.h/2],[b.x+b.w/2,b.y+b.h],[b.x,b.y+b.h/2]])
-        s+=`<circle class="port" data-port="${id}" cx="${px}" cy="${py}" r="6.5"><title>Dra till en annan kommun eller station för att dra en ny ledning</title></circle>`;
+        s+=`<circle class="port" data-port="${id}" cx="${px}" cy="${py}" r="6.5"><title>Dra till en annan kommun för att dra en ny ledning</title></circle>`;
     }
   }
-  $('#diagram').innerHTML=`<svg viewBox="0 0 760 560" role="group" aria-label="Schema över regionnätet med sex kommuner">${s}</svg>`;
+  $('#diagram').innerHTML=`<svg viewBox="0 0 ${MAP.w} ${MAP.h}" role="group" aria-label="Karta över Uppsala län med åtta kommuner och ett fiktivt regionnät">${s}</svg>`;
   $('#maplegend').innerHTML=`<span><i class="ok"></i>20 MW ledigt eller mer</span><span><i class="warn"></i>1–19 MW</span><span><i class="bad"></i>0 MW</span>`+(anyShare?`<span><i class="acc"></i>Vägarna den nya effekten tar (tjockare = större andel)</span>`:'')+(Object.keys(state.up).length||(v.pend&&v.pend.type==='up')?`<span><i class="thick"></i>Förstärkt ledning</span>`:'')+(state.add.length||(v.pend&&v.pend.type==='add')?`<span><i class="dash"></i>Ny ledning</span>`:'');
 }
 
@@ -645,7 +638,12 @@ function renderBuild(v){
   let h=`<div class="bhead"><strong>Bygg ut nätet</strong><span class="val">${n}${M.limit?' av '+M.limit:''} åtgärd${n===1&&!M.limit?'':'er'}</span></div>`;
   if(p&&p.type==='up'){
     const l=ORIG.lines[state.bline];
-    h+=`<div><strong>${cap1(l.label)}</strong><small>Klarar idag ${l.cap} MW. Förstärkt: ${Math.round(l.cap*UPG)} MW (+50 %).</small></div>${effText(v)}<div class="bact"><button class="primary" type="button" data-act="upg">Förstärk ledningen</button></div>`;
+    const r=upRange(l);
+    h+=`<div><strong>${cap1(l.label)}</strong><small id="upinfo">${upInfo(l,p.extra)}</small></div>
+      <div class="seg" role="group" aria-label="Enhet för förstärkning" style="margin-top:8px;max-width:260px"><button type="button" data-upunit="pct" aria-pressed="${state.upunit==='pct'}">Procent</button><button type="button" data-upunit="mw" aria-pressed="${state.upunit==='mw'}">MW</button></div>
+      <div class="row" style="max-width:420px"><label for="upamt">Förstärk med</label><span class="val" id="upval">${state.upunit==='pct'?state.upval+' %':state.upval+' MW'}</span></div>
+      <input type="range" id="upamt" style="max-width:420px" min="${r.min}" max="${r.max}" step="${r.step}" value="${state.upval}">
+      <div id="upeff">${effText(v)}</div><div class="bact"><button class="primary" type="button" data-act="upg" id="upbtn">Förstärk med ${p.extra} MW</button></div>`;
   }else if(p&&p.type==='add'){
     h+=`<div><strong>Ny ledning ${gname(p.a)} – ${gname(p.b)}</strong><small>Välj hur mycket effekt den ska klara.</small></div>
       <div class="seg" role="group" aria-label="Ny ledning, kapacitet">${[40,60,80,100].map(c=>`<button type="button" data-ncap="${c}" aria-pressed="${c===state.ncap}">${c} MW</button>`).join('')}</div>${effText(v)}<div class="bact"><button class="primary" type="button" data-act="newline">Dra ny ledning</button></div>`;
@@ -656,11 +654,11 @@ function renderBuild(v){
   }else if(p&&p.type==='full'){
     h+=`<small>Uppdraget tillåter högst ${M.limit} åtgärd${M.limit===1?'':'er'}. Ta bort en nedan för att pröva en annan.</small>`;
   }else if(state.bnodes.length===1){
-    h+=`<small>${gname(state.bnodes[0])} är vald. Klicka på en andra kommun eller station för att dra en ny ledning dit.</small>`;
+    h+=`<small>${gname(state.bnodes[0])} är vald. Klicka på en andra kommun för att dra en ny ledning dit.</small>`;
   }else{
-    h+=`<small>Klicka på en <b>ledning</b> för att förstärka den. För en ny ledning: dra från en grå punkt på en kommun eller station till en annan (eller klicka på två). <button type="button" class="linkbtn" data-help="h-bygg">Hur gör jag?</button></small>`;
+    h+=`<small>Klicka på en <b>ledning</b> för att förstärka den. För en ny ledning: dra från en grå punkt på en kommun till en annan (eller klicka på två). <button type="button" class="linkbtn" data-help="h-bygg">Hur gör jag?</button></small>`;
   }
-  const items=[...Object.keys(state.up).map(id=>({key:'up:'+id,t:'Förstärkt: '+ORIG.lines.find(l=>l.id===id).label})),...state.add.map(a=>({key:'add:'+a.id,t:`Ny ledning ${gname(a.a)} – ${gname(a.b)}, ${a.cap} MW`}))];
+  const items=[...Object.keys(state.up).map(id=>({key:'up:'+id,t:(()=>{const l=ORIG.lines.find(x=>x.id===id),ex=state.up[id]===true?Math.round(l.cap*(UPG-1)):state.up[id];return `Förstärkt: ${l.label}, +${ex} MW (till ${l.cap+ex} MW)`})()})),...state.add.map(a=>({key:'add:'+a.id,t:`Ny ledning ${gname(a.a)} – ${gname(a.b)}, ${a.cap} MW`}))];
   if(items.length) h+=`<ul class="placed">${items.map(o=>`<li><span>${o.t}</span><button type="button" data-rm="${o.key}">Ta bort</button></li>`).join('')}</ul>`;
   box.innerHTML=h;
 }
@@ -687,14 +685,14 @@ function renderWhy(v){
     return;
   }
   if(!cons.length){
-    $('#why').innerHTML=`<p>I ett maskat nät delar sig effekten över alla vägar, så en etablering i en annan kommun kan minska er lediga kapacitet även om den ligger långt bort. Kommun C, D och F har redan vind och sol i nätet. Välj en plats i schemat, så visas vägarna och orsaken här.</p>`;
+    $('#why').innerHTML=`<p>I startnätet är nätet en stjärna: varje kommun har bara sin egen ledning till stamnätet, så en etablering påverkar bara den egna kommunen. När ni bygger ledningar mellan kommuner delar de på kapaciteten, och då kan en etablering i en kommun ändra vad grannarna kan ansluta. Välj en plats på kartan, så visas vägarna och orsaken här.</p>`;
     return;
   }
   const last=cons[cons.length-1], host=byId[last.node], g=isGen(last.kind);
   const before=compute(cons.slice(0,-1),state.mode,state.hour,state.crit), cur=v.cur, base=v.base;
   const pt=ptdfOf(host.id,-1);
-  const inner=pt.map((p,i)=>({i,p:Math.abs(p)})).filter(o=>o.i>1&&o.p>=0.2).sort((a,b)=>b.p-a.p).slice(0,3);
-  let h=`<p>${g?'Produktionen':'Förbrukningen'} i ${host.name} tar flera vägar. ${g?'Mot':'Från'} stamnätet går ${f0(Math.abs(pt[0])*100)} % via ${LINES[0].label} och ${f0(Math.abs(pt[1])*100)} % via ${LINES[1].label}. Inne i nätet går ${names(inner.map(o=>`${f0(o.p*100)} % över ${LINES[o.i].label}`))}.</p>`;
+  const top=pt.map((p,i)=>({i,p:Math.abs(p)})).filter(o=>o.p>=0.15).sort((a,b)=>b.p-a.p).slice(0,4);
+  let h=`<p>${g?'Produktionen':'Förbrukningen'} i ${host.name} tar ${top.length>1?'flera vägar':'en väg'}: ${names(top.map(o=>`${f0(o.p*100)} % över ${LINES[o.i].label}`))}.${top.length===1?' Här finns ingen annan väg, så grannarna påverkas inte. Bygg en ledning till en granne för att dela på kapaciteten.':''}</p>`;
   const m=state.mine;
   const cu=avl(cur.availU[m]), ci=avl(cur.availI[m]), bu=avl(base.availU[m]), bi=avl(base.availI[m]);
   h+=`<p><strong>${M.name}:</strong> ledig kapacitet för förbrukning går från ${bu} till ${cu} MW (${sg(cu-bu)}) och för produktion från ${bi} till ${ci} MW (${sg(ci-bi)}), jämfört med nuläget.${host.id===m?' Etableringen ligger i er egen kommun.':''}</p>`;
@@ -741,7 +739,7 @@ function renderSens(v){
   const lo=others.reduce((a,b)=>b.d<a.d?b:a,others[0]), hi=others.reduce((a,b)=>b.d>a.d?b:a,others[0]);
   let ins='';
   if(lo.d<0) ins=` Ligger den i ${gname(lo.id)} förlorar ni mest (${sg(lo.d)} MW)`+(hi.id!==lo.id?`, i ${gname(hi.id)} minst (${sg(hi.d)} MW).`:'.');
-  $('#senssub').textContent=`Så ändras ${M.name}:s lediga kapacitet för ${word} om ${ART[c.kind].toLowerCase()} på ${c.mw} MW placeras i respektive kommun.${ins} Klicka på en rad för att pröva.`;
+  $('#senssub').textContent=`Så ändras ${gen(M.name)} lediga kapacitet för ${word} om ${ART[c.kind].toLowerCase()} på ${c.mw} MW placeras i respektive kommun.${ins} Klicka på en rad för att pröva.`;
   host.innerHTML=`<div class="sens">${rows.map(r=>`<button type="button" class="srow ${state.sel===r.id?'sel':''}" data-sens="${r.id}" aria-label="${gname(r.id)}${r.id===m?' (er kommun)':''}: ${sg(r.d)} MW"><span class="sl">${gname(r.id)}<small>${byId[r.id].desc}${r.id===m?' · er':''}</small></span>${barRow(r.d,max)}</button>`).join('')}</div>`;
 }
 
@@ -796,7 +794,7 @@ function renderControls(v){
   $('#minehelp').textContent=locked?'Bestämd av uppdraget. Siffrorna utgår från den här kommunen.':'Siffrorna utgår från den här kommunen.';
   const box=$('#kindbox');
   if(locked){
-    if(c) box.innerHTML=`<div class="lockedkind"><b>${KINDS[c.kind].name}, ${c.mw} MW</b><small>${KINDS[c.kind].desc}. ${state.qi+1} av ${M.queue.length}.</small></div>`;
+    if(c) box.innerHTML=`<div class="lockedkind"><b>${KINDS[c.kind].name}, ${c.mw} MW</b><small>${KINDS[c.kind].desc}. ${state.qi+1} av ${M.queue.length}.</small></div>${c.adjust?`<div class="row"><label for="mw">Storlek</label><span class="val" id="mwval">${state.mw} MW</span></div><input type="range" id="mw" min="10" max="100" step="5" value="${state.mw}">`:''}`;
     else box.innerHTML=`<div class="lockedkind"><b>${M.queue.length?'Alla etableringar placerade':'Inga etableringar i det här uppdraget'}</b>${M.queue.length?'':'<small>Uppdraget handlar om att bygga ut nätet.</small>'}</div>`;
   }else{
     const kb=(type)=>Object.entries(KINDS).filter(([k,o])=>o.type===type).map(([k,o])=>`<button type="button" data-kind="${k}" aria-pressed="${k===state.kind}"><span class="kn">${o.name}</span><span class="kd">${o.desc}</span></button>`).join('');
@@ -814,7 +812,7 @@ function renderControls(v){
   const isHour=state.mode==='hour';
   document.querySelectorAll('#critseg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.crit===state.crit)));
   document.querySelectorAll('#modeseg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===state.mode)));
-  $('#crithelp').textContent=state.crit==='n1'?'N-1: nätet ska klara att en linje åt gången är ur drift. Så planeras regionnät.':'N-0: bara normal drift med alla linjer i drift. Ger alltid mer ledig kapacitet än N-1.';
+  $('#crithelp').textContent=state.crit==='n1'?'N-1: nätet ska klara att en ledning åt gången är ur drift. I en stjärna finns ingen reserv, så alla kommuner får 0 MW tills ni byggt ledningar som ger en andra väg.':'N-0: bara normal drift med alla ledningar i drift. Ger mer ledig kapacitet än N-1.';
   $('#hour').disabled=!isHour; $('#hour').value=state.hour;
   $('#hourval').textContent=hh(state.hour);
   $('#showloads').checked=state.showLoads;
@@ -897,12 +895,29 @@ $('#diagram').addEventListener('keydown',e=>{
   diagramAct(el);
   const again=document.querySelector(`[${sel}="${val}"]`); if(again) again.focus();
 });
+$('#buildbox').addEventListener('input',e=>{
+  if(e.target.id!=='upamt')return;
+  state.upval=+e.target.value;
+  const v=getView(); renderMission(v);renderResult(v);renderDiagram(v);renderAction(v);renderSens(v);renderWhy(v);renderChart(v);
+  const p=v.pend; if(p&&p.type==='up'){
+    const l=ORIG.lines[state.bline];
+    $('#upinfo').textContent=upInfo(l,p.extra); $('#upval').textContent=state.upunit==='pct'?state.upval+' %':state.upval+' MW';
+    $('#upeff').innerHTML=effText(v); $('#upbtn').textContent=`Förstärk med ${p.extra} MW`;
+  }
+});
 $('#tabseg').addEventListener('click',e=>{
   const b=e.target.closest('[data-tab]'); if(!b||b.disabled)return;
   state.tab=b.dataset.tab; state.sel=null; state.bline=null; state.bnodes=[]; render();
 });
 $('#buildbox').addEventListener('click',e=>{
   const M=MISSIONS[state.mission];
+  const un=e.target.closest('[data-upunit]');
+  if(un&&un.dataset.upunit!==state.upunit){
+    const l=ORIG.lines[state.bline];
+    if(un.dataset.upunit==='mw'){state.upval=Math.max(5,Math.round(l.cap*state.upval/100/5)*5);state.upunit='mw'}
+    else{state.upval=Math.min(200,Math.max(10,Math.round(state.upval/l.cap*100/10)*10));state.upunit='pct'}
+    render();return;
+  }
   const nc=e.target.closest('[data-ncap]'); if(nc){state.ncap=+nc.dataset.ncap;render();return}
   const rm=e.target.closest('[data-rm]');
   if(rm){
@@ -913,7 +928,7 @@ $('#buildbox').addEventListener('click',e=>{
   const hp=e.target.closest('[data-help]'); if(hp){openHelp(hp.dataset.help);return}
   const act=e.target.closest('[data-act]'); if(!act)return;
   const p=pendingMeasure(); if(!p)return;
-  if(act.dataset.act==='upg'&&p.type==='up'){state.up[p.id]=true;state.bline=null}
+  if(act.dataset.act==='upg'&&p.type==='up'){state.up[p.id]=p.extra;state.bline=null}
   else if(act.dataset.act==='newline'&&p.type==='add'){state.add.push({id:'N'+state.nid++,a:p.a,b:p.b,cap:p.cap});state.bnodes=[]}
   else return;
   state.chartLine=null; render();
@@ -935,6 +950,7 @@ $('#missionseg').addEventListener('click',e=>{
   const b=e.target.closest('[data-mission]'); if(!b)return;
   state.mission=+b.dataset.mission; const m=MISSIONS[state.mission];
   if(m.mine) state.mine=m.mine; if(m.metric) state.metric=m.metric;
+  const aq=m.queue&&m.queue.find(q=>q.adjust); if(aq) state.mw=aq.mw;
   resetAll(); state.tab=(m.queue&&m.queue.length===0)?'build':'place'; render();
 });
 $('#mineseg').addEventListener('click',e=>{const b=e.target.closest('[data-mine]');if(!b||b.disabled)return;state.mine=b.dataset.mine;render()});

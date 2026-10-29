@@ -1,6 +1,6 @@
 # Regionnätsspelet
 
-Interaktivt spel för kommunala tjänstepersoner: hur påverkar en stor etablering (förbrukning eller produktion) i en kommun den lediga kapaciteten i en annan? Nät, kommuner och siffror är **påhittade** och illustrerar bara en princip. Spelet är inget beslutsunderlag.
+Interaktivt spel för kommunala tjänstepersoner: hur påverkar en stor etablering (förbrukning eller produktion) i en kommun den lediga kapaciteten i en annan? Kartan visar Uppsala län med en station per kommun och stamnätsstationen i mitten. Kommunnamnen är bara kartunderlag; stationer, ledningar och siffror är **påhittade** och illustrerar bara en princip. Spelet är inget beslutsunderlag.
 
 Allt körs i webbläsaren (ren HTML/CSS/JavaScript). Ingen server, databas eller byggsteg behövs.
 
@@ -9,7 +9,9 @@ Allt körs i webbläsaren (ren HTML/CSS/JavaScript). Ingen server, databas eller
 | Fil | Innehåll |
 |---|---|
 | `index.html` | Gränssnitt, uppdrag och texter |
-| `sim.js` | Simuleringsmotor: DC-lastflöde, N-1, PTDF, ledig kapacitet, förstärkta och nya ledningar |
+| `sim.js` | Simuleringsmotor: DC-lastflöde, N-1, PTDF, ledig kapacitet, förstärkta och nya ledningar. Nätet är en stjärna kring stamnätsstationen och startvärdena finns överst i filen |
+| `map.js` | Förenklad statisk karta över Uppsala län (genererad) |
+| `tools/make_map.py` | Skapar `map.js` från öppna kommungränser (kräver `shapely`) |
 | `fonts/` | Typsnitt som levereras från egen domän (inga anrop till Google, GDPR) |
 | `.github/workflows/pages.yml` | Publicerar automatiskt till GitHub Pages |
 | `embed-wordpress.html` | Iframe-kod för WordPress |
@@ -35,7 +37,13 @@ Allt körs i webbläsaren (ren HTML/CSS/JavaScript). Ingen server, databas eller
 
 Använd koden i `embed-wordpress.html` i ett Anpassad HTML-block. Vissa teman och säkerhetsplugin blockerar iframes; tillåt då den egna domänen. Länka också till spelet i eget fönster. Det fungerar bäst på mobil. Justera `height` om sidan klipps.
 
+## Karta och data
+
+Bakgrundskartan är statisk (ingen kartserver, inga anrop från besökarens webbläsare). Kommungränserna kommer från [okfse/sweden-geojson](https://github.com/okfse/sweden-geojson) (förenklade, ursprungligen Valmyndigheten via Opendatasoft). Kör `python3 tools/make_map.py` för att generera om `map.js`, till exempel om kartan ska beskära eller färgläggas annorlunda.
+
 ## Att göra senare
+
+- Bakgrund från OpenStreetMap (statisk bild eller SVG, med källhänvisning ©&nbsp;OpenStreetMap-bidragsgivare).
 
 - Validera lastflödet mot IEEE-testsystem och pandapower (enhetstester av `sim.js`).
 - Lägga till kostnads- och ledtidsindikatorer för nätåtgärder.
