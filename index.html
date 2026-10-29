@@ -195,12 +195,29 @@ details.card[open]>summary{margin-bottom:10px}
 .sbar b.neg{background:var(--bad);right:50%} .sbar b.pos{background:var(--ok);left:50%}
 .sbar em{position:absolute;top:0;line-height:26px;font:500 12px var(--f-mono);font-style:normal;color:var(--ink)}
 @media (prefers-reduced-motion:no-preference){.wire{transition:stroke .2s}.box{transition:fill .2s}.sbar b,.mfill{transition:width .25s}}
+
+.helpbtn{margin-top:10px}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit}
+dialog#help{width:min(720px,calc(100vw - 24px));max-height:calc(100vh - 32px);padding:0;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);overflow:hidden}
+dialog#help::backdrop{background:rgba(10,20,30,.55)}
+dialog#help[open]{display:flex;flex-direction:column}
+.hhead{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--rule)}
+.hhead h2{margin:0;font:700 22px/1.2 var(--f-head);text-transform:none;letter-spacing:0;color:var(--ink)}
+.hbody{overflow:auto;padding:4px 16px 16px}
+.hbody h3{font:600 15px/1.3 var(--f-body);margin:18px 0 6px}
+.hbody p,.hbody li{max-width:68ch}
+.hbody p{margin:0 0 8px}
+.hbody ul,.hbody ol{margin:0 0 8px;padding-left:20px}
+.hbody li{margin-bottom:4px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:2px;border:1.5px solid var(--line);vertical-align:-1px;margin-right:4px}
+.sw.ok{background:var(--ok-t);border-color:var(--ok)} .sw.warn{background:var(--warn-t);border-color:var(--warn)} .sw.bad{background:var(--bad-t);border-color:var(--bad)}
 </style>
 
 <div class="wrap">
   <header>
     <h1>Regionnätsspelet</h1>
     <p>Hur påverkar en stor etablering i en annan kommun er kommuns möjlighet att få ny förbrukning eller produktion ansluten? Pröva i ett förenklat, fiktivt regionnät.</p>
+    <button type="button" class="helpbtn" id="helpbtn" aria-haspopup="dialog">Så fungerar det</button>
   </header>
 
   <section class="card" aria-label="Uppdrag">
@@ -300,6 +317,51 @@ details.card[open]>summary{margin-bottom:10px}
   <p class="foot">Ledig kapacitet är den största jämna extra last (eller produktion) som kan anslutas i en kommun utan att någon linje överbelastas, räknat på värsta timmen. Med N-1 prövas att en linje åt gången är ur drift. Modellen är ett DC-lastflöde: effekten delar sig mellan parallella vägar efter linjernas reaktans, utan spänning, reaktiv effekt eller förluster. Befintlig vind i Kommun C och D och sol i Kommun F ingår. En förstärkt ledning får 50 % högre kapacitet; en ny ledning byggs med vald kapacitet. Kostnader, ledtider och tillstånd ingår inte. Vind- och solprofilerna är schematiska. Kommunerna, nätet och alla siffror är påhittade och beskriver inget verkligt nät. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
 </div>
 
+<dialog id="help" aria-labelledby="helptitle">
+  <div class="hhead"><h2 id="helptitle">Så fungerar det</h2><button type="button" id="helpclose">Stäng</button></div>
+  <div class="hbody">
+    <h3 id="h-mal">Vad spelet visar</h3>
+    <p>Regionnätet är maskat: effekt delar sig över flera vägar. En ny förbrukare eller producent i en kommun kan därför ändra hur mycket som kan anslutas i en <em>annan</em> kommun. Spelet gör det synligt. Nätet och siffrorna är påhittade.</p>
+
+    <h3 id="h-siffror">Vad siffrorna betyder</h3>
+    <ul>
+      <li><b>MW ledigt</b> i varje kommunruta: den största jämna extra last (eller produktion) som kan anslutas i kommunen innan någon ledning blir överbelastad. Välj med knapparna <i>Förbrukning</i> eller <i>Produktion</i> i resultatkortet.</li>
+      <li><b>Färger:</b> <span class="sw ok"></span>20 MW eller mer, <span class="sw warn"></span>1–19 MW, <span class="sw bad"></span>0 MW.</li>
+      <li><b>Röd eller grön siffra</b> bredvid: förändring jämfört med nuläget, utan era åtgärder eller etableringar.</li>
+      <li><b>Taggen "Er"</b> markerar er kommun. Resultatkortet räknar utifrån den.</li>
+      <li><b>MW-rutor på ledningar</b> (till exempel 86/110): flöde i värsta fall / ledningens kapacitet. Pilen visar riktningen. Grön är lugnt, gul över 80 %, röd överbelastad.</li>
+      <li><b>Blå linjer</b> visar vägarna den nya effekten tar. Tjockare linje betyder större andel.</li>
+      <li><b>Staplarna</b> i resultatkortet: <i>Nuläge</i> (dagens nät), <i>Utan åtgärder</i> (med etablering men utan ny eller förstärkt ledning) och <i>Med åtgärder</i>. Den streckade linjen är uppdragets mål.</li>
+    </ul>
+
+    <h3 id="h-placera">Placera en etablering</h3>
+    <ol>
+      <li>Välj etablering och effekt (i uppdrag är den given).</li>
+      <li>Klicka på en kommun i schemat, eller på en rad i listan "Spelar platsen roll?". Den streckade ramen är en förhandsvisning.</li>
+      <li>Klicka <b>Anslut</b> överst i schemakortet för att låsa den. <i>Ångra senaste</i> tar bort den, Esc avbryter förhandsvisningen.</li>
+    </ol>
+    <p><i>Flexibel last</i> sänker lasten till 25 % klockan 16–20, när nätet är som mest belastat.</p>
+
+    <h3 id="h-bygg">Bygg ut nätet</h3>
+    <p>Välj <b>Bygg ut nätet</b> ovanför schemat. Där finns grå punkter på kommuner och stationer.</p>
+    <ul>
+      <li><b>Förstärk en ledning:</b> klicka på ledningen eller dess MW-ruta och sedan <i>Förstärk ledningen</i>. Kapaciteten ökar med 50 %. Ledningen ritas tjockare.</li>
+      <li><b>Dra en ny ledning:</b> dra från en grå punkt på en kommun eller station till en annan, eller klicka på två. Välj kapacitet (40–100 MW) och klicka <i>Dra ny ledning</i>. Den ritas streckad och går runt andra kommuner. Mellan två punkter som redan har en ledning går det inte att dra en ny, förstärk den i stället.</li>
+      <li><b>Förhandsvisning:</b> innan du bygger visas hur ledig kapacitet ändras i alla kommuner. En åtgärd kan hjälpa en kommun och samtidigt minska kapaciteten i en annan.</li>
+      <li><b>Ta bort</b> en åtgärd med knappen i listan. Vissa uppdrag tillåter bara ett visst antal åtgärder.</li>
+    </ul>
+
+    <h3 id="h-avancerat">Avancerat</h3>
+    <ul>
+      <li><b>N-1:</b> nätet ska klara att en ledning åt gången är ur drift. Så planeras regionnät. <b>N-0</b> räknar bara normal drift och ger mer ledig kapacitet.</li>
+      <li><b>Värsta timmen</b> räknar på den timme på dygnet som är mest belastad. <i>Vald timme</i> visar en timme i taget.</li>
+      <li><b>Dygnsprofil:</b> belastningen per timme för en vald ledning, jämfört med dess kapacitet.</li>
+    </ul>
+
+    <h3 id="h-modell">Om modellen</h3>
+    <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
+  </div>
+</dialog>
 <script src="sim.js"></script>
 <script>
 
@@ -596,7 +658,7 @@ function renderBuild(v){
   }else if(state.bnodes.length===1){
     h+=`<small>${gname(state.bnodes[0])} är vald. Klicka på en andra kommun eller station för att dra en ny ledning dit.</small>`;
   }else{
-    h+=`<small>Klicka på en <b>ledning</b> för att förstärka den. För en ny ledning: dra från en grå punkt på en kommun eller station till en annan (eller klicka på två).</small>`;
+    h+=`<small>Klicka på en <b>ledning</b> för att förstärka den. För en ny ledning: dra från en grå punkt på en kommun eller station till en annan (eller klicka på två). <button type="button" class="linkbtn" data-help="h-bygg">Hur gör jag?</button></small>`;
   }
   const items=[...Object.keys(state.up).map(id=>({key:'up:'+id,t:'Förstärkt: '+ORIG.lines.find(l=>l.id===id).label})),...state.add.map(a=>({key:'add:'+a.id,t:`Ny ledning ${gname(a.a)} – ${gname(a.b)}, ${a.cap} MW`}))];
   if(items.length) h+=`<ul class="placed">${items.map(o=>`<li><span>${o.t}</span><button type="button" data-rm="${o.key}">Ta bort</button></li>`).join('')}</ul>`;
@@ -763,6 +825,13 @@ function renderControls(v){
 function render(){const v=getView();renderMission(v);renderControls(v);renderResult(v);renderDiagram(v);renderBuild(v);renderAction(v);renderSens(v);renderWhy(v);renderChart(v)}
 
 /* ---------- events ---------- */
+function openHelp(id){
+  const dlg=$('#help'); if(!dlg.open) dlg.showModal();
+  const el=id&&document.getElementById(id); if(el) el.scrollIntoView({block:'start'}); else dlg.querySelector('.hbody').scrollTop=0;
+}
+$('#helpbtn').addEventListener('click',()=>openHelp());
+$('#helpclose').addEventListener('click',()=>$('#help').close());
+$('#help').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.close()});
 function selectLeaf(id){if(!currentConsumer())return;state.sel=state.sel===id?null:id;render()}
 function selectLine(i){state.chartLine=i;render()}
 function pickLine(i){
@@ -841,6 +910,7 @@ $('#buildbox').addEventListener('click',e=>{
     if(k==='up') delete state.up[id]; else state.add=state.add.filter(a=>a.id!==id);
     state.chartLine=null; render(); return;
   }
+  const hp=e.target.closest('[data-help]'); if(hp){openHelp(hp.dataset.help);return}
   const act=e.target.closest('[data-act]'); if(!act)return;
   const p=pendingMeasure(); if(!p)return;
   if(act.dataset.act==='upg'&&p.type==='up'){state.up[p.id]=true;state.bline=null}
