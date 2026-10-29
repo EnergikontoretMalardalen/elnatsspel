@@ -41,6 +41,10 @@ Använd koden i `embed-wordpress.html` i ett Anpassad HTML-block. Vissa teman oc
 
 Bakgrundskartan är statisk (ingen kartserver, inga anrop från besökarens webbläsare). Kommungränserna kommer från [okfse/sweden-geojson](https://github.com/okfse/sweden-geojson) (förenklade, ursprungligen Valmyndigheten via Opendatasoft). Kör `python3 tools/make_map.py` för att generera om `map.js`, till exempel om kartan ska beskära eller färgläggas annorlunda.
 
+## Workshop-läge
+
+Fliken **Workshop** börjar med en tom karta. Deltagarna placerar själva stamnätsstationer (högst fyra) och en regionstation per kommun, drar ledningar mellan stationerna och placerar sedan etableringar. Kommuner som inte nås av någon ledning visas som *Ej ansluten*. Tanken är att visa en verklig karta (till exempel Svenska kraftnäts) på projektorn och låta gruppen bestämma hur nätet ska se ut; inga verkliga stationsdata finns i spelet.
+
 ## Att göra senare
 
 - Bakgrund från OpenStreetMap (statisk bild eller SVG, med källhänvisning ©&nbsp;OpenStreetMap-bidragsgivare).
