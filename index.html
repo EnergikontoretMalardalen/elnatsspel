@@ -92,7 +92,7 @@ svg .mono{font-family:var(--f-mono)}
 .build svg{touch-action:none}
 .dragline{stroke:var(--accent);stroke-width:3.5;stroke-dasharray:8 5;pointer-events:none;fill:none}
 .station.hot .box,.leaf.hot .box{stroke:var(--accent);stroke-width:3}
-.bbox{margin-top:12px;padding-top:12px;border-top:1px solid var(--rule)}
+.bbox{margin:0 0 12px;padding-bottom:12px;border-bottom:1px solid var(--rule)}
 .bhead{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:6px}
 .bbox small{display:block;color:var(--ink2)}
 .bbox .eff{margin:8px 0 0;font-size:13px}
@@ -116,7 +116,7 @@ svg .mono{font-family:var(--f-mono)}
 .maplegend i.thick{height:6px;width:22px;border:0;background:var(--ok);vertical-align:2px;border-radius:3px}
 .maplegend i.dash{height:0;width:22px;border:0;border-top:3px dashed var(--ok);vertical-align:3px;border-radius:0}
 .maplegend i.acc{height:5px;width:20px;border:0;background:var(--accent);opacity:.6;vertical-align:2px;border-radius:3px}
-.actionbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--rule)}
+.actionbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;justify-content:space-between;margin:0 0 12px;padding-bottom:12px;border-bottom:1px solid var(--rule)}
 .actionbar .msg{min-width:0;flex:1 1 240px}
 .msg small{display:block;color:var(--ink2)}
 button{font:500 14px var(--f-body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:7px 12px;cursor:pointer}
@@ -275,13 +275,13 @@ details.card[open]>summary{margin-bottom:10px}
 
       <section class="card" aria-label="Regionnätet" id="mapcard">
         <div class="cardhead"><h2>Regionnätet</h2><div class="seg small" id="tabseg"></div></div>
-        <div class="scroll"><div id="diagram"></div></div>
-        <div class="maplegend" id="maplegend"></div>
         <div class="bbox" id="buildbox" hidden></div>
         <div class="actionbar" id="actionbar">
           <div class="msg" id="actmsg"></div>
           <button class="primary" id="connect" type="button">Anslut här</button>
         </div>
+        <div class="scroll"><div id="diagram"></div></div>
+        <div class="maplegend" id="maplegend"></div>
       </section>
 
       <section class="card" id="senscard">
