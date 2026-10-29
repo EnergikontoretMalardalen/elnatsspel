@@ -1,5 +1,5 @@
 /* Simuleringsmotor för Regionnätsspelet: DC-lastflöde, N-1, PTDF och ledig kapacitet.
-   Fiktivt nät, endast för illustration. */
+   Fiktivt nät, endast för illustration. Kräver map.js (laddas före). */
 //#SIM-START
 const HRS = Array.from({length:24},(_,i)=>i);
 const bump = (h,c,w)=>Math.exp(-Math.pow((h-c)/w,2));
@@ -22,34 +22,27 @@ const isGen = k=>KINDS[k].type==='gen';
 const inFlex = h=>h>=16&&h<=20;
 const FLEXF = h=>inFlex(h)?0.25:1;
 const NODES = [
-  {id:'G', name:'Stamnät'},
-  {id:'T1',name:'Station Väst'},
-  {id:'T2',name:'Station Öst'},
-  {id:'KA',base:40,kind:'industri',gen:[],                          name:'Kommun A',desc:'industri'},
-  {id:'KB',base:55,kind:'blandat', gen:[],                          name:'Kommun B',desc:'stad'},
-  {id:'KC',base:18,kind:'bostad',  gen:[{kind:'vind',mw:30}],       name:'Kommun C',desc:'landsbygd'},
-  {id:'KD',base:30,kind:'industri',gen:[{kind:'vind',mw:40}],       name:'Kommun D',desc:'hamn'},
-  {id:'KE',base:50,kind:'bostad',  gen:[],                          name:'Kommun E',desc:'bostäder'},
-  {id:'KF',base:12,kind:'bostad',  gen:[{kind:'sol',mw:20}],        name:'Kommun F',desc:'landsbygd'}
+  {id:'G',  name:'Stamnätet'},
+  {id:'UPP',base:150,kind:'blandat', gen:[],                      name:'Uppsala',    desc:'stad'},
+  {id:'ENK',base:55, kind:'blandat', gen:[{kind:'sol', mw:30}],   name:'Enköping',   desc:'stad'},
+  {id:'HEB',base:18, kind:'bostad',  gen:[{kind:'vind',mw:25}],   name:'Heby',       desc:'landsbygd'},
+  {id:'HAB',base:30, kind:'bostad',  gen:[],                      name:'Håbo',       desc:'bostäder'},
+  {id:'KNI',base:32, kind:'bostad',  gen:[],                      name:'Knivsta',    desc:'bostäder'},
+  {id:'TIE',base:28, kind:'industri',gen:[{kind:'vind',mw:40}],   name:'Tierp',      desc:'industri'},
+  {id:'ALV',base:12, kind:'bostad',  gen:[{kind:'sol', mw:20}],   name:'Älvkarleby', desc:'landsbygd'},
+  {id:'OST',base:30, kind:'industri',gen:[{kind:'vind',mw:60}],   name:'Östhammar',  desc:'industri'}
 ];
 const IDX = Object.fromEntries(NODES.map((n,i)=>[n.id,i]));
 const byId = Object.fromEntries(NODES.map(n=>[n.id,n]));
 const LOADS = NODES.filter(n=>n.base!=null);
-const BASE_LINES = [
-  {id:'L1', a:'G', b:'T1',x:.04,cap:240,label:'transformator Väst'},
-  {id:'L2', a:'G', b:'T2',x:.04,cap:240,label:'transformator Öst'},
-  {id:'L3', a:'T1',b:'KA',x:.10,cap:125,label:'linjen Väst–Kommun A'},
-  {id:'L4', a:'KA',b:'KB',x:.12,cap:100,label:'linjen Kommun A–Kommun B'},
-  {id:'L5', a:'KB',b:'T2',x:.10,cap:120,label:'linjen Kommun B–Öst'},
-  {id:'L6', a:'T1',b:'KD',x:.10,cap:110,label:'linjen Väst–Kommun D'},
-  {id:'L7', a:'KD',b:'KF',x:.08,cap:90, label:'linjen Kommun D–Kommun F'},
-  {id:'L8', a:'KF',b:'KE',x:.08,cap:90, label:'linjen Kommun F–Kommun E'},
-  {id:'L9', a:'KE',b:'T2',x:.10,cap:120,label:'linjen Kommun E–Öst'},
-  {id:'L10',a:'KB',b:'KE',x:.15,cap:70, label:'korslänken Kommun B–Kommun E'},
-  {id:'L11',a:'KA',b:'KC',x:.10,cap:45, label:'linjen Kommun A–Kommun C'}
-];
+/* kartpositioner (px) från map.js; avstånd i km styr reaktansen hos nya ledningar */
+const POS = {G:MAP.G, ...Object.fromEntries(Object.entries(MAP.stations).map(([k,v])=>[k,{x:v.x,y:v.y}]))};
+const kmBetween = (a,b)=>Math.max(8,Math.hypot(POS[a].x-POS[b].x,POS[a].y-POS[b].y)/MAP.pxPerKm);
+const XK = 0.275;                /* reaktans = XK * längd(km) / kapacitet(MW); 40 km och 60 MW ger ca 0,18 */
+const STAR = {UPP:230,ENK:110,HEB:55,HAB:70,KNI:75,TIE:90,ALV:45,OST:110};
+/* startnät: stjärna, varje kommunstation har en egen ledning till stamnätsstationen */
+const BASE_LINES = LOADS.map((n,i)=>({id:'L'+(i+1),a:'G',b:n.id,cap:STAR[n.id],x:XK*kmBetween('G',n.id)/STAR[n.id],label:'anslutningen till stamnätet i '+n.name,km:kmBetween('G',n.id)}));
 const UPG = 1.5;                 /* standard (om ingen mängd anges): +50 %. cfg.up[id] kan vara true eller antal extra MW; reaktansen skalas med kapaciteten */
-const NEWX = 11;                 /* ny linje: reaktans = NEWX / kapacitet (samma storleksordning som befintliga linjer) */
 function buildX(out,lines){
   const m=NODES.length-1;
   const B=Array.from({length:m},()=>Array(m).fill(0));
@@ -76,6 +69,12 @@ function buildX(out,lines){
   }
   return A.map(r=>r.slice(m));
 }
+/* noder som tappar matning från stamnätet när ledning `out` är ur drift */
+function isoNodes(out,lines){
+  const seen=new Set(['G']); let grow=true;
+  while(grow){grow=false; lines.forEach((l,i)=>{if(i===out)return; if(seen.has(l.a)!==seen.has(l.b)){seen.add(l.a);seen.add(l.b);grow=true}})}
+  return NODES.filter(n=>n.base!=null&&!seen.has(n.id)).map(n=>n.id);
+}
 const NETCACHE={};
 /* cfg = {up:{L3:true,...}, add:[{id,a,b,cap}]} */
 function makeNet(cfg){
@@ -83,10 +82,11 @@ function makeNet(cfg){
   const key=JSON.stringify(cfg);
   if(NETCACHE[key]) return NETCACHE[key];
   const lines=BASE_LINES.map(l=>{const e=cfg.up[l.id]; if(!e) return {...l}; const ex=e===true?l.cap*(UPG-1):e; const f=(l.cap+ex)/l.cap; return {...l,cap:l.cap+ex,x:l.x/f,up:true,extra:ex}})
-    .concat(cfg.add.map(a=>({id:a.id,a:a.a,b:a.b,cap:a.cap,x:NEWX/a.cap,label:`ny linje ${byId[a.a].name.replace('Kommun ','Kommun ')}–${byId[a.b].name}`,added:true})));
+    .concat(cfg.add.map(a=>({id:a.id,a:a.a,b:a.b,cap:a.cap,x:XK*kmBetween(a.a,a.b)/a.cap,km:kmBetween(a.a,a.b),label:`ny ledning ${byId[a.a].name}–${byId[a.b].name}`,added:true})));
   const scen=[{out:-1,X:buildX(-1,lines)}];
-  lines.forEach((l,i)=>{const X=buildX(i,lines); if(X) scen.push({out:i,X})});
+  lines.forEach((l,i)=>{const X=buildX(i,lines); scen.push(X?{out:i,X}:{out:i,X:null,iso:isoNodes(i,lines)})});
   scen.forEach(s=>{
+    if(!s.X) return;
     s.PT={};
     for(let k=1;k<NODES.length;k++){
       const th=[0,...s.X.map(r=>-r[k-1])];
@@ -137,6 +137,11 @@ function compute(placed,mode,hour,crit,net){
     const inHl=hl.includes(h);
     if(inHl) for(const n of LOADS){const p=parts[IDX[n.id]-1];load[n.id]=Math.max(load[n.id],p.load);gen[n.id]=Math.max(gen[n.id],p.gen)}
     for(const s of scen){
+      if(!s.X){
+        /* N-1: en ledning faller bort och noder blir utan matning, alltså ingen reserv alls */
+        if(inHl) for(const id of s.iso){availU[id]=0;availI[id]=0;bindU[id]=bindI[id]={line:s.out,out:s.out,h}}
+        continue;
+      }
       const f=flowsFor(s,P,lines);
       for(let l=0;l<nl;l++){
         const a=Math.abs(f[l]);
@@ -161,6 +166,6 @@ function metrics(res){
   return {overloads,ok20};
 }
 function ptdfOf(nodeId,outIdx=-1,net){
-  net=net||NET; const s=net.scen.find(x=>x.out===outIdx); return s.PT[IDX[nodeId]];
+  net=net||NET; const s=net.scen.find(x=>x.out===outIdx&&x.X); return s?s.PT[IDX[nodeId]]:net.lines.map(()=>0);
 }
 //#SIM-END
