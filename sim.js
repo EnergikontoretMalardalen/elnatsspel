@@ -48,7 +48,7 @@ const BASE_LINES = [
   {id:'L10',a:'KB',b:'KE',x:.15,cap:70, label:'korslänken Kommun B–Kommun E'},
   {id:'L11',a:'KA',b:'KC',x:.10,cap:45, label:'linjen Kommun A–Kommun C'}
 ];
-const UPG = 1.5;                 /* en förstärkning ger +50 % kapacitet och motsvarande lägre reaktans */
+const UPG = 1.5;                 /* standard (om ingen mängd anges): +50 %. cfg.up[id] kan vara true eller antal extra MW; reaktansen skalas med kapaciteten */
 const NEWX = 11;                 /* ny linje: reaktans = NEWX / kapacitet (samma storleksordning som befintliga linjer) */
 function buildX(out,lines){
   const m=NODES.length-1;
@@ -82,7 +82,7 @@ function makeNet(cfg){
   cfg=cfg||{up:{},add:[]};
   const key=JSON.stringify(cfg);
   if(NETCACHE[key]) return NETCACHE[key];
-  const lines=BASE_LINES.map(l=>cfg.up[l.id]?{...l,cap:l.cap*UPG,x:l.x/UPG,up:true}:{...l})
+  const lines=BASE_LINES.map(l=>{const e=cfg.up[l.id]; if(!e) return {...l}; const ex=e===true?l.cap*(UPG-1):e; const f=(l.cap+ex)/l.cap; return {...l,cap:l.cap+ex,x:l.x/f,up:true,extra:ex}})
     .concat(cfg.add.map(a=>({id:a.id,a:a.a,b:a.b,cap:a.cap,x:NEWX/a.cap,label:`ny linje ${byId[a.a].name.replace('Kommun ','Kommun ')}–${byId[a.b].name}`,added:true})));
   const scen=[{out:-1,X:buildX(-1,lines)}];
   lines.forEach((l,i)=>{const X=buildX(i,lines); if(X) scen.push({out:i,X})});
