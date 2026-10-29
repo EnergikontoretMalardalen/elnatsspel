@@ -314,7 +314,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     </main>
   </div>
 
-  <p class="foot">Ledig kapacitet är den största jämna extra last (eller produktion) som kan anslutas i en kommun utan att någon linje överbelastas, räknat på värsta timmen. Med N-1 prövas att en linje åt gången är ur drift. Modellen är ett DC-lastflöde: effekten delar sig mellan parallella vägar efter linjernas reaktans, utan spänning, reaktiv effekt eller förluster. Befintlig vind i Kommun C och D och sol i Kommun F ingår. En förstärkt ledning får 50 % högre kapacitet; en ny ledning byggs med vald kapacitet. Kostnader, ledtider och tillstånd ingår inte. Vind- och solprofilerna är schematiska. Kommunerna, nätet och alla siffror är påhittade och beskriver inget verkligt nät. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
+  <p class="foot">Ledig kapacitet är den största jämna extra last (eller produktion) som kan anslutas i en kommun utan att någon linje överbelastas, räknat på värsta timmen. Med N-1 prövas att en linje åt gången är ur drift. Modellen är ett DC-lastflöde: effekten delar sig mellan parallella vägar efter linjernas reaktans, utan spänning, reaktiv effekt eller förluster. Befintlig vind i Kommun C och D och sol i Kommun F ingår. En förstärkt ledning får den kapacitetsökning du väljer; en ny ledning byggs med vald kapacitet. Kostnader, ledtider och tillstånd ingår inte. Vind- och solprofilerna är schematiska. Kommunerna, nätet och alla siffror är påhittade och beskriver inget verkligt nät. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
 </div>
 
 <dialog id="help" aria-labelledby="helptitle">
@@ -345,7 +345,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     <h3 id="h-bygg">Bygg ut nätet</h3>
     <p>Välj <b>Bygg ut nätet</b> ovanför schemat. Där finns grå punkter på kommuner och stationer.</p>
     <ul>
-      <li><b>Förstärk en ledning:</b> klicka på ledningen eller dess MW-ruta och sedan <i>Förstärk ledningen</i>. Kapaciteten ökar med 50 %. Ledningen ritas tjockare.</li>
+      <li><b>Förstärk en ledning:</b> klicka på ledningen eller dess MW-ruta och sedan <i>Förstärk ledningen</i>. Välj hur mycket kapaciteten ska öka, i procent av ledningens kapacitet eller i MW. Ledningen ritas tjockare.</li>
       <li><b>Dra en ny ledning:</b> dra från en grå punkt på en kommun eller station till en annan, eller klicka på två. Välj kapacitet (40–100 MW) och klicka <i>Dra ny ledning</i>. Den ritas streckad och går runt andra kommuner. Mellan två punkter som redan har en ledning går det inte att dra en ny, förstärk den i stället.</li>
       <li><b>Förhandsvisning:</b> innan du bygger visas hur ledig kapacitet ändras i alla kommuner. En åtgärd kan hjälpa en kommun och samtidigt minska kapaciteten i en annan.</li>
       <li><b>Ta bort</b> en åtgärd med knappen i listan. Vissa uppdrag tillåter bara ett visst antal åtgärder.</li>
@@ -407,7 +407,7 @@ MISSIONS.push(
 const TAB_ORDER=[1,2,3,4,5,0];
 
 const $ = s=>document.querySelector(s);
-const state = {mission:1, qi:0, placed:[], sel:null, mine:'KE', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n1', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'place', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:60};
+const state = {mission:1, qi:0, placed:[], sel:null, mine:'KE', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n1', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'place', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:60, upunit:'pct', upval:50};
 
 const BW=112, BH=96;
 const L = {
@@ -476,6 +476,9 @@ function currentConsumer(){
   if(m.queue){const q=m.queue[state.qi];return q?{kind:q.kind,mw:q.mw,flex:isGen(q.kind)?false:state.flex}:null}
   return {kind:state.kind,mw:state.mw,flex:isGen(state.kind)?false:state.flex};
 }
+function upExtra(l){return Math.max(1,state.upunit==='pct'?Math.round(l.cap*state.upval/100):Math.round(state.upval))}
+function upRange(l){return state.upunit==='pct'?{min:10,max:200,step:10}:{min:5,max:Math.max(10,Math.round(l.cap*2/5)*5),step:5}}
+function upInfo(l,ex){return `Klarar idag ${l.cap} MW. Efter förstärkning: ${l.cap+ex} MW (+${ex} MW, +${Math.round(ex/l.cap*100)} %).`}
 function nMeasures(){return Object.keys(state.up).length+state.add.length}
 function pendingMeasure(){
   if(state.tab!=='build')return null;
@@ -483,7 +486,7 @@ function pendingMeasure(){
   if(state.bline!=null){
     const l=ORIG.lines[state.bline]; if(!l)return null;
     if(state.up[l.id]) return {type:'dup'};
-    return full?{type:'full'}:{type:'up',id:l.id};
+    return full?{type:'full'}:{type:'up',id:l.id,extra:upExtra(l)};
   }
   if(state.bnodes.length===2){
     const [a,b]=state.bnodes;
@@ -494,7 +497,7 @@ function pendingMeasure(){
 }
 function cfgOf(pend){
   const cfg={up:{...state.up},add:state.add.map(a=>({...a}))};
-  if(pend){const p=pendingMeasure(); if(p&&p.type==='up')cfg.up[p.id]=true; if(p&&p.type==='add')cfg.add.push({id:'NP',a:p.a,b:p.b,cap:p.cap})}
+  if(pend){const p=pendingMeasure(); if(p&&p.type==='up')cfg.up[p.id]=p.extra; if(p&&p.type==='add')cfg.add.push({id:'NP',a:p.a,b:p.b,cap:p.cap})}
   return cfg;
 }
 function getView(){
@@ -645,7 +648,12 @@ function renderBuild(v){
   let h=`<div class="bhead"><strong>Bygg ut nätet</strong><span class="val">${n}${M.limit?' av '+M.limit:''} åtgärd${n===1&&!M.limit?'':'er'}</span></div>`;
   if(p&&p.type==='up'){
     const l=ORIG.lines[state.bline];
-    h+=`<div><strong>${cap1(l.label)}</strong><small>Klarar idag ${l.cap} MW. Förstärkt: ${Math.round(l.cap*UPG)} MW (+50 %).</small></div>${effText(v)}<div class="bact"><button class="primary" type="button" data-act="upg">Förstärk ledningen</button></div>`;
+    const r=upRange(l);
+    h+=`<div><strong>${cap1(l.label)}</strong><small id="upinfo">${upInfo(l,p.extra)}</small></div>
+      <div class="seg" role="group" aria-label="Enhet för förstärkning" style="margin-top:8px;max-width:260px"><button type="button" data-upunit="pct" aria-pressed="${state.upunit==='pct'}">Procent</button><button type="button" data-upunit="mw" aria-pressed="${state.upunit==='mw'}">MW</button></div>
+      <div class="row" style="max-width:420px"><label for="upamt">Förstärk med</label><span class="val" id="upval">${state.upunit==='pct'?state.upval+' %':state.upval+' MW'}</span></div>
+      <input type="range" id="upamt" style="max-width:420px" min="${r.min}" max="${r.max}" step="${r.step}" value="${state.upval}">
+      <div id="upeff">${effText(v)}</div><div class="bact"><button class="primary" type="button" data-act="upg" id="upbtn">Förstärk med ${p.extra} MW</button></div>`;
   }else if(p&&p.type==='add'){
     h+=`<div><strong>Ny ledning ${gname(p.a)} – ${gname(p.b)}</strong><small>Välj hur mycket effekt den ska klara.</small></div>
       <div class="seg" role="group" aria-label="Ny ledning, kapacitet">${[40,60,80,100].map(c=>`<button type="button" data-ncap="${c}" aria-pressed="${c===state.ncap}">${c} MW</button>`).join('')}</div>${effText(v)}<div class="bact"><button class="primary" type="button" data-act="newline">Dra ny ledning</button></div>`;
@@ -660,7 +668,7 @@ function renderBuild(v){
   }else{
     h+=`<small>Klicka på en <b>ledning</b> för att förstärka den. För en ny ledning: dra från en grå punkt på en kommun eller station till en annan (eller klicka på två). <button type="button" class="linkbtn" data-help="h-bygg">Hur gör jag?</button></small>`;
   }
-  const items=[...Object.keys(state.up).map(id=>({key:'up:'+id,t:'Förstärkt: '+ORIG.lines.find(l=>l.id===id).label})),...state.add.map(a=>({key:'add:'+a.id,t:`Ny ledning ${gname(a.a)} – ${gname(a.b)}, ${a.cap} MW`}))];
+  const items=[...Object.keys(state.up).map(id=>({key:'up:'+id,t:(()=>{const l=ORIG.lines.find(x=>x.id===id),ex=state.up[id]===true?Math.round(l.cap*(UPG-1)):state.up[id];return `Förstärkt: ${l.label}, +${ex} MW (till ${l.cap+ex} MW)`})()})),...state.add.map(a=>({key:'add:'+a.id,t:`Ny ledning ${gname(a.a)} – ${gname(a.b)}, ${a.cap} MW`}))];
   if(items.length) h+=`<ul class="placed">${items.map(o=>`<li><span>${o.t}</span><button type="button" data-rm="${o.key}">Ta bort</button></li>`).join('')}</ul>`;
   box.innerHTML=h;
 }
@@ -897,12 +905,29 @@ $('#diagram').addEventListener('keydown',e=>{
   diagramAct(el);
   const again=document.querySelector(`[${sel}="${val}"]`); if(again) again.focus();
 });
+$('#buildbox').addEventListener('input',e=>{
+  if(e.target.id!=='upamt')return;
+  state.upval=+e.target.value;
+  const v=getView(); renderMission(v);renderResult(v);renderDiagram(v);renderAction(v);renderSens(v);renderWhy(v);renderChart(v);
+  const p=v.pend; if(p&&p.type==='up'){
+    const l=ORIG.lines[state.bline];
+    $('#upinfo').textContent=upInfo(l,p.extra); $('#upval').textContent=state.upunit==='pct'?state.upval+' %':state.upval+' MW';
+    $('#upeff').innerHTML=effText(v); $('#upbtn').textContent=`Förstärk med ${p.extra} MW`;
+  }
+});
 $('#tabseg').addEventListener('click',e=>{
   const b=e.target.closest('[data-tab]'); if(!b||b.disabled)return;
   state.tab=b.dataset.tab; state.sel=null; state.bline=null; state.bnodes=[]; render();
 });
 $('#buildbox').addEventListener('click',e=>{
   const M=MISSIONS[state.mission];
+  const un=e.target.closest('[data-upunit]');
+  if(un&&un.dataset.upunit!==state.upunit){
+    const l=ORIG.lines[state.bline];
+    if(un.dataset.upunit==='mw'){state.upval=Math.max(5,Math.round(l.cap*state.upval/100/5)*5);state.upunit='mw'}
+    else{state.upval=Math.min(200,Math.max(10,Math.round(state.upval/l.cap*100/10)*10));state.upunit='pct'}
+    render();return;
+  }
   const nc=e.target.closest('[data-ncap]'); if(nc){state.ncap=+nc.dataset.ncap;render();return}
   const rm=e.target.closest('[data-rm]');
   if(rm){
@@ -913,7 +938,7 @@ $('#buildbox').addEventListener('click',e=>{
   const hp=e.target.closest('[data-help]'); if(hp){openHelp(hp.dataset.help);return}
   const act=e.target.closest('[data-act]'); if(!act)return;
   const p=pendingMeasure(); if(!p)return;
-  if(act.dataset.act==='upg'&&p.type==='up'){state.up[p.id]=true;state.bline=null}
+  if(act.dataset.act==='upg'&&p.type==='up'){state.up[p.id]=p.extra;state.bline=null}
   else if(act.dataset.act==='newline'&&p.type==='add'){state.add.push({id:'N'+state.nid++,a:p.a,b:p.b,cap:p.cap});state.bnodes=[]}
   else return;
   state.chartLine=null; render();
