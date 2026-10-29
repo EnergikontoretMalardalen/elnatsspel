@@ -43,7 +43,7 @@ Bakgrundskartan är statisk (ingen kartserver, inga anrop från besökarens webb
 
 ## Workshop-läge
 
-Fliken **Workshop** börjar med en tom karta. Deltagarna placerar själva stamnätsstationer (högst fyra) och en regionstation per kommun, drar ledningar mellan stationerna och placerar sedan etableringar. Kommuner som inte nås av någon ledning visas som *Ej ansluten*. Tanken är att visa en verklig karta (till exempel Svenska kraftnäts) på projektorn och låta gruppen bestämma hur nätet ska se ut; inga verkliga stationsdata finns i spelet.
+Spelet startar i **Blank karta**, och uppdragen 1–4 och *Prova själv* ligger som alternativ i uppdragsraden. Deltagarna placerar själva stamnätsstationer (högst fyra) och en regionstation per kommun, drar ledningar mellan stationerna och placerar sedan etableringar. Kommuner som inte nås av någon ledning visas som *Ej ansluten*. Tanken är att visa en verklig karta (till exempel Svenska kraftnäts) på projektorn och låta gruppen bestämma hur nätet ska se ut; inga verkliga stationsdata finns i spelet.
 
 ## Att göra senare
 
