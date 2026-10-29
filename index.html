@@ -97,7 +97,7 @@ svg .mono{font-family:var(--f-mono)}
 .build svg{touch-action:none}
 .dragline{stroke:var(--accent);stroke-width:3.5;stroke-dasharray:8 5;pointer-events:none;fill:none}
 .station.hot .box,.leaf.hot .box{stroke:var(--accent);stroke-width:3}
-.srcpre,#srcpre{max-height:420px;overflow:auto;margin:8px 0 0;padding:10px;background:var(--bg,#f4f5f7);border:1px solid var(--rule);border-radius:6px;font:12px/1.45 var(--f-mono);white-space:pre;tab-size:2}
+.dtab{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 0}.dtab th,.dtab td{padding:4px 6px;border-bottom:1px solid var(--rule);text-align:left}.dtab th{font-weight:600;color:var(--ink2);font-size:12px}.dtab td.n,.dtab th.n{text-align:right;font-family:var(--f-mono)}.dtab svg{display:block;width:96px!important;max-width:none;height:26px!important}
 .klabel{font-size:11.5px;font-weight:500;fill:var(--ink2);text-anchor:middle;pointer-events:none}
 .stations svg{cursor:crosshair} .stations .land:hover{fill:var(--accent-t)} .stations .station{cursor:default}
 .wsmsg{color:var(--bad)!important;margin-top:6px}
@@ -260,9 +260,8 @@ dialog#help[open]{display:flex;flex-direction:column}
       </section>
 
       <details class="card" id="srcbox">
-        <summary>Beräkningskoden (sim.js)</summary>
-        <p class="help" style="margin-top:0">Här ligger hela beräkningen, inklusive kommunernas last och produktion (<code>NODES</code>) och etableringarnas dygnsprofiler (<code>KINDS</code>). Filen <code>sim.js</code> i repot är samma kod.</p>
-        <pre id="srcpre" tabindex="0" aria-label="Källkod sim.js">Laddar…</pre>
+        <summary>Kommunernas last och etableringarnas profiler</summary>
+        <div id="srcdata"></div>
       </details>
       <details class="card" id="adv">
         <summary>Avancerat</summary>
@@ -1078,11 +1077,19 @@ $('#hour').addEventListener('input',e=>{state.hour=+e.target.value;render()});
 $('#showloads').addEventListener('change',e=>{state.showLoads=e.target.checked;render()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(state.sel||state.bline!=null||state.bnodes.length)){state.sel=null;state.bline=null;state.bnodes=[];render()}});
 
-$('#srcbox').addEventListener('toggle',function(){
-  if(!this.open||this.dataset.loaded)return;
-  fetch('sim.js').then(r=>{if(!r.ok)throw 0;return r.text()}).then(t=>{$('#srcpre').textContent=t;this.dataset.loaded='1'})
-    .catch(()=>{$('#srcpre').textContent='Kunde inte läsa sim.js här. Öppna filen i repot: https://github.com/EnergikontoretMalardalen/elnatsspel/blob/main/sim.js'});
-});
+function srcData(){
+  const gk=Object.keys(KINDS).filter(k=>KINDS[k].type==='gen');
+  const rows=NODES.filter(n=>n.base!=null).map(n=>`<tr><td>${n.name}</td><td>${n.desc}</td><td class="n">${n.base}</td><td>${n.gen.length?n.gen.map(g=>`${g.mw} MW ${KINDS[g.kind].short==='Sol'?'sol':'vind'}`).join(', '):'–'}</td></tr>`).join('');
+  const bars=k=>{const W=96,H=26,bw=W/24;return `<svg viewBox="0 0 ${W} ${H}" width="96" height="${H}" role="img" aria-label="Dygnsprofil ${KINDS[k].name}">${HRS.map(h=>{const v=Math.max(0,Math.min(1,KINDS[k].profile(h))),bh=Math.max(1,v*(H-2));return `<rect x="${(h*bw+.5).toFixed(1)}" y="${(H-bh).toFixed(1)}" width="${(bw-1).toFixed(1)}" height="${bh.toFixed(1)}" fill="var(--accent)"/>`}).join('')}</svg>`};
+  const kr=Object.keys(KINDS).map(k=>{const o=KINDS[k],v=HRS.map(h=>o.profile(h));return `<tr><td>${o.name}${o.type==='gen'?' (prod.)':''}</td><td class="n">${o.mw}</td><td>${bars(k)}</td></tr>`}).join('');
+  return `<p class="help" style="margin-top:0">Siffrorna är påhittade och hämtas direkt ur spelets beräkningsfil <code>sim.js</code> (<code>NODES</code> och <code>KINDS</code>).</p>
+  <div class="sub">Kommuner: befintlig last och produktion (MW)</div>
+  <div style="overflow-x:auto"><table class="dtab"><thead><tr><th>Kommun</th><th>Typ</th><th class="n">Last, topp</th><th>Installerad produktion</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="sub">Etableringar: förvald effekt och dygnsprofil (andel av effekten, timme 0–23, staplarnas höjd = andel av effekten)</div>
+  <div style="overflow-x:auto"><table class="dtab"><thead><tr><th>Etablering</th><th class="n">MW</th><th>Dygnsprofil</th></tr></thead><tbody>${kr}</tbody></table></div>
+  <p class="help">Flexibel last sänker förbrukningen till ${f0(FLEXF(18)*100)} % klockan 16–20.</p>`;
+}
+$('#srcdata').innerHTML=srcData();
 render();
 </script>
 
