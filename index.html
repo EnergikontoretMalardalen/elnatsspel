@@ -360,8 +360,8 @@ dialog#help[open]{display:flex;flex-direction:column}
       <li><b>Ta bort</b> en åtgärd med knappen i listan. Vissa uppdrag tillåter bara ett visst antal åtgärder.</li>
     </ul>
 
-    <h3 id="h-workshop">Workshop: bygg ert eget nät</h3>
-    <p>Fliken <b>Workshop</b> börjar med en tom karta, så att ni bestämmer själva hur regionnätet ska se ut. Använd den till exempel tillsammans med en verklig karta på projektorn.</p>
+    <h3 id="h-workshop">Blank karta: bygg ert eget nät</h3>
+    <p>Spelet startar i <b>Blank karta</b>, där ni bestämmer själva hur regionnätet ska se ut. Använd den till exempel tillsammans med en verklig karta på projektorn.</p>
     <ol>
       <li><b>Stationer:</b> välj <i>Stamnätsstation</i> och klicka där stamnätet ska komma in (högst fyra). Välj sedan <i>Regionstation i kommun</i> och klicka inne i varje kommun som ska vara med. En station per kommun. <i>Ta bort</i> i listan flyttar en station.</li>
       <li><b>Ledningar:</b> dra från en grå punkt på en station till en annan. Välj kapacitet (60–300 MW). Klicka på en ledning för att förstärka den. En kommun som inte nås av någon ledning visas som <i>Ej ansluten</i> och har 0 MW. Stamnätsstationer kopplas inte ihop med varandra.</li>
@@ -415,12 +415,12 @@ const MISSIONS = [
       {label:'Inga ledningar överbelastas', test:m=>m.overloads===0},
       {label:'Älvkarleby har minst 40 MW ledigt för produktion', test:m=>m.mineI>=40}]}
 ];
-MISSIONS.push({title:'Workshop: bygg ert eget regionnät', short:'Workshop', mine:null, metric:null, goal:null, ws:true,
+MISSIONS.push({title:'Bygg ert eget regionnät', short:'Blank karta', mine:null, metric:null, goal:null, ws:true,
     text:'Kartan är tom. Bestäm tillsammans var stamnätet kommer in i länet, var varje kommun har sin regionstation och hur ledningarna dras. Sedan kan ni placera etableringar och se hur grannarna påverkas. Stationer, ledningar och siffror är påhittade.', queue:null, goals:[]});
-const TAB_ORDER=[1,2,3,4,0,5];
+const TAB_ORDER=[5,1,2,3,4,0];
 
 const $ = s=>document.querySelector(s);
-const state = {mission:1, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'place', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:60, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:''};
+const state = {mission:5, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:''};
 
 const BW=108, BH=68;
 const L0 = {G:{x:MAP.G.x-50,y:MAP.G.y-17,w:100,h:34}};
