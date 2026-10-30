@@ -116,6 +116,10 @@ const SHP = (()=>{
   /* stationer (punkter) och ledningar (linjer) -> {stations, lines} */
   function stamnat(sets){
     const t=lanTest(), st=[], byKv={};
+    /* SVK_STAMNAT.zip innehåller även STATIONSOMRÅDEN och SVK_STOLPAR: använd bara stationer och ledningar */
+    const isSt=x=>/^stationer$/i.test(x.name), isLe=x=>/ledning/i.test(x.name);
+    const named=sets.some(x=>isSt(x)||isLe(x));
+    sets=named?sets.filter(x=>isSt(x)||isLe(x)):sets;
     for(const s of sets){
       if(s.type==='point'){
         for(const sh of s.shapes){
