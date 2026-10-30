@@ -45,6 +45,17 @@ Bakgrundskartan är statisk (ingen kartserver, inga anrop från besökarens webb
 
 Spelet startar i **Blank karta**, och uppdragen 1–4 och *Prova själv* ligger som alternativ i uppdragsraden. Deltagarna placerar själva stamnätsstationer (högst fyra) och en regionstation per kommun, drar ledningar mellan stationerna och placerar sedan etableringar. Kommuner som inte nås av någon ledning visas som *Ej ansluten*. Tanken är att visa en verklig karta (till exempel Svenska kraftnäts) på projektorn och låta gruppen bestämma hur nätet ska se ut; inga verkliga stationsdata finns i spelet.
 
+### Stamnätet från Svenska kraftnäts filer (valfritt)
+
+Knappen **Ladda stamnät** (under Stationer) läser in `stamnat.json`: stamnätsstationerna inom länet placeras där de ligger och stamnätets ledningar visas som bakgrund. Filen görs av shapefilerna för stationer och ledningar:
+
+```
+pip install pyshp pyproj shapely
+python3 tools/stamnat_till_json.py STATIONER.shp SVK_LEDNINGAR.shp stamnat.json
+```
+
+`stamnat.json` ligger i `.gitignore` och finns inte i repot, eftersom licensen för datan måste vara klar innan den publiceras. Utan filen i repot öppnar knappen en filväljare, och filen läses bara i webbläsaren. Stationerna har inga namn i underlaget och numreras därför.
+
 ## Att göra senare
 
 - Bakgrund från OpenStreetMap (statisk bild eller SVG, med källhänvisning ©&nbsp;OpenStreetMap-bidragsgivare).
