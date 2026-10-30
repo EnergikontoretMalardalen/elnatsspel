@@ -90,3 +90,6 @@ Typsnitten (IBM Plex, Barlow Semi Condensed) ligger under SIL Open Font License;
 
 ### Regionnätsledningar som går att välja
 OSM-ledningarna under 200 kV läses som en vektor per ledningssträcka. De är blå och ingår inte i beräkningen. Klicka på en i fliken Ledningar, ange kapacitet (MW) och den blir röd och räknas med. Längd = polylinjens längd i kartan; reaktans = 0,275·km/MW. Ändpunkterna snappas till närmaste station (≤ ca 2 km), annars skapas en regionnätsstation. Kapacitet finns inte i OSM, så den anges av användaren.
+
+### Medföljande OSM-data
+`osm_uppsala.json` är en export från Overpass (overpass-turbo.eu) för Uppsala län, omräknad till kartans koordinater. Knappen *Ladda stamnät/regionnät* läser den automatiskt (om `stamnat.json` saknas), så spelarna behöver inte hämta något. *Egen fil…* väljer en annan fil. Data © OpenStreetMap-bidragsgivare (ODbL), kan vara ofullständig eller felaktig.

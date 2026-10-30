@@ -786,7 +786,7 @@ function stationsHtml(){
     <pre class="q" tabindex="0">${osmQuery()}</pre></details>`;
   const items=[...state.gst.map(g=>({id:g.id,t:sname(g.id)+(g.nm?' (stamnät)':'')})),...state.rst.map(g=>({id:g.id,t:sname(g.id)+(g.nm?' (region)':'')})),...LOADS.filter(n=>state.kst[n.id]).map(n=>({id:n.id,t:'Kommunstation '+n.name}))];
   if(items.length) h+=`<ul class="placed" style="max-height:150px;overflow:auto">${items.map(o=>`<li><span>${o.t}</span><button type="button" data-rmst="${o.id}">Ta bort</button></li>`).join('')}</ul>`;
-  h+=`<div class="bact"><button class="primary" type="button" data-act="tolines" ${state.gst.length&&nk?'':'disabled'}>Klart, dra ledningar</button><button type="button" data-act="loadstam">Ladda stamnät/regionnät</button><button type="button" data-act="loadnat">Ladda nätområden</button><button type="button" data-act="clearmap" ${none?'disabled':''}>Rensa kartan</button></div>`;
+  h+=`<div class="bact"><button class="primary" type="button" data-act="tolines" ${state.gst.length&&nk?'':'disabled'}>Klart, dra ledningar</button><button type="button" data-act="loadstam">Ladda stamnät/regionnät</button><button type="button" data-act="ownfile">Egen fil…</button><button type="button" data-act="loadnat">Ladda nätområden</button><button type="button" data-act="clearmap" ${none?'disabled':''}>Rensa kartan</button></div>`;
   return h;
 }
 const NATCOL=['#c2410c','#1d4ed8','#15803d','#a21caf','#a16207','#0e7490','#be123c'];
@@ -839,7 +839,8 @@ function applyStamnat(d){
   state.wsmsg='';
 }
 function loadStamnat(){
-  fetch('stamnat.json').then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{applyStamnat(d);render()}).catch(()=>{$('#stfile').click()});
+  const get=u=>fetch(u).then(r=>{if(!r.ok)throw 0;return r.json()});
+  get('stamnat.json').catch(()=>get('osm_uppsala.json')).then(d=>{applyStamnat(d);render()}).catch(()=>{$('#stfile').click()});
 }
 $('#stfile').addEventListener('change',e=>{const f=[...e.target.files]; e.target.value=''; readLayer(f,sets=>{const d=SHP.stamnat(sets); if(!d.stations.length) throw new Error('inga stationer i länet'); return d},applyStamnat,'stamnatmsg')});
 function removeStation(id){
@@ -1224,6 +1225,7 @@ $('#buildbox').addEventListener('click',e=>{
   const ac=e.target.closest('[data-act]');
   if(ac&&ac.dataset.act==='clearmap'){wsClear();render();return}
   if(ac&&ac.dataset.act==='loadstam'){loadStamnat();return}
+  if(ac&&ac.dataset.act==='ownfile'){$('#stfile').click();return}
   if(ac&&ac.dataset.act==='loadnat'){loadNat();return}
   if(ac&&ac.dataset.act==='tolines'){state.tab='build';state.wsmsg='';render();return}
   const oc=e.target.closest('[data-owcap]'); if(oc){state.owcap=+oc.dataset.owcap;render();return}
