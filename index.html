@@ -738,12 +738,12 @@ function stationsHtml(){
   const nk=Object.keys(state.kst).length, none=!state.gst.length&&!nk;
   let h=`<div class="bhead"><strong>Placera stationer</strong><span class="val">${state.gst.length} stamnät · ${nk} av ${LOADS.length} kommuner</span></div>
     <div class="seg" role="group" aria-label="Typ av station" style="max-width:480px"><button type="button" data-tool="g" aria-pressed="${state.tool==='g'}">Stamnätsstation</button><button type="button" data-tool="k" aria-pressed="${state.tool==='k'}">Regionstation i kommun</button></div>
-    <small style="margin-top:8px">${state.tool==='g'?'Klicka var som helst på kartan för att placera en stamnätsstation (högst ${state.stamnat?30:4}), eller använd <i>Ladda stamnät</i> för verkliga lägen. Där kommer stamnätet in i länet.':'Klicka inne i en kommun för att placera dess regionstation. En station per kommun. Dra en station för att flytta den.'}</small>`;
+    <small style="margin-top:8px">${state.tool==='g'?'Klicka var som helst på kartan för att placera en stamnätsstation (högst '+(state.stamnat?30:4)+'), eller använd <i>Ladda stamnät</i> för verkliga lägen. Där kommer stamnätet in i länet.':'Klicka inne i en kommun för att placera dess regionstation. En station per kommun. Dra en station för att flytta den.'}</small>`;
   if(state.wsmsg) h+=`<small class="wsmsg" role="status">${state.wsmsg}</small>`;
   if(state.stamnatmsg) h+=`<small role="status">${state.stamnatmsg}</small>`;
   if(state.natmsg) h+=`<small role="status">${state.natmsg}</small>`;
   const items=[...state.gst.map(g=>({id:g.id,t:stName(g.id)})),...LOADS.filter(n=>state.kst[n.id]).map(n=>({id:n.id,t:'Regionstation '+n.name}))];
-  if(items.length) h+=`<ul class="placed">${items.map(o=>`<li><span>${o.t}</span><button type="button" data-rmst="${o.id}">Ta bort</button></li>`).join('')}</ul>`;
+  if(items.length) h+=`<ul class="placed" style="max-height:150px;overflow:auto">${items.map(o=>`<li><span>${o.t}</span><button type="button" data-rmst="${o.id}">Ta bort</button></li>`).join('')}</ul>`;
   h+=`<div class="bact"><button class="primary" type="button" data-act="tolines" ${state.gst.length&&nk?'':'disabled'}>Klart, dra ledningar</button><button type="button" data-act="loadstam">Ladda stamnät</button><button type="button" data-act="loadnat">Ladda nätområden</button><button type="button" data-act="clearmap" ${none?'disabled':''}>Rensa kartan</button></div>`;
   return h;
 }
