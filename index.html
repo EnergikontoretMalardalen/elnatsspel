@@ -369,7 +369,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Spelet startar i <b>Blank karta</b>, där ni bestämmer själva hur regionnätet ska se ut. Använd den till exempel tillsammans med en verklig karta på projektorn.</p>
     <ol>
       <li><b>Stationer:</b> välj <i>Stamnätsstation</i> och klicka där stamnätet ska komma in (högst fyra). Välj sedan <i>Regionstation i kommun</i> och klicka inne i varje kommun som ska vara med. En station per kommun. Flytta en station genom att dra den (fungerar även under Ledningar); <i>Ta bort</i> i listan tar bort den.</li>
-      <li><b>Ledningar:</b> dra från en grå punkt på en station till en annan. Välj kapacitet (60–300 MW). Klicka på en ledning för att förstärka den. En kommun som inte nås av någon ledning visas som <i>Ej ansluten</i> och har 0 MW. Stamnätsstationer kopplas inte ihop med varandra.</li>
+      <li><b>Ledningar:</b> dra från en grå punkt på en station till en annan. Välj kapacitet (60–300 MW). Klicka på en ledning för att förstärka den. En kommun som inte nås av någon ledning visas som <i>Ej ansluten</i> och har 0 MW. Stamnätsstationer kopplas inte ihop med varandra. <b>Grannlän:</b> dra en ledning från en regionstation och släpp den utanför länets gräns (på havet eller på grannkommunerna), så skapas en anslutning utanför länet som går att flytta. Den antas höra till ett starkt nät, på samma sätt som stamnätet.</li>
       <li><b>Etableringar:</b> placera datacenter, vindpark med mera och se hur ledig kapacitet ändras i er egen kommun och hos grannarna. Använd <i>N-1</i> under Avancerat för att se om nätet klarar att en ledning faller bort.</li>
     </ol>
     <p>Stationernas lägen och ledningarnas längd är bara spelets egna: längden räknas från avståndet på kartan och ger ledningens reaktans.</p>
@@ -425,7 +425,7 @@ MISSIONS.push({title:'Bygg ert eget regionnät', short:'Blank karta', mine:null,
 const TAB_ORDER=[5,1,2,3,4,0];
 
 const $ = s=>document.querySelector(s);
-const state = {mission:5, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:''};
+const state = {mission:5, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:'', ext:[]};
 
 const BW=108, BH=68;
 const L0 = {G:{x:MAP.G.x-50,y:MAP.G.y-17,w:100,h:34}};
@@ -433,15 +433,19 @@ LOADS.forEach(n=>{const s=MAP.stations[n.id];L0[n.id]={x:s.x-BW/2,y:s.y-BH/2,w:B
 const L = {...L0};
 const ws = ()=>!!MISSIONS[state.mission].ws;
 const VL = ()=>ws()?LOADS.filter(n=>state.kst[n.id]):LOADS;
-const posOf = ()=>{const o={}; state.gst.forEach(g=>o[g.id]={x:g.x,y:g.y}); for(const k in state.kst)o[k]=state.kst[k]; return o};
+const isSl = id=>id[0]==='G'||id[0]==='X';
+const SD = id=>id[0]==='G'?[50,17]:id[0]==='X'?[45,13]:[BW/2,BH/2];
+const stObj = id=>id[0]==='G'?state.gst.find(g=>g.id===id):id[0]==='X'?state.ext.find(g=>g.id===id):state.kst[id];
+const posOf = ()=>{const o={}; state.gst.forEach(g=>o[g.id]={x:g.x,y:g.y}); state.ext.forEach(g=>o[g.id]={x:g.x,y:g.y}); for(const k in state.kst)o[k]=state.kst[k]; return o};
 let layoutKey='d';
 function syncLayout(){
-  const key=ws()?JSON.stringify([state.gst,state.kst]):'d';
+  const key=ws()?JSON.stringify([state.gst,state.kst,state.ext]):'d';
   if(key===layoutKey)return; layoutKey=key;
   for(const k of Object.keys(L)) delete L[k];
   for(const k of Object.keys(ROUTES)) delete ROUTES[k];
   if(!ws()){Object.assign(L,L0);return}
   state.gst.forEach(g=>{L[g.id]={x:g.x-50,y:g.y-17,w:100,h:34}});
+  state.ext.forEach(g=>{L[g.id]={x:g.x-45,y:g.y-13,w:90,h:26}});
   for(const id in state.kst){const p=state.kst[id];L[id]={x:p.x-BW/2,y:p.y-BH/2,w:BW,h:BH}}
 }
 const ctr = id=>({x:L[id].x+L[id].w/2,y:L[id].y+L[id].h/2});
@@ -522,7 +526,7 @@ function pendingMeasure(){
   }
   if(state.bnodes.length===2){
     const [a,b]=state.bnodes;
-    if(a[0]==='G'&&b[0]==='G') return {type:'gg'};
+    if(isSl(a)&&isSl(b)) return {type:'gg'};
     if((ws()?state.add:[...ORIG.lines,...state.add]).some(l=>(l.a===a&&l.b===b)||(l.a===b&&l.b===a))) return {type:'exists'};
     return full?{type:'full'}:{type:'add',a,b,cap:state.ncap};
   }
@@ -535,6 +539,7 @@ function cfgOf(pend){
 }
 function ensureMine(){const vl=VL(); if(ws()&&vl.length&&!vl.some(n=>n.id===state.mine)) state.mine=vl[0].id}
 function getView(){
+  if(state.ext.length) state.ext=state.ext.filter(x=>state.bnodes.includes(x.id)||state.add.some(a=>a.a===x.id||a.b===x.id));
   syncLayout(); ensureMine();
   const pend=pendingMeasure(), live=pend&&(pend.type==='up'||pend.type==='add');
   setCfg(cfgOf(true));
@@ -623,6 +628,7 @@ function renderDiagram(v){
   if(bld) LINES.forEach((ln,i)=>{s+=`<path class="hit" data-wire="${i}" d="${wirePath(ln)}"><title>${cap1(ln.label)}${ln.added?'':': klicka för att förstärka'}</title></path>`});
   if(ws()){
     for(const n of LOADS) if(!state.kst[n.id]){const c=MAP.stations[n.id]; s+=`<text class="klabel" x="${c.x}" y="${c.y+4}">${n.name}</text>`}
+    for(const g of state.ext){const gb=L[g.id]; s+=`<g class="station ext" data-station="${g.id}" tabindex="0" role="button" aria-label="Anslutning utanför länet"><title>Anslutning till grannlänets nät (antas vara ett starkt nät)</title><rect class="box" x="${gb.x}" y="${gb.y}" width="${gb.w}" height="${gb.h}" rx="13" stroke-dasharray="5 3"/><text x="${gb.x+gb.w/2}" y="${gb.y+17}" text-anchor="middle" font-size="12" font-weight="600">Utanför länet</text></g>`}
     for(const g of state.gst){const gb=L[g.id]; s+=`<g class="station" data-station="${g.id}" tabindex="0" role="button" aria-label="${stName(g.id)}"><rect class="box" x="${gb.x}" y="${gb.y}" width="${gb.w}" height="${gb.h}" rx="4"/><text x="${gb.x+gb.w/2}" y="${gb.y+22}" text-anchor="middle" font-size="13" font-weight="600">${stName(g.id)}</text></g>`}
   }else s+=`<g><rect class="box" x="${L.G.x}" y="${L.G.y}" width="${L.G.w}" height="${L.G.h}" rx="4"/><text x="${L.G.x+L.G.w/2}" y="${L.G.y+22}" text-anchor="middle" font-size="13" font-weight="600">Stamnätet</text></g>`;
   for(const n of VL()){
@@ -639,7 +645,7 @@ function renderDiagram(v){
       <rect class="box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="4"/>
       <text x="${b.x+8}" y="${b.y+17}" font-size="12.5" font-weight="600">${n.name}</text>
       <text class="muted" x="${b.x+8}" y="${b.y+30}" font-size="10">${desc}</text>
-      ${iso?`<text class="mono avail-num n-bad" x="${b.x+8}" y="${b.y+54}" style="font-size:13px">Ej ansluten</text>`:`<text class="mono avail-num n-${tcls}" x="${b.x+8}" y="${b.y+56}" style="font-size:24px">${vv}</text>`}
+      ${iso?`<text class="mono avail-num n-bad" x="${b.x+8}" y="${b.y+54}" style="font-size:12px">Ej ansluten</text>`:`<text class="mono avail-num n-${tcls}" x="${b.x+8}" y="${b.y+56}" style="font-size:24px">${vv}</text>`}
       ${iso?'':`${d!==0?`<text class="mono ${d<0?'lost':'gain'}" x="${b.x+b.w-8}" y="${b.y+44}" text-anchor="end" font-size="12">${sg(d)}</text>`:''}
       <text class="muted" x="${b.x+b.w-8}" y="${b.y+60}" text-anchor="end" font-size="10">MW ledigt</text>`}
       ${list.length?`<g class="tag new"><rect x="${b.x}" y="${b.y-14}" width="${tw}" height="17" rx="3"/><text x="${b.x+tw/2}" y="${b.y-2}" text-anchor="middle" font-size="11">${newTxt}</text></g>`:''}
@@ -698,7 +704,7 @@ function renderBuild(v){
     h+=`<div><strong>Ny ledning ${gname(p.a)} – ${gname(p.b)}</strong><small>Välj hur mycket effekt den ska klara.</small></div>
       <div class="seg" role="group" aria-label="Ny ledning, kapacitet">${(ws()?[60,100,150,200,300]:[40,60,80,100]).map(c=>`<button type="button" data-ncap="${c}" aria-pressed="${c===state.ncap}">${c} MW</button>`).join('')}</div>${effText(v)}<div class="bact"><button class="primary" type="button" data-act="newline">Dra ny ledning</button></div>`;
   }else if(p&&p.type==='gg'){
-    h+=`<small>Två stamnätsstationer kopplas inte ihop här. Dra ledningen till en regionstation i en kommun.</small>`;
+    h+=`<small>Stamnätet och anslutningar utanför länet kopplas inte ihop med varandra här. Dra ledningen till en regionstation i en kommun.</small>`;
   }else if(p&&p.type==='dup'){
     h+=`<small>Den här ledningen är redan förstärkt. Välj en annan ledning, eller ta bort förstärkningen nedan.</small>`;
   }else if(p&&p.type==='exists'){
@@ -708,7 +714,7 @@ function renderBuild(v){
   }else if(state.bnodes.length===1){
     h+=`<small>${gname(state.bnodes[0])} är vald. Klicka på en andra kommun för att dra en ny ledning dit.</small>`;
   }else if(ws()){
-    h+=`<small>Dra från en grå punkt på en station till en annan för att bygga en ledning (eller klicka på två stationer). Klicka på en ledning för att förstärka den. <button type="button" class="linkbtn" data-help="h-workshop">Hur gör jag?</button></small>`;
+    h+=`<small>Dra från en grå punkt på en station till en annan för att bygga en ledning (eller klicka på två stationer). Dra till området utanför länet för att koppla till ett grannlän. Klicka på en ledning för att förstärka den. <button type="button" class="linkbtn" data-help="h-workshop">Hur gör jag?</button></small>`;
   }else{
     h+=`<small>Klicka på en <b>ledning</b> för att förstärka den. För en ny ledning: dra från en grå punkt på en kommun till en annan (eller klicka på två). <button type="button" class="linkbtn" data-help="h-bygg">Hur gör jag?</button></small>`;
   }
@@ -731,7 +737,7 @@ function removeStation(id){
   if(id[0]==='G') state.gst=state.gst.filter(g=>g.id!==id); else {delete state.kst[id]; state.placed=state.placed.filter(p=>p.node!==id)}
   state.add=state.add.filter(a=>a.a!==id&&a.b!==id); state.sel=null; state.bline=null; state.bnodes=[]; state.chartLine=null;
 }
-function wsClear(){state.gst=[];state.kst={};state.add=[];state.placed=[];state.tool='g';state.wsmsg='';state.sel=null;state.bline=null;state.bnodes=[];state.chartLine=null}
+function wsClear(){state.gst=[];state.ext=[];state.kst={};state.add=[];state.placed=[];state.tool='g';state.wsmsg='';state.sel=null;state.bline=null;state.bnodes=[];state.chartLine=null}
 function stationClick(e){
   const t=e.target; if(!t.closest||t.closest('[data-station],[data-leaf]'))return;
   const svg=$('#diagram svg'), p=svgPt(svg,e);
@@ -975,6 +981,18 @@ function endDrag(e,cancel){
   justDragged=true; setTimeout(()=>{justDragged=false},0);
   const to=nodeAt(e);
   if(to&&to!==d.from){state.bline=null;state.bnodes=[d.from,to];render()}
+  else if(!to&&ws()&&state.tab==='build'&&!isSl(d.from)){
+    const el=document.elementFromPoint(e.clientX,e.clientY);
+    if(el&&el.matches&&el.matches('.sea,.land2')){
+      const p=svgPt($('#diagram svg'),e), x=Math.round(Math.min(MAP.w-51,Math.max(51,p.x))), y=Math.round(Math.min(MAP.h-19,Math.max(19,p.y)));
+      const id=['X1','X2','X3','X4'].find(i=>!state.ext.some(g=>g.id===i));
+      const clash=Object.values(L).some(b=>x+51>b.x&&x-51<b.x+b.w&&y+19>b.y&&y-19<b.y+b.h);
+      if(!id){state.wsmsg='Högst fyra anslutningar utanför länet.'}
+      else if(clash){state.wsmsg='För nära en annan station.'}
+      else{state.ext.push({id,x,y});state.bline=null;state.bnodes=[d.from,id];state.wsmsg=''}
+      render();
+    }
+  }
 }
 window.addEventListener('pointerup',e=>endDrag(e,false));
 window.addEventListener('pointercancel',e=>endDrag(e,true));
@@ -993,20 +1011,20 @@ $('#diagram').addEventListener('pointerdown',e=>{
   if(!ws()||(state.tab!=='stations'&&state.tab!=='build')||(e.button!==undefined&&e.button>0))return;
   if(e.target.closest('[data-port]'))return;
   const el=e.target.closest('[data-station],[data-leaf]'); if(!el)return;
-  const id=el.dataset.station||el.dataset.leaf, o=id[0]==='G'?state.gst.find(g=>g.id===id):state.kst[id]; if(!o)return;
+  const id=el.dataset.station||el.dataset.leaf, o=stObj(id); if(!o)return;
   moveInfo={id,o,svg:el.ownerSVGElement,sx:e.clientX,sy:e.clientY,ox:o.x,oy:o.y,p0:svgPt(el.ownerSVGElement,e),moved:false};
 });
 window.addEventListener('pointermove',e=>{
   if(!moveInfo)return; const m=moveInfo;
   if(!m.moved){if(Math.abs(e.clientX-m.sx)+Math.abs(e.clientY-m.sy)<=6)return; m.moved=true}
-  const p=svgPt($("#diagram svg"),e), hw=m.id[0]==='G'?50:BW/2, hh2=m.id[0]==='G'?17:BH/2;
+  const p=svgPt($("#diagram svg"),e), [hw,hh2]=SD(m.id);
   m.o.x=Math.round(Math.min(MAP.w-hw-4,Math.max(hw+4,m.ox+p.x-m.p0.x))); m.o.y=Math.round(Math.min(MAP.h-hh2-4,Math.max(hh2+4,m.oy+p.y-m.p0.y)));
   renderDiagram(getView());
 });
 function endMove(cancel){
   if(!moveInfo)return; const m=moveInfo; moveInfo=null; if(!m.moved)return;
   justDragged=true; setTimeout(()=>{justDragged=false},0);
-  const hw=m.id[0]==='G'?50:BW/2, hh2=m.id[0]==='G'?17:BH/2;
+  const [hw,hh2]=SD(m.id);
   const clash=Object.entries(L).some(([k,b])=>k!==m.id&&m.o.x+hw+6>b.x&&m.o.x-hw-6<b.x+b.w&&m.o.y+hh2+6>b.y&&m.o.y-hh2-6<b.y+b.h);
   if(cancel||clash){m.o.x=m.ox;m.o.y=m.oy; state.wsmsg=clash&&!cancel?'För nära en annan station. Stationen flyttades tillbaka.':''}
   else state.wsmsg='';
