@@ -86,3 +86,7 @@ Typsnitten (IBM Plex, Barlow Semi Condensed) ligger under SIL Open Font License;
 ## Shapefiler i webbläsaren
 
 `shp.js` läser `.zip`, `.shp` och `.dbf` direkt i webbläsaren (zip packas upp med `DecompressionStream`, SWEREF 99 TM räknas om till kartans koordinater). Inget skickas någonstans, och ingen data ligger i repot.
+
+
+### Regionnätsledningar som går att välja
+OSM-ledningarna under 200 kV läses som en vektor per ledningssträcka. De är blå och ingår inte i beräkningen. Klicka på en i fliken Ledningar, ange kapacitet (MW) och den blir röd och räknas med. Längd = polylinjens längd i kartan; reaktans = 0,275·km/MW. Ändpunkterna snappas till närmaste station (≤ ca 2 km), annars skapas en regionnätsstation. Kapacitet finns inte i OSM, så den anges av användaren.

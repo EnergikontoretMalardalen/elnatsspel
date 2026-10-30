@@ -217,14 +217,14 @@ const SHP = (()=>{
       if(!list.some(q=>Math.hypot(q[0]-x,q[1]-y)<tol)) list.push([x,y,s.nm]);
     }
     const R2=R.filter(r=>!G.some(g=>Math.hypot(g[0]-r[0],g[1]-r[1])<14));
-    const byKv={};
+    const lines=[];
     for(const l of lns){
       if(l.kv<50) continue;
       const px=l.pts.map(p=>llPx(p[0],p[1])); if(!px.some(inView)) continue;
-      byKv[l.kv]=(byKv[l.kv]||'')+'M'+px.map(p=>f1(p[0])+' '+f1(p[1])).join('L');
+      lines.push({v:+l.kv.toFixed(0),d:'M'+px.map(p=>f1(p[0])+' '+f1(p[1])).join('L')});   /* en post per ledningssträcka, så att regionnätsledningar kan väljas var för sig */
     }
     const srt=l=>l.sort((a,b)=>a[1]-b[1]||a[0]-b[0]).map(p=>[+f1(p[0]),+f1(p[1]),p[2]]);
-    return {src:'osm',stations:srt(G),rstations:srt(R2),lines:Object.entries(byKv).map(([v,d])=>({v:+v,d}))};
+    return {src:'osm',stations:srt(G),rstations:srt(R2),lines};
   }
   return {read,stamnat,nat,osm};
 })();
