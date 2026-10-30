@@ -47,7 +47,7 @@ Spelet startar i **Blank karta**, och uppdragen 1–4 och *Prova själv* ligger 
 
 ### Stamnätet från Svenska kraftnäts filer (valfritt)
 
-Knappen **Ladda stamnät** (under Stationer) läser in shapefilerna direkt (zip-filerna för stationer och ledningar markeras samtidigt) eller en `stamnat.json`: stamnätsstationerna inom länet placeras där de ligger och stamnätets ledningar visas som bakgrund. Filen kan också göras i förväg av shapefilerna:
+Knappen **Ladda stamnät** (under Stationer) läser in shapefilerna direkt (zip-filen SVK_STAMNAT, där bara STATIONER och SVK_LEDNINGAR används, eller de två lagren som separata zip-filer som markeras samtidigt) eller en `stamnat.json`: stamnätsstationerna inom länet placeras där de ligger och stamnätets ledningar visas som bakgrund. Filen kan också göras i förväg av shapefilerna:
 
 ```
 pip install pyshp pyproj shapely
