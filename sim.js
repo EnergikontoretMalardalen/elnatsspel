@@ -40,8 +40,8 @@ const POS = {G:MAP.G, ...Object.fromEntries(Object.entries(MAP.stations).map(([k
 const kmP = (a,b,pos)=>Math.max(8,Math.hypot(pos[a].x-pos[b].x,pos[a].y-pos[b].y)/MAP.pxPerKm);
 const kmBetween = (a,b)=>kmP(a,b,POS);
 /* fysiska stamnätsstationer heter G, G1, G2 ... och är alla samma elektriska nod (stamnätet, referensnod) */
-const E = id=>id[0]==='G'?'G':id;
-const stName = id=>id==='G'?'Stamnätet':id[0]==='G'?'Stamnätet '+id.slice(1):byId[id].name;
+const E = id=>(id[0]==='G'||id[0]==='X')?'G':id;  /* X = anslutning utanför länet, räknas som starkt nät som stamnätet */
+const stName = id=>id==='G'?'Stamnätet':id[0]==='G'?'Stamnätet '+id.slice(1):id[0]==='X'?'Utanför länet '+id.slice(1):byId[id].name;
 const XK = 0.275;                /* reaktans = XK * längd(km) / kapacitet(MW); 40 km och 60 MW ger ca 0,18 */
 const STAR = {UPP:230,ENK:110,HEB:55,HAB:70,KNI:75,TIE:90,ALV:45,OST:110};
 /* startnät: stjärna, varje kommunstation har en egen ledning till stamnätsstationen */
