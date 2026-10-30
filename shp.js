@@ -175,5 +175,56 @@ const SHP = (()=>{
     }
     return {areas};
   }
-  return {read,stamnat,nat};
+  /* OpenStreetMap: Overpass-JSON (elements) eller GeoJSON -> {src,stations,rstations,lines} */
+  const clean=t=>String(t||'').replace(/[<>&"]/g,'').slice(0,60);
+  const kvOf=tags=>{const v=String(tags.voltage||'').split(';').map(parseFloat).filter(n=>n>0); if(!v.length) return 0; const m=Math.max(...v); return m<1000?m:m/1000};
+  const llPx=(lon,lat)=>[(lon-P.minx)*P.k*P.sx,(P.maxy-lat)*P.sx];
+  function osm(d){
+    const subs=[], lns=[];
+    const bcenter=pts=>{const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]); return [(Math.min(...xs)+Math.max(...xs))/2,(Math.min(...ys)+Math.max(...ys))/2]};
+    const add=(tags,c,pts)=>{
+      const pw=tags.power, kv=kvOf(tags); if(!kv) return;
+      if((pw==='substation'||pw==='station')&&c) subs.push({kv,c,nm:clean(tags.name||tags['name:sv'])});
+      else if((pw==='line'||pw==='cable')&&pts&&pts.length>1) lns.push({kv,pts});
+    };
+    if(Array.isArray(d.elements)){
+      for(const el of d.elements){
+        const tags=el.tags||{}; let c=null, pts=null;
+        if(el.type==='node') c=[el.lon,el.lat];
+        else{
+          const g=el.geometry||(el.members||[]).flatMap(m=>m.geometry||[]);
+          if(g&&g.length){pts=el.geometry?g.map(q=>[q.lon,q.lat]):null; c=bcenter(g.map(q=>[q.lon,q.lat]))}
+          else if(el.center) c=[el.center.lon,el.center.lat];
+          else if(el.bounds) c=[(el.bounds.minlon+el.bounds.maxlon)/2,(el.bounds.minlat+el.bounds.maxlat)/2];
+        }
+        add(tags,c,pts);
+      }
+    }else if(Array.isArray(d.features)){
+      for(const f of d.features){
+        const g=f.geometry; if(!g) continue; const tags=(f.properties&&f.properties.tags)||f.properties||{};
+        if(g.type==='Point') add(tags,g.coordinates,null);
+        else if(g.type==='LineString') add(tags,null,g.coordinates);
+        else if(g.type==='MultiLineString') g.coordinates.forEach(l=>add(tags,null,l));
+        else if(g.type==='Polygon') add(tags,bcenter(g.coordinates[0]),null);
+        else if(g.type==='MultiPolygon') add(tags,bcenter(g.coordinates[0][0]),null);
+      }
+    }else throw new Error('okänt OSM-format');
+    const t=lanTest(), G=[], R=[];
+    for(const s of subs){
+      const [x,y]=llPx(...s.c); if(!t.inLan(x,y)) continue;
+      const list=s.kv>=220?G:s.kv>=50?R:null; if(!list) continue;
+      const tol=s.kv>=220?14:8;
+      if(!list.some(q=>Math.hypot(q[0]-x,q[1]-y)<tol)) list.push([x,y,s.nm]);
+    }
+    const R2=R.filter(r=>!G.some(g=>Math.hypot(g[0]-r[0],g[1]-r[1])<14));
+    const byKv={};
+    for(const l of lns){
+      if(l.kv<50) continue;
+      const px=l.pts.map(p=>llPx(p[0],p[1])); if(!px.some(inView)) continue;
+      byKv[l.kv]=(byKv[l.kv]||'')+'M'+px.map(p=>f1(p[0])+' '+f1(p[1])).join('L');
+    }
+    const srt=l=>l.sort((a,b)=>a[1]-b[1]||a[0]-b[0]).map(p=>[+f1(p[0]),+f1(p[1]),p[2]]);
+    return {src:'osm',stations:srt(G),rstations:srt(R2),lines:Object.entries(byKv).map(([v,d])=>({v:+v,d}))};
+  }
+  return {read,stamnat,nat,osm};
 })();

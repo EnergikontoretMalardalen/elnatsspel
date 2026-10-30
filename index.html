@@ -98,10 +98,12 @@ svg .mono{font-family:var(--f-mono)}
 .dragline{stroke:var(--accent);stroke-width:3.5;stroke-dasharray:8 5;pointer-events:none;fill:none}
 .station.hot .box,.leaf.hot .box{stroke:var(--accent);stroke-width:3}
 .dtab{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 0}.dtab th,.dtab td{padding:4px 6px;border-bottom:1px solid var(--rule);text-align:left}.dtab th{font-weight:600;color:var(--ink2);font-size:12px}.dtab td.n,.dtab th.n{text-align:right;font-family:var(--f-mono)}.dtab svg{display:block;width:96px!important;max-width:none;height:26px!important}
-.stam{fill:none;stroke:#6b7078;stroke-linecap:round;pointer-events:none;opacity:.75}.stam.v400{stroke-width:2}.stam.v220{stroke-width:1.2}.stam.v0,.stam.v500{stroke-width:1;stroke-dasharray:3 3}
+.stam{fill:none;stroke:#6b7078;stroke-linecap:round;pointer-events:none;opacity:.75}.stam.v400{stroke-width:2}.stam.v220{stroke-width:1.2}.stam.vr{stroke:#4f7fbf;stroke-width:1;opacity:.85}.station.rst .box{fill:var(--accent-t);stroke:var(--accent);stroke-width:1.5}
+.stam.v0{stroke-width:1;stroke-dasharray:3 3}
 .natp{fill-rule:evenodd;pointer-events:none;stroke-width:1.3;stroke-dasharray:6 3;fill-opacity:.13}.natl{font-size:9.5px;font-style:italic;fill:var(--ink2);text-anchor:middle;pointer-events:none}
 .natchk{display:inline-flex;gap:6px;align-items:center;cursor:pointer}.maplegend i.nt{border-style:dashed}
 .filehelp{margin:10px 0 0;font-size:13px;color:var(--ink2)}.filehelp summary{cursor:pointer;font-weight:600;color:var(--ink)}.filehelp p,.filehelp li{margin:6px 0}
+.filehelp pre.q{white-space:pre-wrap;word-break:break-all;background:var(--bg);border:1px solid var(--rule);border-radius:6px;padding:8px;font:11.5px/1.4 var(--f-mono);user-select:all}
 .klabel{font-size:11.5px;font-weight:500;fill:var(--ink2);text-anchor:middle;pointer-events:none}
 .stations svg{cursor:crosshair;touch-action:none} .stations .station,.stations .leaf{cursor:grab} .stations .land:hover{fill:var(--accent-t)} 
 .wsmsg{color:var(--bad)!important;margin-top:6px}
@@ -126,6 +128,7 @@ svg .mono{font-family:var(--f-mono)}
 .maplegend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--ink2);margin-top:6px}
 .maplegend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px;border:1.5px solid var(--line)}
 .maplegend i.ok{background:var(--ok-t);border-color:var(--ok)} .maplegend i.warn{background:var(--warn-t);border-color:var(--warn)} .maplegend i.bad{background:var(--bad-t);border-color:var(--bad)}
+.maplegend i.stl.r{border-top-color:#4f7fbf;border-top-width:1.5px}
 .maplegend i.stl{height:0;width:22px;border:0;border-top:2px solid #6b7078;vertical-align:3px;border-radius:0}
 .maplegend i.thick{height:6px;width:22px;border:0;background:var(--ok);vertical-align:2px;border-radius:3px}
 .maplegend i.dash{height:0;width:22px;border:0;border-top:3px dashed var(--ok);vertical-align:3px;border-radius:0}
@@ -376,7 +379,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Spelet startar i <b>Blank karta</b>, där ni bestämmer själva hur regionnätet ska se ut. Använd den till exempel tillsammans med en verklig karta på projektorn.</p>
     <ol>
       <li><b>Stationer:</b> välj <i>Stamnätsstation</i> och klicka där stamnätet ska komma in (högst fyra). Välj sedan <i>Regionstation i kommun</i> och klicka inne i varje kommun som ska vara med. En station per kommun. Flytta en station genom att dra den (fungerar även under Ledningar); <i>Ta bort</i> i listan tar bort den.</li>
-      <li><b>Ledningar:</b> dra från en grå punkt på en station till en annan. Välj kapacitet (60–300 MW). Klicka på en ledning för att förstärka den. En kommun som inte nås av någon ledning visas som <i>Ej ansluten</i> och har 0 MW. Stamnätsstationer kopplas inte ihop med varandra. <b>Ladda stamnät:</b> knappen läser in en fil (<code>stamnat.json</code>, gjord från Svenska kraftnäts stationer och ledningar med <code>tools/stamnat_till_json.py</code>). Då placeras stamnätsstationerna där de verkligen ligger och stamnätets ledningar visas som bakgrund. Filen läses bara i din webbläsare. Båda filerna väljs i en filväljare och läses bara i webbläsaren; se <i>Så laddar du stamnät och nätområden</i> under Stationer för var underlaget hämtas. <b>Ladda nätområden:</b> lägger ett lager över kartan med lokalnätens nätområden (nätägare och områdesnamn), gjort med <code>tools/natomraden_till_json.py</code> från nätområdesstrukturen. De följer inte kommungränserna och kan stängas av med <i>Visa nätområden</i>. <b>Grannlän:</b> dra en ledning från en regionstation och släpp den utanför länets gräns (på havet eller på grannkommunerna), så skapas en anslutning utanför länet som går att flytta. Den antas höra till ett starkt nät, på samma sätt som stamnätet.</li>
+      <li><b>Ledningar:</b> dra från en grå punkt på en station till en annan. Välj kapacitet (60–300 MW). Klicka på en ledning för att förstärka den. En kommun som inte nås av någon ledning visas som <i>Ej ansluten</i> och har 0 MW. Stamnätsstationer kopplas inte ihop med varandra. <b>Ladda stamnät:</b> knappen läser in en fil (<code>stamnat.json</code>, gjord från Svenska kraftnäts stationer och ledningar med <code>tools/stamnat_till_json.py</code>). Då placeras stamnätsstationerna där de verkligen ligger och stamnätets ledningar visas som bakgrund. Filen läses bara i din webbläsare. Båda filerna väljs i en filväljare och läses bara i webbläsaren; se <i>Så laddar du stamnät och nätområden</i> under Stationer för var underlaget hämtas. <b>Regionnät och stationer på ledning:</b> under Stationer finns verktygen <i>Stamnätsstation</i>, <i>Kommunstation</i>, <i>Regionnätsstation</i> (en knutpunkt utan last) och <i>Station på ledning</i>, som bygger en egen station på en bakgrundsledning. Ledningar kan dras från alla stationer. Ledningarna i bakgrunden (stam- och regionnät) är bara underlag, och bara de ledningar ni drar själva räknas. Regionnätet kan hämtas från OpenStreetMap, men uppgifterna är inskickade av frivilliga och kan vara ofullständiga eller felaktiga. <b>Ladda nätområden:</b> lägger ett lager över kartan med lokalnätens nätområden (nätägare och områdesnamn), gjort med <code>tools/natomraden_till_json.py</code> från nätområdesstrukturen. De följer inte kommungränserna och kan stängas av med <i>Visa nätområden</i>. <b>Grannlän:</b> dra en ledning från en regionstation och släpp den utanför länets gräns (på havet eller på grannkommunerna), så skapas en anslutning utanför länet som går att flytta. Den antas höra till ett starkt nät, på samma sätt som stamnätet.</li>
       <li><b>Etableringar:</b> placera datacenter, vindpark med mera och se hur ledig kapacitet ändras i er egen kommun och hos grannarna. Använd <i>N-1</i> under Avancerat för att se om nätet klarar att en ledning faller bort.</li>
     </ol>
     <p>Stationernas lägen och ledningarnas längd är bara spelets egna: längden räknas från avståndet på kartan och ger ledningens reaktans.</p>
@@ -433,7 +436,7 @@ MISSIONS.push({title:'Bygg ert eget regionnät', short:'Blank karta', mine:null,
 const TAB_ORDER=[5,1,2,3,4,0];
 
 const $ = s=>document.querySelector(s);
-const state = {mission:5, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:'', ext:[], stamnat:null, nat:null, natvis:true, natmsg:''};
+const state = {mission:5, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:'', ext:[], rst:[], stamnat:null, nat:null, natvis:true, natmsg:''};
 
 const BW=108, BH=68;
 const L0 = {G:{x:MAP.G.x-50,y:MAP.G.y-17,w:100,h:34}};
@@ -442,18 +445,20 @@ const L = {...L0};
 const ws = ()=>!!MISSIONS[state.mission].ws;
 const VL = ()=>ws()?LOADS.filter(n=>state.kst[n.id]):LOADS;
 const isSl = id=>id[0]==='G'||id[0]==='X';
-const SD = id=>id[0]==='G'?[26,10]:id[0]==='X'?[45,13]:[BW/2,BH/2];
-const stObj = id=>id[0]==='G'?state.gst.find(g=>g.id===id):id[0]==='X'?state.ext.find(g=>g.id===id):state.kst[id];
-const posOf = ()=>{const o={}; state.gst.forEach(g=>o[g.id]={x:g.x,y:g.y}); state.ext.forEach(g=>o[g.id]={x:g.x,y:g.y}); for(const k in state.kst)o[k]=state.kst[k]; return o};
+const sname = id=>{const o=ws()?stObj(id):null; return o&&o.nm?o.nm:stName(id)};
+const SD = id=>id[0]==='R'?[8,8]:id[0]==='G'?[26,10]:id[0]==='X'?[45,13]:[BW/2,BH/2];
+const stObj = id=>id[0]==='G'?state.gst.find(g=>g.id===id):id[0]==='R'?state.rst.find(g=>g.id===id):id[0]==='X'?state.ext.find(g=>g.id===id):state.kst[id];
+const posOf = ()=>{const o={}; state.gst.forEach(g=>o[g.id]={x:g.x,y:g.y}); state.ext.forEach(g=>o[g.id]={x:g.x,y:g.y}); state.rst.forEach(g=>o[g.id]={x:g.x,y:g.y}); for(const k in state.kst)o[k]=state.kst[k]; return o};
 let layoutKey='d';
 function syncLayout(){
-  const key=ws()?JSON.stringify([state.gst,state.kst,state.ext]):'d';
+  const key=ws()?JSON.stringify([state.gst,state.kst,state.ext,state.rst]):'d';
   if(key===layoutKey)return; layoutKey=key;
   for(const k of Object.keys(L)) delete L[k];
   for(const k of Object.keys(ROUTES)) delete ROUTES[k];
   if(!ws()){Object.assign(L,L0);return}
   state.gst.forEach(g=>{L[g.id]={x:g.x-26,y:g.y-10,w:52,h:20}});
   state.ext.forEach(g=>{L[g.id]={x:g.x-45,y:g.y-13,w:90,h:26}});
+  state.rst.forEach(g=>{L[g.id]={x:g.x-8,y:g.y-8,w:16,h:16}});
   for(const id in state.kst){const p=state.kst[id];L[id]={x:p.x-BW/2,y:p.y-BH/2,w:BW,h:BH}}
 }
 const ctr = id=>({x:L[id].x+L[id].w/2,y:L[id].y+L[id].h/2});
@@ -638,11 +643,12 @@ function renderDiagram(v){
     const ow=natOwners();
     s+=`<g aria-hidden="true">`+state.nat.areas.map(a=>{const c=ow.col[a.a]||'#7d828a';return `<path class="natp" d="${a.d}" fill="${c}" stroke="${c}"/>`}).join('')+state.nat.areas.filter(a=>a.i).map(a=>`<text class="natl" x="${a.x}" y="${a.y}">${a.n}</text>`).join('')+`</g>`;
   }
-  if(ws()&&state.stamnat) s+=state.stamnat.lines.map(l=>`<path class="stam v${l.v}" d="${l.d}"/>`).join('');
+  if(ws()&&state.stamnat) s+=state.stamnat.lines.map(l=>`<path class="stam ${l.v>=380?'v400':l.v>=200?'v220':l.v>0?'vr':'v0'}" d="${l.d}"/>`).join('');
   if(ws()){
     for(const n of LOADS) if(!state.kst[n.id]){const c=MAP.stations[n.id]; s+=`<text class="klabel" x="${c.x}" y="${c.y+4}">${n.name}</text>`}
     for(const g of state.ext){const gb=L[g.id]; s+=`<g class="station ext" data-station="${g.id}" tabindex="0" role="button" aria-label="Anslutning utanför länet"><title>Anslutning till grannlänets nät (antas vara ett starkt nät)</title><rect class="box" x="${gb.x}" y="${gb.y}" width="${gb.w}" height="${gb.h}" rx="13" stroke-dasharray="5 3"/><text x="${gb.x+gb.w/2}" y="${gb.y+17}" text-anchor="middle" font-size="12" font-weight="600">Utanför länet</text></g>`}
-    for(const g of state.gst){const gb=L[g.id]; s+=`<g class="station" data-station="${g.id}" tabindex="0" role="button" aria-label="${stName(g.id)}"><title>${stName(g.id)} (stamnätsstation)</title><rect class="box" x="${gb.x}" y="${gb.y}" width="${gb.w}" height="${gb.h}" rx="4"/><text x="${gb.x+gb.w/2}" y="${gb.y+14}" text-anchor="middle" font-size="11.5" font-weight="600">Stn ${g.id.slice(1)}</text></g>`}
+    for(const g of state.gst){const gb=L[g.id]; s+=`<g class="station" data-station="${g.id}" tabindex="0" role="button" aria-label="${sname(g.id)}"><title>${sname(g.id)} (stamnätsstation)</title><rect class="box" x="${gb.x}" y="${gb.y}" width="${gb.w}" height="${gb.h}" rx="4"/><text x="${gb.x+gb.w/2}" y="${gb.y+14}" text-anchor="middle" font-size="11.5" font-weight="600">Stn ${g.id.slice(1)}</text></g>`}
+    for(const g of state.rst){const gb=L[g.id]; s+=`<g class="station rst" data-station="${g.id}" tabindex="0" role="button" aria-label="${sname(g.id)}"><title>${sname(g.id)} (regionnätsstation)</title><rect class="box" x="${gb.x}" y="${gb.y}" width="${gb.w}" height="${gb.h}" rx="3"/></g>`}
   }else s+=`<g><rect class="box" x="${L.G.x}" y="${L.G.y}" width="${L.G.w}" height="${L.G.h}" rx="4"/><text x="${L.G.x+L.G.w/2}" y="${L.G.y+22}" text-anchor="middle" font-size="13" font-weight="600">Stamnätet</text></g>`;
   for(const n of VL()){
     const b=L[n.id], vv=val(cur,n.id), bv=val(base,n.id), d=vv-bv, tcls=thr(vv), iso=ws()&&cur.iso.includes(n.id);
@@ -682,13 +688,14 @@ function renderDiagram(v){
   if(bld){
     for(const id of (ws()?Object.keys(L):LOADS.map(n=>n.id))){
       const b=L[id];
+      if(id[0]==='R'){s+=`<circle class="port" data-port="${id}" cx="${b.x+8}" cy="${b.y+8}" r="5.5"><title>Dra till en annan station för att dra en ledning</title></circle>`; continue}
       for(const [px,py] of [[b.x+b.w/2,b.y],[b.x+b.w,b.y+b.h/2],[b.x+b.w/2,b.y+b.h],[b.x,b.y+b.h/2]])
         s+=`<circle class="port" data-port="${id}" cx="${px}" cy="${py}" r="6.5"><title>Dra till en annan station för att dra en ny ledning</title></circle>`;
     }
   }
   $('#diagram').innerHTML=`<svg viewBox="0 0 ${MAP.w} ${MAP.h}" role="group" aria-label="Karta över Uppsala län med ${ws()?'stationer som deltagarna placerar':'åtta kommuner och ett fiktivt regionnät'}">${s}</svg>`;
   const natLeg=(ws()&&state.nat)?`<label class="natchk"><input type="checkbox" data-natvis ${state.natvis?'checked':''}> Visa nätområden</label>`+(state.natvis?natOwners().list.map(o=>`<span><i class="nt" style="border-color:${o[1]};background:${o[1]}22"></i>${o[0]}</span>`).join(''):''):'';
-  $('#maplegend').innerHTML=natLeg+`<span><i class="ok"></i>20 MW ledigt eller mer</span><span><i class="warn"></i>1–19 MW</span><span><i class="bad"></i>0 MW</span>`+(anyShare?`<span><i class="acc"></i>Vägarna den nya effekten tar (tjockare = större andel)</span>`:'')+(ws()&&state.stamnat?`<span><i class="stl"></i>Stamnätets ledningar (bakgrund)</span>`:'')+(LINES.some(l=>l.up)?`<span><i class="thick"></i>Förstärkt ledning</span>`:'')+((!ws()&&LINES.some(l=>l.added))||(v.pend&&v.pend.type==='add')?`<span><i class="dash"></i>Ny ledning</span>`:'');
+  $('#maplegend').innerHTML=natLeg+`<span><i class="ok"></i>20 MW ledigt eller mer</span><span><i class="warn"></i>1–19 MW</span><span><i class="bad"></i>0 MW</span>`+(anyShare?`<span><i class="acc"></i>Vägarna den nya effekten tar (tjockare = större andel)</span>`:'')+(ws()&&state.stamnat?`<span><i class="stl"></i>Stamnätets ledningar (bakgrund)</span>`+(state.stamnat.lines.some(l=>l.v>0&&l.v<200)?`<span><i class="stl r"></i>Regionnätets ledningar (bakgrund)</span>`:'')+(state.stamnat.src==='osm'?`<span>Data: © OpenStreetMap-bidragsgivare (ODbL). Kan vara ofullständig eller felaktig.</span>`:''):'')+(LINES.some(l=>l.up)?`<span><i class="thick"></i>Förstärkt ledning</span>`:'')+((!ws()&&LINES.some(l=>l.added))||(v.pend&&v.pend.type==='add')?`<span><i class="dash"></i>Ny ledning</span>`:'');
 }
 
 /* ---------- action bar ---------- */
@@ -736,11 +743,21 @@ function renderBuild(v){
   if(items.length) h+=`<ul class="placed">${items.map(o=>`<li><span>${o.t}</span><button type="button" data-rm="${o.key}">Ta bort</button></li>`).join('')}</ul>`;
   box.innerHTML=h;
 }
+function osmQuery(){
+  const P=MAP.proj, r=v=>v.toFixed(3), bb=[P.maxy-MAP.h/P.sx,P.minx,P.maxy,P.minx+MAP.w/(P.k*P.sx)].map(r).join(',');
+  const f='["voltage"~"(^|;)(70000|130000|220000|400000)(;|$)"]';
+  return `[out:json][timeout:120];\n(\n  nwr["power"="substation"]${f}(${bb});\n  way["power"="line"]${f}(${bb});\n);\nout geom;`;
+}
 function stationsHtml(){
-  const nk=Object.keys(state.kst).length, none=!state.gst.length&&!nk;
-  let h=`<div class="bhead"><strong>Placera stationer</strong><span class="val">${state.gst.length} stamnät · ${nk} av ${LOADS.length} kommuner</span></div>
-    <div class="seg" role="group" aria-label="Typ av station" style="max-width:480px"><button type="button" data-tool="g" aria-pressed="${state.tool==='g'}">Stamnätsstation</button><button type="button" data-tool="k" aria-pressed="${state.tool==='k'}">Regionstation i kommun</button></div>
-    <small style="margin-top:8px">${state.tool==='g'?'Klicka var som helst på kartan för att placera en stamnätsstation (högst '+(state.stamnat?30:4)+'), eller använd <i>Ladda stamnät</i> för verkliga lägen. Där kommer stamnätet in i länet.':'Klicka inne i en kommun för att placera dess regionstation. En station per kommun. Dra en station för att flytta den.'}</small>`;
+  const nk=Object.keys(state.kst).length, none=!state.gst.length&&!state.rst.length&&!nk;
+  const T=[['g','Stamnätsstation'],['k','Kommunstation'],['r','Regionnätsstation'],['l','Station på ledning']];
+  const hint={g:'Klicka var som helst på kartan för att placera en stamnätsstation (högst '+(state.stamnat?30:4)+'). Där kommer stamnätet in i länet.',
+    k:'Klicka inne i en kommun för att placera kommunens station (den med last och produktion). En per kommun.',
+    r:'Klicka på kartan för att placera en regionnätsstation, en knutpunkt utan egen last. Ledningar kan dras från den.',
+    l:'Klicka på en ledning i bakgrunden för att bygga en egen station där. På en stamnätsledning (220 kV och uppåt) blir det en stamnätsstation, annars en regionnätsstation. Kräver att ledningar är laddade.'}[state.tool];
+  let h=`<div class="bhead"><strong>Placera stationer</strong><span class="val">${state.gst.length} stamnät · ${state.rst.length} region · ${nk} av ${LOADS.length} kommuner</span></div>
+    <div class="seg" role="group" aria-label="Typ av station" style="max-width:640px">${T.map(([k,l])=>`<button type="button" data-tool="${k}" aria-pressed="${state.tool===k}">${l}</button>`).join('')}</div>
+    <small style="margin-top:8px">${hint} Dra en station för att flytta den.</small>`;
   if(state.wsmsg) h+=`<small class="wsmsg" role="status">${state.wsmsg}</small>`;
   if(state.stamnatmsg) h+=`<small role="status">${state.stamnatmsg}</small>`;
   if(state.natmsg) h+=`<small role="status">${state.natmsg}</small>`;
@@ -751,10 +768,12 @@ function stationsHtml(){
       <li><b>Ladda stamnät:</b> välj zip-filen <code>SVK_STAMNAT</code> (hämtas från <a href="https://ext-geodatakatalog-forv.lansstyrelsen.se/PlaneringsKatalogen/GetMetaDataById?id=08ec56a0-6b5c-4f83-b29e-375e6f1a34b9_C" target="_blank" rel="noopener">Länsstyrelsernas geodatakatalog</a>). Av de fyra lagren i filen används bara <code>STATIONER</code> och <code>SVK_LEDNINGAR</code>; <code>STATIONSOMRÅDEN</code> och <code>SVK_STOLPAR</code> ignoreras. Har du lagren som separata zip-filer markerar du dem samtidigt (Ctrl eller Shift). Stationerna i länet placeras på kartan och ledningarna visas som bakgrund.</li>
       <li><b>Ladda nätområden:</b> välj zip-filen för nätområden. De visas som ett lager som kan stängas av.</li>
       <li>Skripten <code>tools/stamnat_till_json.py</code> och <code>tools/natomraden_till_json.py</code> i <a href="https://github.com/EnergikontoretMalardalen/elnatsspel" target="_blank" rel="noopener">spelets repo</a> gör samma sak till en <code>.json</code>-fil, som också går att välja.</li>
-    </ol></details>`;
-  const items=[...state.gst.map(g=>({id:g.id,t:stName(g.id)})),...LOADS.filter(n=>state.kst[n.id]).map(n=>({id:n.id,t:'Regionstation '+n.name}))];
+    </ol>
+    <p><b>Regionnätet (70–130 kV) från OpenStreetMap:</b> OSM har även regionnätet, men uppgifterna är inskickade av frivilliga och kan vara ofullständiga eller felaktiga. Gå till <a href="https://overpass-turbo.eu/" target="_blank" rel="noopener">overpass-turbo.eu</a>, klistra in frågan nedan, kör den (<i>Kör</i>) och välj <i>Export</i> → <i>Data</i> → <i>Ladda ner som rå OSM-data</i> (JSON). Välj filen med <i>Ladda stamnät/regionnät</i>. Ange källan: © OpenStreetMap-bidragsgivare (ODbL).</p>
+    <pre class="q" tabindex="0">${osmQuery()}</pre></details>`;
+  const items=[...state.gst.map(g=>({id:g.id,t:sname(g.id)+(g.nm?' (stamnät)':'')})),...state.rst.map(g=>({id:g.id,t:sname(g.id)+(g.nm?' (region)':'')})),...LOADS.filter(n=>state.kst[n.id]).map(n=>({id:n.id,t:'Kommunstation '+n.name}))];
   if(items.length) h+=`<ul class="placed" style="max-height:150px;overflow:auto">${items.map(o=>`<li><span>${o.t}</span><button type="button" data-rmst="${o.id}">Ta bort</button></li>`).join('')}</ul>`;
-  h+=`<div class="bact"><button class="primary" type="button" data-act="tolines" ${state.gst.length&&nk?'':'disabled'}>Klart, dra ledningar</button><button type="button" data-act="loadstam">Ladda stamnät</button><button type="button" data-act="loadnat">Ladda nätområden</button><button type="button" data-act="clearmap" ${none?'disabled':''}>Rensa kartan</button></div>`;
+  h+=`<div class="bact"><button class="primary" type="button" data-act="tolines" ${state.gst.length&&nk?'':'disabled'}>Klart, dra ledningar</button><button type="button" data-act="loadstam">Ladda stamnät/regionnät</button><button type="button" data-act="loadnat">Ladda nätområden</button><button type="button" data-act="clearmap" ${none?'disabled':''}>Rensa kartan</button></div>`;
   return h;
 }
 const NATCOL=['#c2410c','#1d4ed8','#15803d','#a21caf','#a16207','#0e7490','#be123c'];
@@ -777,22 +796,33 @@ async function readLayer(files,build,apply,what){
   const fs=[...files]; if(!fs.length) return;
   try{
     const js=fs.find(f=>/\.(geo)?json$/i.test(f.name));
-    let d; if(js) d=JSON.parse(await js.text()); else d=build(await SHP.read(fs));
+    let d; if(js){d=JSON.parse(await js.text()); if(d&&(d.elements||d.type==='FeatureCollection')&&what==='stamnatmsg') d=SHP.osm(d)} else d=build(await SHP.read(fs));
     apply(d);
   }catch(err){
     console.error(err);
-    state[what]='Filerna kunde inte läsas. Välj '+(what==='natmsg'?'zip- eller shapefilen för nätområden (polygoner) eller natomraden.json':'zip- eller shapefilerna för stationer och ledningar (båda på en gång) eller stamnat.json')+'.';
+    state[what]='Filerna kunde inte läsas. Välj '+(what==='natmsg'?'zip- eller shapefilen för nätområden (polygoner) eller natomraden.json':'zip-filen SVK_STAMNAT (eller zip-/shapefilerna för STATIONER och SVK_LEDNINGAR), en OpenStreetMap-export (.json/.geojson) eller stamnat.json')+'.';
   }
   render();
 }
 $('#nfile').addEventListener('change',e=>{const f=[...e.target.files]; e.target.value=''; readLayer(f,sets=>{const d=SHP.nat(sets); if(!d.areas.length) throw new Error('inga nätområden'); return d},applyNat,'natmsg')});
 $('#maplegend').addEventListener('change',e=>{if(e.target.matches('[data-natvis]')){state.natvis=e.target.checked;render()}});
+function segsOf(lines){
+  const out=[];
+  for(const l of lines) for(const ch of l.d.split('M')){
+    if(!ch) continue; const pts=ch.split('L').map(q=>q.trim().split(' ').map(Number));
+    for(let k=0;k<pts.length-1;k++) if(pts[k].length===2&&pts[k+1].length===2) out.push([pts[k][0],pts[k][1],pts[k+1][0],pts[k+1][1],l.v]);
+  }
+  return out;
+}
 function applyStamnat(d){
   if(!d||!Array.isArray(d.stations)||!Array.isArray(d.lines)) throw new Error('fel format');
-  state.stamnat={lines:d.lines.map(l=>({v:+l.v||0,d:String(l.d).replace(/[^0-9ML. \-]/g,'')}))};
-  state.gst=d.stations.map((p,i)=>({id:'G'+(i+1),x:Math.round(p[0]),y:Math.round(p[1])}));
-  state.add=state.add.filter(a=>!(a.a[0]==='G'||a.b[0]==='G')); state.bnodes=[]; state.bline=null; state.sel=null;
-  state.stamnatmsg=`Laddade ${state.gst.length} stamnätsstationer i länet och stamnätets ledningar. Stationerna har inga namn i underlaget, så de numreras. Placera nu regionstationer och dra ledningar.`;
+  const nm=p=>String(p[2]||'').replace(/[<>&"]/g,'').slice(0,60);
+  state.stamnat={src:d.src||'',lines:d.lines.map(l=>({v:+l.v||0,d:String(l.d).replace(/[^0-9ML. \-]/g,'')}))};
+  state.stamnat.segs=segsOf(state.stamnat.lines);
+  state.gst=d.stations.slice(0,30).map((p,i)=>({id:'G'+(i+1),x:Math.round(p[0]),y:Math.round(p[1]),nm:nm(p)}));
+  state.rst=(d.rstations||[]).slice(0,40).map((p,i)=>({id:'R'+(i+1),x:Math.round(p[0]),y:Math.round(p[1]),nm:nm(p)}));
+  state.add=state.add.filter(a=>!(a.a[0]==='G'||a.b[0]==='G'||a.a[0]==='R'||a.b[0]==='R')); state.bnodes=[]; state.bline=null; state.sel=null;
+  state.stamnatmsg=`Laddade ${state.gst.length} stamnätsstationer`+(state.rst.length?`, ${state.rst.length} regionnätsstationer`:'')+` i länet och ledningar${state.stamnat.src==='osm'?' från OpenStreetMap (kan vara ofullständiga eller felaktiga)':''}. Ledningarna är bara bakgrund: det är de ledningar ni drar själva som räknas.`+(d.stations.some(p=>p[2])?'':' Stationerna har inga namn i underlaget, så de numreras.')+' Placera kommunstationer och dra ledningar.';
   state.wsmsg='';
 }
 function loadStamnat(){
@@ -800,27 +830,49 @@ function loadStamnat(){
 }
 $('#stfile').addEventListener('change',e=>{const f=[...e.target.files]; e.target.value=''; readLayer(f,sets=>{const d=SHP.stamnat(sets); if(!d.stations.length) throw new Error('inga stationer i länet'); return d},applyStamnat,'stamnatmsg')});
 function removeStation(id){
-  if(id[0]==='G') state.gst=state.gst.filter(g=>g.id!==id); else {delete state.kst[id]; state.placed=state.placed.filter(p=>p.node!==id)}
+  if(id[0]==='G') state.gst=state.gst.filter(g=>g.id!==id); else if(id[0]==='R') state.rst=state.rst.filter(g=>g.id!==id); else {delete state.kst[id]; state.placed=state.placed.filter(p=>p.node!==id)}
   state.add=state.add.filter(a=>a.a!==id&&a.b!==id); state.sel=null; state.bline=null; state.bnodes=[]; state.chartLine=null;
 }
-function wsClear(){state.nat=null;state.natown=null;state.natmsg='';state.stamnat=null;state.stamnatmsg='';state.gst=[];state.ext=[];state.kst={};state.add=[];state.placed=[];state.tool='g';state.wsmsg='';state.sel=null;state.bline=null;state.bnodes=[];state.chartLine=null}
+function wsClear(){state.nat=null;state.natown=null;state.natmsg='';state.stamnat=null;state.stamnatmsg='';state.gst=[];state.rst=[];state.ext=[];state.kst={};state.add=[];state.placed=[];state.tool='g';state.wsmsg='';state.sel=null;state.bline=null;state.bnodes=[];state.chartLine=null}
+function nearestSeg(p){
+  if(!state.stamnat||!state.stamnat.segs) return null;
+  let best=null, bd=12;
+  for(const [x1,y1,x2,y2,v] of state.stamnat.segs){
+    const dx=x2-x1, dy=y2-y1, l2=dx*dx+dy*dy||1e-9, t=Math.max(0,Math.min(1,((p.x-x1)*dx+(p.y-y1)*dy)/l2)), x=x1+t*dx, y=y1+t*dy, d=Math.hypot(p.x-x,p.y-y);
+    if(d<bd){bd=d;best={x,y,v}}
+  }
+  return best;
+}
+function freeId(letter,list,max){const n=Array.from({length:max},(_,i)=>i+1).find(i=>!list.some(g=>g.id===letter+i)); return n?letter+n:null}
 function stationClick(e){
   const t=e.target; if(!t.closest||t.closest('[data-station],[data-leaf]'))return;
   const svg=$('#diagram svg'), p=svgPt(svg,e);
-  const hw=state.tool==='g'?26:BW/2, hh2=state.tool==='g'?10:BH/2;
-  const x=Math.min(MAP.w-hw-6,Math.max(hw+6,p.x)), y=Math.min(MAP.h-hh2-6,Math.max(hh2+6,p.y));
-  const clash=Object.values(L).some(b=>x+hw+6>b.x&&x-hw-6<b.x+b.w&&y+hh2+6>b.y&&y-hh2-6<b.y+b.h);
-  let msg='';
-  if(state.tool==='g'){
-    if(state.gst.length>=(state.stamnat?30:4)) msg=`Högst ${state.stamnat?30:4} stamnätsstationer.`;
+  let tool=state.tool, px=p.x, py=p.y, msg='';
+  if(tool==='l'){
+    const sn=nearestSeg(p);
+    if(!sn){state.wsmsg=state.stamnat?'Klicka närmare en ledning i bakgrunden.':'Ladda stamnät först, så att det finns ledningar att bygga på.'; render(); return}
+    px=sn.x; py=sn.y; tool=sn.v>=200?'g':'r';
+  }
+  const [hw,hh2]=tool==='g'?[26,10]:tool==='k'?[BW/2,BH/2]:[8,8];
+  const x=Math.min(MAP.w-hw-4,Math.max(hw+4,px)), y=Math.min(MAP.h-hh2-4,Math.max(hh2+4,py)), mg=tool==='r'?3:6;
+  const clash=Object.values(L).some(b=>x+hw+mg>b.x&&x-hw-mg<b.x+b.w&&y+hh2+mg>b.y&&y-hh2-mg<b.y+b.h);
+  const xy={x:Math.round(x),y:Math.round(y)};
+  if(tool==='g'){
+    const id=freeId('G',state.gst,state.stamnat?30:4);
+    if(!id) msg=`Högst ${state.stamnat?30:4} stamnätsstationer.`;
     else if(clash) msg='För nära en annan station. Klicka en bit därifrån.';
-    else{const id='G'+(Array.from({length:40},(_,i)=>i+1).find(i=>!state.gst.some(g=>g.id==='G'+i))); state.gst.push({id,x:Math.round(x),y:Math.round(y)})}
+    else state.gst.push({id,...xy,nm:''});
+  }else if(tool==='r'){
+    const id=freeId('R',state.rst,40);
+    if(!id) msg='Högst 40 regionnätsstationer.';
+    else if(clash) msg='För nära en annan station. Klicka en bit därifrån.';
+    else state.rst.push({id,...xy,nm:''});
   }else{
     const k=t.closest('[data-k]'), id=k&&k.dataset.k;
     if(!id) msg='Klicka inne i en av kommunerna med namn på kartan.';
     else if(state.kst[id]) msg=`${gname(id)} har redan en station. Ta bort den först.`;
     else if(clash) msg='För nära en annan station. Klicka en bit därifrån.';
-    else state.kst[id]={x:Math.round(x),y:Math.round(y)};
+    else state.kst[id]=xy;
   }
   state.wsmsg=msg; render();
 }
