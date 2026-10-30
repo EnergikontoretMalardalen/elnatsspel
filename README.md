@@ -56,6 +56,10 @@ python3 tools/stamnat_till_json.py STATIONER.shp SVK_LEDNINGAR.shp stamnat.json
 
 `stamnat.json` ligger i `.gitignore` och finns inte i repot, eftersom licensen för datan måste vara klar innan den publiceras. Utan filen i repot öppnar knappen en filväljare, och filen läses bara i webbläsaren. Stationerna har inga namn i underlaget och numreras därför.
 
+### Regionnät från OpenStreetMap (valfritt)
+
+**Ladda stamnät/regionnät** läser även en OpenStreetMap-export (Overpass-JSON eller GeoJSON): substationer och kraftledningar på 70, 130, 220 och 400 kV. Stationer på 220 kV och uppåt blir stamnätsstationer, 50–219 kV regionnätsstationer, och ledningarna visas som bakgrund. Frågan att köra i [overpass-turbo.eu](https://overpass-turbo.eu/) står i förklaringen under Stationer i spelet. Kapaciteter finns inte i OSM, så alla ledningar som räknas är de som spelarna drar själva. Källa: © OpenStreetMap-bidragsgivare (ODbL). Uppgifterna är inskickade av frivilliga och kan vara ofullständiga eller felaktiga. En OSM-export får läggas i repot om källan anges och filen delas under ODbL.
+
 ### Nätområden (lokalnät, valfritt)
 
 Knappen **Ladda nätområden** (zip- eller shapefilen, eller `natomraden.json`) lägger ett lager över kartan med lokalnätens nätområden (områdesnamn och nätägare), som inte följer kommungränserna. Filen kan också göras i förväg:

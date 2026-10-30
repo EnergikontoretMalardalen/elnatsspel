@@ -32,6 +32,8 @@ const NODES = [
   {id:'ALV',base:12, kind:'bostad',  gen:[{kind:'sol', mw:20}],   name:'Älvkarleby', desc:'landsbygd'},
   {id:'OST',base:30, kind:'industri',gen:[{kind:'vind',mw:60}],   name:'Östhammar',  desc:'industri'}
 ];
+/* passiva regionnätsstationer R1..R40 (ingen last eller produktion); används i Blank karta */
+for(let i=1;i<=40;i++) NODES.push({id:'R'+i,name:'Regionnätsstation '+i});
 const IDX = Object.fromEntries(NODES.map((n,i)=>[n.id,i]));
 const byId = Object.fromEntries(NODES.map(n=>[n.id,n]));
 const LOADS = NODES.filter(n=>n.base!=null);
