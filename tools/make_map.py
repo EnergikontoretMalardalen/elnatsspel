@@ -57,7 +57,7 @@ for n,i in LAN.items():
     c=polylabel(geoms[n] if geoms[n].geom_type=="Polygon" else max(geoms[n].geoms,key=lambda p:p.area),tolerance=0.001)
     x,y=prj(c.x,c.y); st[i]={"name":n,"x":round(x,1),"y":round(y,1)}
 cx,cy=prj((minx+maxx)/2,(miny+maxy)/2)
-out={"w":int(W),"h":H,"pxPerKm":round(sx/110.57,3),"stations":st,"G":{"x":round(cx,1),"y":round(cy,1)},"paths":paths}
+out={"w":int(W),"h":H,"pxPerKm":round(sx/110.57,3),"stations":st,"G":{"x":round(cx,1),"y":round(cy,1)},"proj":{"minx":minx,"maxy":maxy,"k":k,"sx":sx},"paths":paths}
 open("map.js","w",encoding="utf-8").write("/* Genererad av tools/make_map.py. Förenklade kommungränser, se README. */\nconst MAP="+json.dumps(out,ensure_ascii=False,separators=(',',':'))+";\n")
 print(W,H,out["pxPerKm"],len(paths),sum(len(p["d"]) for p in paths)//1024,"kB")
 for i,s in st.items(): print(i,s)

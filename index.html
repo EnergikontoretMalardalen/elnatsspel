@@ -336,8 +336,8 @@ dialog#help[open]{display:flex;flex-direction:column}
   <p class="foot">Ledig kapacitet är den största jämna extra last (eller produktion) som kan anslutas i en kommun utan att någon ledning överbelastas, räknat på värsta timmen. Med N-1 prövas att en ledning åt gången är ur drift. Modellen är ett DC-lastflöde: effekten delar sig mellan parallella vägar efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Befintlig vind och sol i vissa kommuner ingår, med schematiska profiler. En förstärkt ledning får den kapacitetsökning du väljer; en ny ledning byggs med vald kapacitet och längden på kartan påverkar dess reaktans. Kostnader, ledtider och tillstånd ingår inte. Kommunnamn används bara som kartunderlag: stationerna, nätet och alla siffror är påhittade och beskriver inget verkligt nät. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät. Karta: förenklade kommungränser från Valmyndigheten via Opendatasoft (okfse/sweden-geojson).</p>
 </div>
 
-<input type="file" id="stfile" accept=".json,.geojson,application/json" hidden>
-<input type="file" id="nfile" accept=".json,.geojson,application/json" hidden>
+<input type="file" id="stfile" accept=".zip,.shp,.dbf,.json,.geojson,application/json" multiple hidden>
+<input type="file" id="nfile" accept=".zip,.shp,.dbf,.json,.geojson,application/json" multiple hidden>
 <dialog id="help" aria-labelledby="helptitle">
   <div class="hhead"><h2 id="helptitle">Så fungerar det</h2><button type="button" id="helpclose">Stäng</button></div>
   <div class="hbody">
@@ -394,6 +394,7 @@ dialog#help[open]{display:flex;flex-direction:column}
 </dialog>
 <script src="map.js"></script>
 <script src="sim.js"></script>
+<script src="shp.js"></script>
 <script>
 
 const ART = {dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -744,11 +745,12 @@ function stationsHtml(){
   if(state.stamnatmsg) h+=`<small role="status">${state.stamnatmsg}</small>`;
   if(state.natmsg) h+=`<small role="status">${state.natmsg}</small>`;
   h+=`<details class="filehelp"><summary>Så laddar du stamnät och nätområden</summary>
-    <p>Knapparna <i>Ladda stamnät</i> och <i>Ladda nätområden</i> öppnar en filväljare där du pekar ut <code>stamnat.json</code> respektive <code>natomraden.json</code> på din dator. Filerna läses bara i webbläsaren och skickas ingenstans. De ligger inte i spelets repo, eftersom datan inte får publiceras utan tillstånd.</p>
+    <p>Knapparna <i>Ladda stamnät</i> och <i>Ladda nätområden</i> öppnar en filväljare. Välj filerna du hämtat, antingen som <b>zip</b> eller som shapefiler (<code>.shp</code> och <code>.dbf</code>). Filerna läses bara i webbläsaren och skickas ingenstans. De ligger inte i spelets repo, eftersom datan inte får publiceras utan tillstånd. Om du inte ser filerna: sätt filtret i filväljaren till <i>Alla filer</i>.</p>
     <ol>
       <li>Hämta underlaget: stationer och ledningar från <a href="https://www.geodata.se/geodataportalen/srv/swe/catalog.search#/metadata/08ec56a0-6b5c-4f83-b29e-375e6f1a34b9" target="_blank" rel="noopener">Svenska kraftnäts stamnätsdata (Geodataportalen, INSPIRE)</a> som SHAPE, och nätområdena under rubriken <i>Information om befintlig nätområdesstruktur</i> hos nätmyndigheten.</li>
-      <li>Gör om dem med skripten <code>tools/stamnat_till_json.py</code> och <code>tools/natomraden_till_json.py</code> i <a href="https://github.com/EnergikontoretMalardalen/elnatsspel" target="_blank" rel="noopener">spelets repo</a>. Instruktioner finns i README.</li>
-      <li>Klicka på knappen och välj filen. Stationerna placeras då på kartan, och nätområdena visas som ett lager som kan stängas av.</li>
+      <li><b>Ladda stamnät:</b> välj zip-filerna för stationer och ledningar <i>samtidigt</i> (markera båda med Ctrl eller Shift). Stationerna i länet placeras då på kartan och ledningarna visas som bakgrund.</li>
+      <li><b>Ladda nätområden:</b> välj zip-filen för nätområden. De visas som ett lager som kan stängas av.</li>
+      <li>Skripten <code>tools/stamnat_till_json.py</code> och <code>tools/natomraden_till_json.py</code> i <a href="https://github.com/EnergikontoretMalardalen/elnatsspel" target="_blank" rel="noopener">spelets repo</a> gör samma sak till en <code>.json</code>-fil, som också går att välja.</li>
     </ol></details>`;
   const items=[...state.gst.map(g=>({id:g.id,t:stName(g.id)})),...LOADS.filter(n=>state.kst[n.id]).map(n=>({id:n.id,t:'Regionstation '+n.name}))];
   if(items.length) h+=`<ul class="placed" style="max-height:150px;overflow:auto">${items.map(o=>`<li><span>${o.t}</span><button type="button" data-rmst="${o.id}">Ta bort</button></li>`).join('')}</ul>`;
@@ -771,10 +773,19 @@ function applyNat(d){
 function loadNat(){
   fetch('natomraden.json').then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{applyNat(d);render()}).catch(()=>{$('#nfile').click()});
 }
-$('#nfile').addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f)return;
-  f.text().then(t=>{applyNat(JSON.parse(t))}).catch(()=>{state.natmsg='Filen kunde inte läsas. Välj natomraden.json som gjorts med tools/natomraden_till_json.py.'}).then(()=>{e.target.value='';render()});
-});
+async function readLayer(files,build,apply,what){
+  const fs=[...files]; if(!fs.length) return;
+  try{
+    const js=fs.find(f=>/\.(geo)?json$/i.test(f.name));
+    let d; if(js) d=JSON.parse(await js.text()); else d=build(await SHP.read(fs));
+    apply(d);
+  }catch(err){
+    console.error(err);
+    state[what]='Filerna kunde inte läsas. Välj '+(what==='natmsg'?'zip- eller shapefilen för nätområden (polygoner) eller natomraden.json':'zip- eller shapefilerna för stationer och ledningar (båda på en gång) eller stamnat.json')+'.';
+  }
+  render();
+}
+$('#nfile').addEventListener('change',e=>{const f=[...e.target.files]; e.target.value=''; readLayer(f,sets=>{const d=SHP.nat(sets); if(!d.areas.length) throw new Error('inga nätområden'); return d},applyNat,'natmsg')});
 $('#maplegend').addEventListener('change',e=>{if(e.target.matches('[data-natvis]')){state.natvis=e.target.checked;render()}});
 function applyStamnat(d){
   if(!d||!Array.isArray(d.stations)||!Array.isArray(d.lines)) throw new Error('fel format');
@@ -787,10 +798,7 @@ function applyStamnat(d){
 function loadStamnat(){
   fetch('stamnat.json').then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{applyStamnat(d);render()}).catch(()=>{$('#stfile').click()});
 }
-$('#stfile').addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f)return;
-  f.text().then(t=>{applyStamnat(JSON.parse(t))}).catch(()=>{state.stamnatmsg='Filen kunde inte läsas. Välj stamnat.json som gjorts med tools/stamnat_till_json.py.'}).then(()=>{e.target.value='';render()});
-});
+$('#stfile').addEventListener('change',e=>{const f=[...e.target.files]; e.target.value=''; readLayer(f,sets=>{const d=SHP.stamnat(sets); if(!d.stations.length) throw new Error('inga stationer i länet'); return d},applyStamnat,'stamnatmsg')});
 function removeStation(id){
   if(id[0]==='G') state.gst=state.gst.filter(g=>g.id!==id); else {delete state.kst[id]; state.placed=state.placed.filter(p=>p.node!==id)}
   state.add=state.add.filter(a=>a.a!==id&&a.b!==id); state.sel=null; state.bline=null; state.bnodes=[]; state.chartLine=null;

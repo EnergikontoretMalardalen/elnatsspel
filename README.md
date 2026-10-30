@@ -47,7 +47,7 @@ Spelet startar i **Blank karta**, och uppdragen 1–4 och *Prova själv* ligger 
 
 ### Stamnätet från Svenska kraftnäts filer (valfritt)
 
-Knappen **Ladda stamnät** (under Stationer) läser in `stamnat.json`: stamnätsstationerna inom länet placeras där de ligger och stamnätets ledningar visas som bakgrund. Filen görs av shapefilerna för stationer och ledningar:
+Knappen **Ladda stamnät** (under Stationer) läser in shapefilerna direkt (zip-filerna för stationer och ledningar markeras samtidigt) eller en `stamnat.json`: stamnätsstationerna inom länet placeras där de ligger och stamnätets ledningar visas som bakgrund. Filen kan också göras i förväg av shapefilerna:
 
 ```
 pip install pyshp pyproj shapely
@@ -58,7 +58,7 @@ python3 tools/stamnat_till_json.py STATIONER.shp SVK_LEDNINGAR.shp stamnat.json
 
 ### Nätområden (lokalnät, valfritt)
 
-Knappen **Ladda nätområden** lägger ett lager över kartan med lokalnätens nätområden (områdesnamn och nätägare), som inte följer kommungränserna. Filen görs av nätområdes-shapefilen:
+Knappen **Ladda nätområden** (zip- eller shapefilen, eller `natomraden.json`) lägger ett lager över kartan med lokalnätens nätområden (områdesnamn och nätägare), som inte följer kommungränserna. Filen kan också göras i förväg:
 
 ```
 python3 tools/natomraden_till_json.py Natomraden_SE3_Sw99TM.shp natomraden.json
@@ -78,3 +78,7 @@ python3 tools/natomraden_till_json.py Natomraden_SE3_Sw99TM.shp natomraden.json
 ## Licenser
 
 Typsnitten (IBM Plex, Barlow Semi Condensed) ligger under SIL Open Font License; licenstexter finns i `fonts/`.
+
+## Shapefiler i webbläsaren
+
+`shp.js` läser `.zip`, `.shp` och `.dbf` direkt i webbläsaren (zip packas upp med `DecompressionStream`, SWEREF 99 TM räknas om till kartans koordinater). Inget skickas någonstans, och ingen data ligger i repot.
