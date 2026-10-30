@@ -99,7 +99,7 @@ svg .mono{font-family:var(--f-mono)}
 .station.hot .box,.leaf.hot .box{stroke:var(--accent);stroke-width:3}
 .dtab{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 0}.dtab th,.dtab td{padding:4px 6px;border-bottom:1px solid var(--rule);text-align:left}.dtab th{font-weight:600;color:var(--ink2);font-size:12px}.dtab td.n,.dtab th.n{text-align:right;font-family:var(--f-mono)}.dtab svg{display:block;width:96px!important;max-width:none;height:26px!important}
 .klabel{font-size:11.5px;font-weight:500;fill:var(--ink2);text-anchor:middle;pointer-events:none}
-.stations svg{cursor:crosshair} .stations .land:hover{fill:var(--accent-t)} .stations .station{cursor:default}
+.stations svg{cursor:crosshair;touch-action:none} .stations .station,.stations .leaf{cursor:grab} .stations .land:hover{fill:var(--accent-t)} 
 .wsmsg{color:var(--bad)!important;margin-top:6px}
 .bbox{margin:0 0 12px;padding-bottom:12px;border-bottom:1px solid var(--rule)}
 .bhead{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:6px}
@@ -368,7 +368,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     <h3 id="h-workshop">Blank karta: bygg ert eget nät</h3>
     <p>Spelet startar i <b>Blank karta</b>, där ni bestämmer själva hur regionnätet ska se ut. Använd den till exempel tillsammans med en verklig karta på projektorn.</p>
     <ol>
-      <li><b>Stationer:</b> välj <i>Stamnätsstation</i> och klicka där stamnätet ska komma in (högst fyra). Välj sedan <i>Regionstation i kommun</i> och klicka inne i varje kommun som ska vara med. En station per kommun. <i>Ta bort</i> i listan flyttar en station.</li>
+      <li><b>Stationer:</b> välj <i>Stamnätsstation</i> och klicka där stamnätet ska komma in (högst fyra). Välj sedan <i>Regionstation i kommun</i> och klicka inne i varje kommun som ska vara med. En station per kommun. Flytta en station genom att dra den (fungerar även under Ledningar); <i>Ta bort</i> i listan tar bort den.</li>
       <li><b>Ledningar:</b> dra från en grå punkt på en station till en annan. Välj kapacitet (60–300 MW). Klicka på en ledning för att förstärka den. En kommun som inte nås av någon ledning visas som <i>Ej ansluten</i> och har 0 MW. Stamnätsstationer kopplas inte ihop med varandra.</li>
       <li><b>Etableringar:</b> placera datacenter, vindpark med mera och se hur ledig kapacitet ändras i er egen kommun och hos grannarna. Använd <i>N-1</i> under Avancerat för att se om nätet klarar att en ledning faller bort.</li>
     </ol>
@@ -720,7 +720,7 @@ function stationsHtml(){
   const nk=Object.keys(state.kst).length, none=!state.gst.length&&!nk;
   let h=`<div class="bhead"><strong>Placera stationer</strong><span class="val">${state.gst.length} stamnät · ${nk} av ${LOADS.length} kommuner</span></div>
     <div class="seg" role="group" aria-label="Typ av station" style="max-width:480px"><button type="button" data-tool="g" aria-pressed="${state.tool==='g'}">Stamnätsstation</button><button type="button" data-tool="k" aria-pressed="${state.tool==='k'}">Regionstation i kommun</button></div>
-    <small style="margin-top:8px">${state.tool==='g'?'Klicka var som helst på kartan för att placera en stamnätsstation (högst 4). Där kommer stamnätet in i länet.':'Klicka inne i en kommun för att placera dess regionstation. En station per kommun.'}</small>`;
+    <small style="margin-top:8px">${state.tool==='g'?'Klicka var som helst på kartan för att placera en stamnätsstation (högst 4). Där kommer stamnätet in i länet.':'Klicka inne i en kommun för att placera dess regionstation. En station per kommun. Dra en station för att flytta den.'}</small>`;
   if(state.wsmsg) h+=`<small class="wsmsg" role="status">${state.wsmsg}</small>`;
   const items=[...state.gst.map(g=>({id:g.id,t:stName(g.id)})),...LOADS.filter(n=>state.kst[n.id]).map(n=>({id:n.id,t:'Regionstation '+n.name}))];
   if(items.length) h+=`<ul class="placed">${items.map(o=>`<li><span>${o.t}</span><button type="button" data-rmst="${o.id}">Ta bort</button></li>`).join('')}</ul>`;
@@ -987,6 +987,33 @@ function diagramAct(t){
   const st=t.closest('[data-station]'); if(st&&bld){pickNode(st.dataset.station);return}
   const lf=t.closest('[data-leaf]'); if(lf){bld?pickNode(lf.dataset.leaf):selectLeaf(lf.dataset.leaf)}
 }
+/* flytta stationer med drag and drop (Blank karta) */
+let moveInfo=null;
+$('#diagram').addEventListener('pointerdown',e=>{
+  if(!ws()||(state.tab!=='stations'&&state.tab!=='build')||(e.button!==undefined&&e.button>0))return;
+  if(e.target.closest('[data-port]'))return;
+  const el=e.target.closest('[data-station],[data-leaf]'); if(!el)return;
+  const id=el.dataset.station||el.dataset.leaf, o=id[0]==='G'?state.gst.find(g=>g.id===id):state.kst[id]; if(!o)return;
+  moveInfo={id,o,svg:el.ownerSVGElement,sx:e.clientX,sy:e.clientY,ox:o.x,oy:o.y,p0:svgPt(el.ownerSVGElement,e),moved:false};
+});
+window.addEventListener('pointermove',e=>{
+  if(!moveInfo)return; const m=moveInfo;
+  if(!m.moved){if(Math.abs(e.clientX-m.sx)+Math.abs(e.clientY-m.sy)<=6)return; m.moved=true}
+  const p=svgPt($("#diagram svg"),e), hw=m.id[0]==='G'?50:BW/2, hh2=m.id[0]==='G'?17:BH/2;
+  m.o.x=Math.round(Math.min(MAP.w-hw-4,Math.max(hw+4,m.ox+p.x-m.p0.x))); m.o.y=Math.round(Math.min(MAP.h-hh2-4,Math.max(hh2+4,m.oy+p.y-m.p0.y)));
+  renderDiagram(getView());
+});
+function endMove(cancel){
+  if(!moveInfo)return; const m=moveInfo; moveInfo=null; if(!m.moved)return;
+  justDragged=true; setTimeout(()=>{justDragged=false},0);
+  const hw=m.id[0]==='G'?50:BW/2, hh2=m.id[0]==='G'?17:BH/2;
+  const clash=Object.entries(L).some(([k,b])=>k!==m.id&&m.o.x+hw+6>b.x&&m.o.x-hw-6<b.x+b.w&&m.o.y+hh2+6>b.y&&m.o.y-hh2-6<b.y+b.h);
+  if(cancel||clash){m.o.x=m.ox;m.o.y=m.oy; state.wsmsg=clash&&!cancel?'För nära en annan station. Stationen flyttades tillbaka.':''}
+  else state.wsmsg='';
+  render();
+}
+window.addEventListener('pointerup',()=>endMove(false));
+window.addEventListener('pointercancel',()=>endMove(true));
 $('#diagram').addEventListener('click',e=>{if(state.tab==='stations'){stationClick(e);return} diagramAct(e.target)});
 $('#diagram').addEventListener('keydown',e=>{
   if(e.key!=='Enter'&&e.key!==' ')return;
