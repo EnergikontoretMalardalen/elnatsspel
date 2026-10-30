@@ -56,6 +56,16 @@ python3 tools/stamnat_till_json.py STATIONER.shp SVK_LEDNINGAR.shp stamnat.json
 
 `stamnat.json` ligger i `.gitignore` och finns inte i repot, eftersom licensen för datan måste vara klar innan den publiceras. Utan filen i repot öppnar knappen en filväljare, och filen läses bara i webbläsaren. Stationerna har inga namn i underlaget och numreras därför.
 
+### Nätområden (lokalnät, valfritt)
+
+Knappen **Ladda nätområden** lägger ett lager över kartan med lokalnätens nätområden (områdesnamn och nätägare), som inte följer kommungränserna. Filen görs av nätområdes-shapefilen:
+
+```
+python3 tools/natomraden_till_json.py Natomraden_SE3_Sw99TM.shp natomraden.json
+```
+
+`natomraden.json` ligger i `.gitignore` av samma skäl som stamnätsfilen: kontrollera licensen innan den publiceras.
+
 ## Att göra senare
 
 - Bakgrund från OpenStreetMap (statisk bild eller SVG, med källhänvisning ©&nbsp;OpenStreetMap-bidragsgivare).
