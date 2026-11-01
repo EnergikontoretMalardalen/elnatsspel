@@ -93,3 +93,6 @@ OSM-ledningarna under 200 kV läses som en vektor per ledningssträcka. De är b
 
 ### Medföljande OSM-data
 `osm_uppsala.json` är en export från Overpass (overpass-turbo.eu) för Uppsala län, omräknad till kartans koordinater. Knappen *Ladda stamnät/regionnät* läser den automatiskt (om `stamnat.json` saknas), så spelarna behöver inte hämta något. *Egen fil…* väljer en annan fil. Data © OpenStreetMap-bidragsgivare (ODbL), kan vara ofullständig eller felaktig.
+
+### Vattenfalls kapacitetskarta (jämförelse)
+`vattenfall_ref.json` innehåller regionnätsstationer i Uppsala län avlästa ur screenshots av Vattenfalls kapacitetskarta (ungefärligt läge, ledig kapacitet för hög elkonsumtion i klasser). Närliggande stationer (≤ ca 5 km) är ihopslagna till en, som får det högsta värdet, inte summan. Lagret slås på med *Visa Vattenfalls kapacitetskarta* under kartan och ingår inte i beräkningen. Kontrollera att uppgifterna får visas innan spelet sprids.

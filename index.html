@@ -99,7 +99,7 @@ svg .mono{font-family:var(--f-mono)}
 .station.hot .box,.leaf.hot .box{stroke:var(--accent);stroke-width:3}
 .dtab{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 0}.dtab th,.dtab td{padding:4px 6px;border-bottom:1px solid var(--rule);text-align:left}.dtab th{font-weight:600;color:var(--ink2);font-size:12px}.dtab td.n,.dtab th.n{text-align:right;font-family:var(--f-mono)}.dtab svg{display:block;width:96px!important;max-width:none;height:26px!important}
 .stam{fill:none;stroke:#6b7078;stroke-linecap:round;pointer-events:none;opacity:.75}.stam.v400{stroke-width:2}.stam.v220{stroke-width:1.2}.stam.vr{stroke:#4f7fbf;stroke-width:1;opacity:.85}.station.rst .box{fill:var(--accent-t);stroke:var(--accent);stroke-width:1.5}
-.stam.v0{stroke-width:1;stroke-dasharray:3 3}.stam.vr.on{stroke:var(--bad,#c0392b);stroke-width:2;opacity:.9}.stam.vr.pick{stroke:var(--accent);stroke-width:3.5;opacity:1}.owhit{fill:none;stroke:transparent;stroke-width:12;cursor:pointer;stroke-linecap:round}
+.stam.v0{stroke-width:1;stroke-dasharray:3 3}.stam.vr.on{stroke:var(--bad,#c0392b);stroke-width:2;opacity:.9}.stam.vr.pick{stroke:var(--accent);stroke-width:3.5;opacity:1}.vflab{font-size:10px;fill:#1d2b2c;paint-order:stroke;stroke:#fff;stroke-width:2.5px;pointer-events:none}.owhit{fill:none;stroke:transparent;stroke-width:12;cursor:pointer;stroke-linecap:round}
 .natp{fill-rule:evenodd;pointer-events:none;stroke-width:1.3;stroke-dasharray:6 3;fill-opacity:.13}.natl{font-size:9.5px;font-style:italic;fill:var(--ink2);text-anchor:middle;pointer-events:none}
 .natchk{display:inline-flex;gap:6px;align-items:center;cursor:pointer}.maplegend i.nt{border-style:dashed}
 .filehelp{margin:10px 0 0;font-size:13px;color:var(--ink2)}.filehelp summary{cursor:pointer;font-weight:600;color:var(--ink)}.filehelp p,.filehelp li{margin:6px 0}
@@ -436,7 +436,7 @@ MISSIONS.push({title:'Bygg ert eget regionnät', short:'Blank karta', mine:null,
 const TAB_ORDER=[5,1,2,3,4,0];
 
 const $ = s=>document.querySelector(s);
-const state = {mission:5, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:'', ext:[], rst:[], stamnat:null, nat:null, natvis:true, natmsg:'', ow:null, owcap:60};
+const state = {mission:5, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:'', ext:[], rst:[], stamnat:null, nat:null, natvis:true, natmsg:'', ow:null, owcap:60, vf:null, vfvis:false};
 
 const BW=108, BH=68;
 const L0 = {G:{x:MAP.G.x-50,y:MAP.G.y-17,w:100,h:34}};
@@ -639,6 +639,7 @@ function renderDiagram(v){
     LINES.forEach((ln,i)=>{const w=Math.abs(pt[i]); if(w>=0.08){anyShare=true;s+=`<path class="share" d="${wirePath(ln)}" stroke-width="${(3+w*11).toFixed(1)}"/>`}});
   }
   if(bld) LINES.forEach((ln,i)=>{s+=`<path class="hit" data-wire="${i}" d="${wirePath(ln)}"><title>${cap1(ln.label)}${ln.added?'':': klicka för att förstärka'}</title></path>`});
+  if(ws()&&state.vfvis&&state.vf) s+=`<g aria-hidden="true">`+state.vf.map(o=>`<circle cx="${o.x}" cy="${o.y}" r="7" fill="${VFCOL[o.c]}" stroke="#1d2b2c" stroke-width="1.2"/><text class="vflab" x="${o.x+10}" y="${o.y+4}">${VFLAB[o.c]}</text>`).join('')+`</g>`;
   if(ws()&&state.nat&&state.natvis){
     const ow=natOwners();
     s+=`<g aria-hidden="true">`+state.nat.areas.map(a=>{const c=ow.col[a.a]||'#7d828a';return `<path class="natp" d="${a.d}" fill="${c}" stroke="${c}"/>`}).join('')+state.nat.areas.filter(a=>a.i).map(a=>`<text class="natl" x="${a.x}" y="${a.y}">${a.n}</text>`).join('')+`</g>`;
@@ -701,7 +702,8 @@ function renderDiagram(v){
   }
   $('#diagram').innerHTML=`<svg viewBox="0 0 ${MAP.w} ${MAP.h}" role="group" aria-label="Karta över Uppsala län med ${ws()?'stationer som deltagarna placerar':'åtta kommuner och ett fiktivt regionnät'}">${s}</svg>`;
   const natLeg=(ws()&&state.nat)?`<label class="natchk"><input type="checkbox" data-natvis ${state.natvis?'checked':''}> Visa nätområden</label>`+(state.natvis?natOwners().list.map(o=>`<span><i class="nt" style="border-color:${o[1]};background:${o[1]}22"></i>${o[0]}</span>`).join(''):''):'';
-  $('#maplegend').innerHTML=natLeg+`<span><i class="ok"></i>20 MW ledigt eller mer</span><span><i class="warn"></i>1–19 MW</span><span><i class="bad"></i>0 MW</span>`+(anyShare?`<span><i class="acc"></i>Vägarna den nya effekten tar (tjockare = större andel)</span>`:'')+(ws()&&state.stamnat?`<span><i class="stl"></i>Stamnätets ledningar (bakgrund)</span>`+(state.stamnat.lines.some(l=>l.v>0&&l.v<200)?`<span><i class="stl r"></i>Regionnätets ledningar (bakgrund)</span>`:'')+(state.stamnat.src==='osm'?`<span>Data: © OpenStreetMap-bidragsgivare (ODbL). Kan vara ofullständig eller felaktig.</span>`:''):'')+(LINES.some(l=>l.up)?`<span><i class="thick"></i>Förstärkt ledning</span>`:'')+((!ws()&&LINES.some(l=>l.added))||(v.pend&&v.pend.type==='add')?`<span><i class="dash"></i>Ny ledning</span>`:'');
+  const vfLeg=ws()?`<label class="natchk"><input type="checkbox" data-vfvis ${state.vfvis?'checked':''}> Visa Vattenfalls kapacitetskarta (jämförelse)</label>`+(state.vfvis&&state.vf?`<span>Ledig kapacitet för hög elkonsumtion i regionnätsstationer, MW (ungefärligt läge, närliggande stationer ihopslagna, högsta värdet gäller). Källa: Vattenfall Eldistribution.</span>`+VFCOL.map((c,i)=>`<span><i style="background:${c};border:1px solid #1d2b2c;border-radius:50%"></i>${VFLAB[i]} MW</span>`).join(''):''):'';
+  $('#maplegend').innerHTML=natLeg+vfLeg+`<span><i class="ok"></i>20 MW ledigt eller mer</span><span><i class="warn"></i>1–19 MW</span><span><i class="bad"></i>0 MW</span>`+(anyShare?`<span><i class="acc"></i>Vägarna den nya effekten tar (tjockare = större andel)</span>`:'')+(ws()&&state.stamnat?`<span><i class="stl"></i>Stamnätets ledningar (bakgrund)</span>`+(state.stamnat.lines.some(l=>l.v>0&&l.v<200)?`<span><i class="stl r"></i>Regionnätets ledningar (bakgrund)</span>`:'')+(state.stamnat.src==='osm'?`<span>Data: © OpenStreetMap-bidragsgivare (ODbL). Kan vara ofullständig eller felaktig.</span>`:''):'')+(LINES.some(l=>l.up)?`<span><i class="thick"></i>Förstärkt ledning</span>`:'')+((!ws()&&LINES.some(l=>l.added))||(v.pend&&v.pend.type==='add')?`<span><i class="dash"></i>Ny ledning</span>`:'');
 }
 
 /* ---------- action bar ---------- */
@@ -818,7 +820,8 @@ async function readLayer(files,build,apply,what){
   render();
 }
 $('#nfile').addEventListener('change',e=>{const f=[...e.target.files]; e.target.value=''; readLayer(f,sets=>{const d=SHP.nat(sets); if(!d.areas.length) throw new Error('inga nätområden'); return d},applyNat,'natmsg')});
-$('#maplegend').addEventListener('change',e=>{if(e.target.matches('[data-natvis]')){state.natvis=e.target.checked;render()}});
+$('#maplegend').addEventListener('change',e=>{if(e.target.matches('[data-vfvis]')){state.vfvis=e.target.checked; if(state.vfvis&&!state.vf){fetch('vattenfall_ref.json').then(r=>r.json()).then(d=>{state.vf=d;render()}).catch(()=>{state.vfvis=false;render()})} render(); return}
+  if(e.target.matches('[data-natvis]')){state.natvis=e.target.checked;render()}});
 function segsOf(lines){
   const out=[];
   for(const l of lines) for(const ch of l.d.split('M')){
@@ -847,6 +850,7 @@ function removeStation(id){
   if(id[0]==='G') state.gst=state.gst.filter(g=>g.id!==id); else if(id[0]==='R') state.rst=state.rst.filter(g=>g.id!==id); else {delete state.kst[id]; state.placed=state.placed.filter(p=>p.node!==id)}
   state.add=state.add.filter(a=>a.a!==id&&a.b!==id); state.sel=null; state.bline=null; state.bnodes=[]; state.chartLine=null;
 }
+const VFCOL=['#d9e7e8','#a6c6c9','#73a6a9','#40858a','#005c63'], VFLAB=['<1','1–17','18–34','35–50','>50'];
 function wsClear(){state.nat=null;state.natown=null;state.natmsg='';state.stamnat=null;state.ow=null;state.stamnatmsg='';state.gst=[];state.rst=[];state.ext=[];state.kst={};state.add=[];state.placed=[];state.tool='g';state.wsmsg='';state.sel=null;state.bline=null;state.bnodes=[];state.chartLine=null}
 function nearestSeg(p){
   if(!state.stamnat||!state.stamnat.segs) return null;
