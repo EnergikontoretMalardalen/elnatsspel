@@ -96,3 +96,6 @@ OSM-ledningarna under 200 kV läses som en vektor per ledningssträcka. De är b
 
 ### Vattenfalls kapacitetskarta (jämförelse)
 `vattenfall_ref.json` innehåller regionnätsstationer i Uppsala län (ungefärligt läge från screenshots av Vattenfalls kapacitetskarta; värden för ledig kapacitet för hög elkonsumtion avlästa via klick i kartan, >50 MW anges som >50). Närliggande stationer (≤ ca 5 km) är ihopslagna till en, som får det högsta värdet, inte summan. Lagret slås på med *Visa Vattenfalls kapacitetskarta* under kartan och ingår inte i beräkningen. Kontrollera att uppgifterna får visas innan spelet sprids.
+
+### Lantmäteriets ledningar
+`lm_uppsala.json` har ledningar från Lantmäteriet Topografi 100 Nedladdning vektor (lager Ledningslinje, objekttyp 1702 stam och 1703 region, CC0), stamnätsstationer från OSM och regionnätsstationer från Vattenfalls kapacitetskarta (ungefärligt läge). Den läses före `osm_uppsala.json`. Lantmäteriet anger bara region (25–200 kV) och stam (över 200 kV), inte exakt kV. Omräkning: SWEREF 99 TM till kartans koordinater, förenklad med 0,8 px tolerans.

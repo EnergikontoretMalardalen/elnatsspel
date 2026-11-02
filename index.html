@@ -648,7 +648,7 @@ function renderDiagram(v){
     const onW=new Set(state.add.filter(a=>a.gid!=null).map(a=>a.gid)), pick=ws()&&bld;
     s+=state.stamnat.lines.map((l,i)=>{
       const reg=l.v>0&&l.v<200, on=reg&&onW.has(i);
-      return `<path class="stam ${l.v>=380?'v400':l.v>=200?'v220':l.v>0?'vr':'v0'}${on?' on':''}${state.ow===i?' pick':''}" d="${l.d}"/>`+(pick&&reg&&!on?`<path class="owhit" data-ow="${i}" d="${l.d}"><title>Regionnätsledning ${l.v} kV (OpenStreetMap): klicka och ange kapacitet för att ta med den i beräkningen</title></path>`:'');
+      return `<path class="stam ${l.v>=380?'v400':l.v>=200?'v220':l.v>0?'vr':'v0'}${on?' on':''}${state.ow===i?' pick':''}" d="${l.d}"/>`+(pick&&reg&&!on?`<path class="owhit" data-ow="${i}" d="${l.d}"><title>Regionnätsledning ${state.stamnat.src==='lm'?'(Lantmäteriet)':l.v+' kV (OpenStreetMap)'}: klicka och ange kapacitet för att ta med den i beräkningen</title></path>`:'');
     }).join('');
   }
   if(ws()){
@@ -703,7 +703,7 @@ function renderDiagram(v){
   $('#diagram').innerHTML=`<svg viewBox="0 0 ${MAP.w} ${MAP.h}" role="group" aria-label="Karta över Uppsala län med ${ws()?'stationer som deltagarna placerar':'åtta kommuner och ett fiktivt regionnät'}">${s}</svg>`;
   const natLeg=(ws()&&state.nat)?`<label class="natchk"><input type="checkbox" data-natvis ${state.natvis?'checked':''}> Visa nätområden</label>`+(state.natvis?natOwners().list.map(o=>`<span><i class="nt" style="border-color:${o[1]};background:${o[1]}22"></i>${o[0]}</span>`).join(''):''):'';
   const vfLeg=ws()?`<label class="natchk"><input type="checkbox" data-vfvis ${state.vfvis?'checked':''}> Visa Vattenfalls kapacitetskarta (jämförelse)</label>`+(state.vfvis&&state.vf?`<span>Ledig kapacitet för hög elkonsumtion i regionnätsstationer, MW (ungefärligt läge, närliggande stationer ihopslagna, högsta värdet gäller; värden enligt Vattenfalls karta, färg efter klass). Visar bara 70–130 kV-stationer. Källa: Vattenfall Eldistribution.</span>`+VFCOL.map((c,i)=>`<span><i style="background:${c};border:1px solid #1d2b2c;border-radius:50%"></i>${VFLAB[i]} MW</span>`).join(''):''):'';
-  $('#maplegend').innerHTML=natLeg+vfLeg+`<span><i class="ok"></i>20 MW ledigt eller mer</span><span><i class="warn"></i>1–19 MW</span><span><i class="bad"></i>0 MW</span>`+(anyShare?`<span><i class="acc"></i>Vägarna den nya effekten tar (tjockare = större andel)</span>`:'')+(ws()&&state.stamnat?`<span><i class="stl"></i>Stamnätets ledningar (bakgrund)</span>`+(state.stamnat.lines.some(l=>l.v>0&&l.v<200)?`<span><i class="stl r"></i>Regionnätets ledningar (bakgrund)</span>`:'')+(state.stamnat.src==='osm'?`<span>Data: © OpenStreetMap-bidragsgivare (ODbL). Kan vara ofullständig eller felaktig.</span>`:''):'')+(LINES.some(l=>l.up)?`<span><i class="thick"></i>Förstärkt ledning</span>`:'')+((!ws()&&LINES.some(l=>l.added))||(v.pend&&v.pend.type==='add')?`<span><i class="dash"></i>Ny ledning</span>`:'');
+  $('#maplegend').innerHTML=natLeg+vfLeg+`<span><i class="ok"></i>20 MW ledigt eller mer</span><span><i class="warn"></i>1–19 MW</span><span><i class="bad"></i>0 MW</span>`+(anyShare?`<span><i class="acc"></i>Vägarna den nya effekten tar (tjockare = större andel)</span>`:'')+(ws()&&state.stamnat?`<span><i class="stl"></i>Stamnätets ledningar (bakgrund)</span>`+(state.stamnat.lines.some(l=>l.v>0&&l.v<200)?`<span><i class="stl r"></i>Regionnätets ledningar (bakgrund)</span>`:'')+(state.stamnat.src==='osm'?`<span>Data: © OpenStreetMap-bidragsgivare (ODbL). Kan vara ofullständig eller felaktig.</span>`:state.stamnat.src==='lm'?`<span>Ledningar: © Lantmäteriet, Topografi 100 (CC0). Stamnätsstationer: © OpenStreetMap-bidragsgivare (ODbL). Regionnätsstationer: ungefärligt läge enligt Vattenfalls kapacitetskarta. Kan vara ofullständigt eller felaktigt.</span>`:''):'')+(LINES.some(l=>l.up)?`<span><i class="thick"></i>Förstärkt ledning</span>`:'')+((!ws()&&LINES.some(l=>l.added))||(v.pend&&v.pend.type==='add')?`<span><i class="dash"></i>Ny ledning</span>`:'');
 }
 
 /* ---------- action bar ---------- */
@@ -724,7 +724,7 @@ function renderBuild(v){
   if(ws()&&state.wsmsg) h+=`<small class="wsmsg" role="status">${state.wsmsg}</small>`;
   if(ws()&&state.ow!=null&&state.stamnat&&state.stamnat.lines[state.ow]){
     const ln=state.stamnat.lines[state.ow], pts=pathPts(ln.d); let km=0; for(let k=1;k<pts.length;k++) km+=Math.hypot(pts[k][0]-pts[k-1][0],pts[k][1]-pts[k-1][1]); km=Math.max(1,km/MAP.pxPerKm);
-    h+=`<div><strong>Regionnätsledning ${ln.v} kV (OpenStreetMap)</strong><small>Längd ca ${km.toFixed(1)} km (från kartans geometri). Ange hur mycket effekt den klarar. Reaktansen uppskattas ur kapacitet och längd, så en lång ledning med låg kapacitet blir svag. Ändarna kopplas till närmaste station, eller en ny regionnätsstation skapas.</small></div>
+    h+=`<div><strong>Regionnätsledning ${state.stamnat.src==='lm'?'(Lantmäteriet, 25–200 kV)':ln.v+' kV (OpenStreetMap)'}</strong><small>Längd ca ${km.toFixed(1)} km (från kartans geometri). Ange hur mycket effekt den klarar. Reaktansen uppskattas ur kapacitet och längd, så en lång ledning med låg kapacitet blir svag. Ändarna kopplas till närmaste station, eller en ny regionnätsstation skapas.</small></div>
       <div class="seg" role="group" aria-label="Kapacitet">${[40,60,100,150,200].map(c=>`<button type="button" data-owcap="${c}" aria-pressed="${c===state.owcap}">${c} MW</button>`).join('')}</div>
       <div class="row" style="max-width:300px;margin-top:8px"><label for="owin">Eller ange själv (MW)</label><input type="number" id="owin" min="5" max="2000" step="5" value="${state.owcap}" style="width:90px"></div>
       <div class="bact"><button class="primary" type="button" data-act="owon">Ta med i beräkningen</button></div>`;
@@ -838,12 +838,12 @@ function applyStamnat(d){
   state.gst=d.stations.slice(0,30).map((p,i)=>({id:'G'+(i+1),x:Math.round(p[0]),y:Math.round(p[1]),nm:nm(p)}));
   state.rst=(d.rstations||[]).slice(0,40).map((p,i)=>({id:'R'+(i+1),x:Math.round(p[0]),y:Math.round(p[1]),nm:nm(p)}));
   state.add=state.add.filter(a=>!(a.gid!=null||a.a[0]==='G'||a.b[0]==='G'||a.a[0]==='R'||a.b[0]==='R')); state.bnodes=[]; state.bline=null; state.sel=null;
-  state.stamnatmsg=`Laddade ${state.gst.length} stamnätsstationer`+(state.rst.length?`, ${state.rst.length} regionnätsstationer`:'')+` i länet och ledningar${state.stamnat.src==='osm'?' från OpenStreetMap (kan vara ofullständiga eller felaktiga)':''}. Stamnätets ledningar är bara bakgrund. Regionnätets ledningar (blå) räknas först när ni klickar på dem och anger kapacitet; de ledningar ni drar själva räknas alltid.`+(d.stations.some(p=>p[2])?'':' Stationerna har inga namn i underlaget, så de numreras.')+' Placera kommunstationer och dra ledningar.';
+  state.stamnatmsg=`Laddade ${state.gst.length} stamnätsstationer`+(state.rst.length?`, ${state.rst.length} regionnätsstationer`:'')+` i länet och ledningar${state.stamnat.src==='osm'?' från OpenStreetMap (kan vara ofullständiga eller felaktiga)':state.stamnat.src==='lm'?' från Lantmäteriet (ledningarna anges bara som region- eller stamnät, inte med exakt spänning)':''}. Stamnätets ledningar är bara bakgrund. Regionnätets ledningar (blå) räknas först när ni klickar på dem och anger kapacitet; de ledningar ni drar själva räknas alltid.`+(d.stations.some(p=>p[2])?'':' Stationerna har inga namn i underlaget, så de numreras.')+' Placera kommunstationer och dra ledningar.';
   state.wsmsg='';
 }
 function loadStamnat(){
   const get=u=>fetch(u).then(r=>{if(!r.ok)throw 0;return r.json()});
-  get('stamnat.json').catch(()=>get('osm_uppsala.json')).then(d=>{applyStamnat(d);render()}).catch(()=>{$('#stfile').click()});
+  get('stamnat.json').catch(()=>get('lm_uppsala.json')).catch(()=>get('osm_uppsala.json')).then(d=>{applyStamnat(d);render()}).catch(()=>{$('#stfile').click()});
 }
 $('#stfile').addEventListener('change',e=>{const f=[...e.target.files]; e.target.value=''; readLayer(f,sets=>{const d=SHP.stamnat(sets); if(!d.stations.length) throw new Error('inga stationer i länet'); return d},applyStamnat,'stamnatmsg')});
 function removeStation(id){
