@@ -96,7 +96,7 @@ function makeNet(cfg){
   const pos=cfg.pos||POS, base=cfg.base==='none'?[]:BASE_LINES;
   const present=new Set(cfg.ks||LOADS.map(n=>n.id));
   const lines=base.map(l=>{const e=(cfg.up||{})[l.id]; if(!e) return {...l}; const ex=e===true?l.cap*(UPG-1):e; const f=(l.cap+ex)/l.cap; return {...l,cap:l.cap+ex,x:l.x/f,up:true,extra:ex}})
-    .concat(cfg.add.map(a=>{const ex=a.extra||0, cap=a.cap+ex, km=kmP(a.a,a.b,pos); return {id:a.id,a:a.a,b:a.b,cap,x:XK*km/cap,km,label:`ny ledning ${stName(a.a)}–${stName(a.b)}`,added:true,up:ex>0,extra:ex}}));
+    .concat(cfg.add.map(a=>{const ex=a.extra||0, cap=a.cap+ex, km=a.km||kmP(a.a,a.b,pos); return {id:a.id,a:a.a,b:a.b,cap,x:XK*km/cap,km,gid:a.gid,label:`${a.gid?'regionnätsledning':'ny ledning'} ${stName(a.a)}–${stName(a.b)}`,added:true,up:ex>0,extra:ex}}));
   const act0=reach(-1,lines);
   const scen=[{out:-1,X:buildX(-1,lines,act0),iso:[]}];
   const inPresent=NODES.filter(n=>n.base!=null&&present.has(n.id)).map(n=>n.id);

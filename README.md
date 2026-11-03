@@ -86,3 +86,19 @@ Typsnitten (IBM Plex, Barlow Semi Condensed) ligger under SIL Open Font License;
 ## Shapefiler i webbläsaren
 
 `shp.js` läser `.zip`, `.shp` och `.dbf` direkt i webbläsaren (zip packas upp med `DecompressionStream`, SWEREF 99 TM räknas om till kartans koordinater). Inget skickas någonstans, och ingen data ligger i repot.
+
+
+### Regionnätsledningar som går att välja
+OSM-ledningarna under 200 kV läses som en vektor per ledningssträcka. De är blå och ingår inte i beräkningen. Klicka på en i fliken Ledningar, ange kapacitet (MW) och den blir röd och räknas med. Längd = polylinjens längd i kartan; reaktans = 0,275·km/MW. Ändpunkterna snappas till närmaste station (≤ ca 2 km), annars skapas en regionnätsstation. Kapacitet finns inte i OSM, så den anges av användaren.
+
+### Medföljande OSM-data
+`osm_uppsala.json` är en export från Overpass (overpass-turbo.eu) för Uppsala län, omräknad till kartans koordinater. Knappen *Ladda stamnät/regionnät* läser den automatiskt (om `stamnat.json` saknas), så spelarna behöver inte hämta något. *Egen fil…* väljer en annan fil. Data © OpenStreetMap-bidragsgivare (ODbL), kan vara ofullständig eller felaktig.
+
+### Vattenfalls kapacitetskarta (jämförelse)
+`vattenfall_ref.json` innehåller regionnätsstationer i Uppsala län (ungefärligt läge från screenshots av Vattenfalls kapacitetskarta; värden för ledig kapacitet för hög elkonsumtion avlästa via klick i kartan, >50 MW anges som >50). Närliggande stationer (≤ ca 5 km) är ihopslagna till en, som får det högsta värdet, inte summan. Lagret slås på med *Visa Vattenfalls kapacitetskarta* under kartan och ingår inte i beräkningen. Kontrollera att uppgifterna får visas innan spelet sprids.
+
+### Lantmäteriets ledningar
+`lm_uppsala.json` har ledningar från Lantmäteriet Topografi 100 Nedladdning vektor (lager Ledningslinje, objekttyp 1702 stam och 1703 region, CC0), stamnätsstationer från OSM och regionnätsstationer från Vattenfalls kapacitetskarta (ungefärligt läge). Den läses före `osm_uppsala.json`. Lantmäteriet anger bara region (25–200 kV) och stam (över 200 kV), inte exakt kV. Omräkning: SWEREF 99 TM till kartans koordinater, förenklad med 0,8 px tolerans.
+
+### Uppdatering: Lantmäteriets ledningar och stationer
+`lm_uppsala.json` görs nu med `tools/lm_till_json.py` av Lantmäteriets GeoPackage-filer (ledningar_ln01 Stockholm, ln03 Uppsala, ln19 Västmanland, ln21 Gästrikland). Stationerna kommer från lagren transformatoromrade och transformatoromradespunkt (exakta lägen). Stationer nära en stamnätsledning blir stamnätsstationer, övriga regionnätsstationer. Ledningsbitar som möts i två ändar slås ihop. Vattenfalls stationer (`vattenfall_ref.json`) flyttas till närmaste station i filerna (högst 5 km). Kommandot står överst i skriptet.
