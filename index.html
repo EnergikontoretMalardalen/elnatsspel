@@ -436,7 +436,7 @@ MISSIONS.push({title:'Bygg ert eget regionnät', short:'Blank karta', mine:null,
 const TAB_ORDER=[5,1,2,3,4,0];
 
 const $ = s=>document.querySelector(s);
-const state = {mission:5, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:'', ext:[], rst:[], stamnat:null, nat:null, natvis:true, natmsg:'', ow:null, owcap:0, owkv:0, kn:{}, ke:null, vf:null, vfvis:false};
+const state = {mission:5, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:'', ext:[], rst:[], stamnat:null, nat:null, natvis:true, natmsg:'', ow:null, owcap:0, owkv:0, owscope:'group', kn:{}, ke:null, vf:null, vfvis:false};
 
 const BW=108, BH=68;
 const L0 = {G:{x:MAP.G.x-50,y:MAP.G.y-17,w:100,h:34}};
@@ -726,6 +726,8 @@ function renderBuild(v){
     const ln=state.stamnat.lines[state.ow], pts=pathPts(ln.d); let km=0; for(let k=1;k<pts.length;k++) km+=Math.hypot(pts[k][0]-pts[k-1][0],pts[k][1]-pts[k-1][1]); km=Math.max(1,km/MAP.pxPerKm);
     const cur=state.add.find(a=>a.gid===state.ow);
     h+=`<div><strong>Regionnätsledning ${cur?'(med i beräkningen)':'(inte med i beräkningen)'}</strong><small>${state.stamnat.src==='lm'?'Lantmäteriet, 25–200 kV. ':''}Längd ca ${km.toFixed(1)} km (från kartans geometri). Ange spänning och hur mycket effekt ledningen klarar. Ledningen blir grön och räknas med när båda är större än 0. Reaktansen räknas ur spänning och längd. Ändarna kopplas till närmaste station, annars skapas en regionnätsstation.</small></div>
+      <div class="seg" role="group" aria-label="Gäller för" style="margin-bottom:8px">${[['one','Bara denna ledning'],['group','Hela stråket till nästa station'],['all','Alla regionnätsledningar i länet']].map(([k,l])=>`<button type="button" data-owscope="${k}" aria-pressed="${state.owscope===k}">${l}</button>`).join('')}</div>
+      <small>Gäller ${wayScope(state.ow).length} ledning${wayScope(state.ow).length===1?'':'ar'}. Alla får samma kV och MW.</small>
       <div class="seg" role="group" aria-label="Spänning">${[70,130].map(c=>`<button type="button" data-setin="owkv:${c}">${c} kV</button>`).join('')}</div>
       <div class="seg" role="group" aria-label="Kapacitet" style="margin-top:6px">${[40,60,100,150,200].map(c=>`<button type="button" data-setin="owin:${c}">${c} MW</button>`).join('')}</div>
       <div class="row" style="max-width:420px;margin-top:8px;gap:14px"><label for="owkv">kV</label><input type="number" id="owkv" min="0" max="420" step="1" value="${cur?cur.kv:0}" style="width:80px"><label for="owin">MW</label><input type="number" id="owin" min="0" max="2000" step="5" value="${cur?cur.cap:0}" style="width:90px"></div>
@@ -870,6 +872,18 @@ function nearestSeg(p){
   return best;
 }
 function pathPts(d){return d.replace(/^M/,'').split(/[ML]/).map(q=>q.trim().split(' ').map(Number)).filter(p=>p.length===2&&!p.some(isNaN))}
+function wayScope(i){
+  const L=state.stamnat.lines, reg=k=>L[k].v>0&&L[k].v<200;
+  if(state.owscope==='all') return L.map((l,k)=>k).filter(reg);
+  if(state.owscope!=='group') return [i];
+  const stn=[...state.gst,...state.rst,...Object.entries(state.kst).map(([k,q])=>({x:q.x,y:q.y}))];
+  const near=p=>stn.some(g=>Math.hypot(g.x-p[0],g.y-p[1])<=16), key=p=>Math.round(p[0]/3)+','+Math.round(p[1]/3);
+  const ends={}; L.forEach((l,k)=>{ if(!reg(k)) return; const pp=pathPts(l.d); if(pp.length<2) return;
+    for(const p of [pp[0],pp[pp.length-1]]) if(!near(p)) (ends[key(p)]=ends[key(p)]||[]).push(k)});
+  const seen=new Set([i]), q=[i];
+  while(q.length){const k=q.pop(), pp=pathPts(L[k].d); for(const p of [pp[0],pp[pp.length-1]]) for(const m of (ends[key(p)]||[])) if(!seen.has(m)){seen.add(m);q.push(m)}}
+  return [...seen];
+}
 function activateWay(i,cap,kv){
   const ln=state.stamnat&&state.stamnat.lines[i]; if(!ln) return 'Ledningen hittades inte.';
   if(!(kv>0&&kv<=420)) return 'Ange spänning (kV) större än 0.';
@@ -1245,8 +1259,12 @@ $('#buildbox').addEventListener('click',e=>{
   if(ac&&ac.dataset.act==='loadnat'){loadNat();return}
   if(ac&&ac.dataset.act==='tolines'){state.tab='build';state.wsmsg='';render();return}
   const si=e.target.closest('[data-setin]'); if(si){const [id,v]=si.dataset.setin.split(':'); const el=$('#'+id); if(el)el.value=v; return}
-  if(e.target.closest('[data-act="owon"]')){state.wsmsg=activateWay(state.ow,+($('#owin')||{}).value,+($('#owkv')||{}).value); if(!state.wsmsg){state.ow=null;state.chartLine=null} render(); return}
-  if(e.target.closest('[data-act="owoff"]')){state.add=state.add.filter(a=>a.gid!==state.ow); state.ow=null; state.chartLine=null; state.wsmsg=''; render(); return}
+  const osc=e.target.closest('[data-owscope]'); if(osc){state.owscope=osc.dataset.owscope; render(); return}
+  if(e.target.closest('[data-act="owon"]')){const cap=+($('#owin')||{}).value, kv=+($('#owkv')||{}).value, set=wayScope(state.ow); let n=0, skip=0, first=''; state.wsmsg='';
+    for(const k of set){const m=activateWay(k,cap,kv); if(!m) n++; else if(/spänning|kapacitet/.test(m)){first=m;break} else {skip++; first=first||m}}
+    if(set.length===1||!n) state.wsmsg=first; else if(first) state.wsmsg=`${n} av ${set.length} ledningar lades till, ${skip} hoppades över (${first})`;
+    if(!state.wsmsg){state.ow=null;state.chartLine=null} render(); return}
+  if(e.target.closest('[data-act="owoff"]')){const set=new Set(wayScope(state.ow)); state.add=state.add.filter(a=>!set.has(a.gid)); state.ow=null; state.chartLine=null; state.wsmsg=''; render(); return}
   const ke=e.target.closest('[data-ke]'); if(ke){state.ke=ke.dataset.ke; render(); return}
   if(e.target.closest('[data-act="knon"]')){const id=state.ke,n=byId[id]; const v=k=>Math.max(0,Math.min(2000,+($('#kn-'+k)||{}).value||0)); const gen=[]; if(v('vind')>0)gen.push({kind:'vind',mw:v('vind')}); if(v('sol')>0)gen.push({kind:'sol',mw:v('sol')}); state.kn[id]={base:v('base'),gen}; state.wsmsg=''; render(); return}
   if(e.target.closest('[data-act="knreset"]')){delete state.kn[state.ke]; render(); return}

@@ -104,8 +104,28 @@ def main():
     by = {1702: [], 1703: []}
     for t, parts in lines.values(): by[t] += parts
     outl = []; sp = []
+    def clip_lan(q):
+        """Behåller bara de delar av en regionnätsledning som ligger i länet (plus en punkt utanför per ände)."""
+        d = []   # tätare punkter så att länsgränsen träffas någorlunda
+        for a_, b_ in zip(q[:-1], q[1:]):
+            n = max(1, int(np.hypot(b_[0] - a_[0], b_[1] - a_[1]) / (0.7 * PXKM)))
+            d += [(a_[0] + (b_[0] - a_[0]) * i / n, a_[1] + (b_[1] - a_[1]) * i / n) for i in range(n)]
+        d.append(tuple(q[-1]))
+        ins = [inlan(p) for p in d]; runs = []; i = 0
+        while i < len(d):
+            if ins[i]:
+                j = i
+                while j + 1 < len(d) and ins[j + 1]: j += 1
+                runs.append(d[max(0, i - 1):min(len(d), j + 2)]); i = j + 1
+            else: i += 1
+        return runs
     for t, parts in by.items():
         for q in merge_chains(parts):
+            if t == 1703:
+                for r in clip_lan(q):
+                    r = rdp(r, 0.8)
+                    if len(r) >= 2: outl.append({'v': 70, 'd': 'M' + 'L'.join(f'{x:.1f} {y:.1f}' for x, y in r)})
+                continue
             q = rdp(q, 0.8)
             if not any(0 <= x <= M['w'] and 0 <= y <= M['h'] for x, y in q): continue
             outl.append({'v': 400 if t == 1702 else 70, 'd': 'M' + 'L'.join(f'{x:.1f} {y:.1f}' for x, y in q)})
