@@ -829,7 +829,7 @@ function stationsHtml(){
       <div class="row" style="gap:14px;flex-wrap:wrap;margin-top:6px"><label for="kn-base">Högsta last (MW)</label><input type="number" id="kn-base" min="0" max="2000" step="1" value="${val('base')}" style="width:80px"><label for="kn-vind">Vindkraft (MW)</label><input type="number" id="kn-vind" min="0" max="2000" step="1" value="${val('vind')}" style="width:80px"><label for="kn-sol">Solkraft (MW)</label><input type="number" id="kn-sol" min="0" max="2000" step="1" value="${val('sol')}" style="width:80px"></div>
       <div class="bact"><button class="primary" type="button" data-act="knon">Använd</button>${o?'<button type="button" data-act="knreset">Återställ förval</button>':''}</div></div>`;
   }
-  h+=`<div class="bact"><button class="primary" type="button" data-act="tolines" ${state.gst.length&&nl?'':'disabled'}>Klart, dra ledningar</button><button type="button" data-act="snap" ${state.stamnat?'':'disabled'} title="Flyttar stationer som ligger vid sidan av ledningarna till närmaste ledning eller ledningsände">Snappa stationer till ledningar</button><button type="button" data-act="loadstam">Ladda stamnät/regionnät</button><button type="button" data-act="ownfile">Egen fil…</button><button type="button" data-act="loadnat">Ladda nätområden</button><button type="button" data-act="clearmap" ${none?'disabled':''}>Rensa kartan</button></div>`;
+  h+=`<div class="bact"><button class="primary" type="button" data-act="tolines" ${state.gst.length&&nl?'':'disabled'}>Klart, dra ledningar</button><button type="button" data-act="loadstam">Ladda stamnät/regionnät</button><button type="button" data-act="ownfile">Egen fil…</button><button type="button" data-act="loadnat">Ladda nätområden</button><button type="button" data-act="clearmap" ${none?'disabled':''}>Rensa kartan</button></div>`;
   return h;
 }
 const NATCOL=['#c2410c','#1d4ed8','#15803d','#a21caf','#a16207','#0e7490','#be123c'];
@@ -885,16 +885,15 @@ function applyStamnat(d){
 }
 let VFREF=null;
 /* Flyttar regionnätsstationer som ligger vid sidan av ledningarna till närmaste ledningsände, skarv eller punkt på en regionnätsledning. */
-function snapStations(){
+function snapStations(only,maxd){
   const Ls=state.stamnat&&state.stamnat.lines; if(!Ls) return 0;
   const segs=[], ends=[];
   Ls.forEach(l=>{ if(!(l.v>0&&l.v<200)) return; const pp=pathPts(l.d); if(pp.length<2) return; ends.push(pp[0],pp[pp.length-1]); for(let k=1;k<pp.length;k++) segs.push([pp[k-1],pp[k]]) });
   let moved=0;
-  for(const g of state.rst){
-    if(g.ox!=null){g.x=g.ox;g.y=g.oy} 
+  for(const g of (only||state.rst)){
     let bs=null,bd=1e9;
     for(const [a,b] of segs){const dx=b[0]-a[0],dy=b[1]-a[1],l2=dx*dx+dy*dy||1e-9,t=Math.max(0,Math.min(1,((g.x-a[0])*dx+(g.y-a[1])*dy)/l2)),x=a[0]+t*dx,y=a[1]+t*dy,d=Math.hypot(g.x-x,g.y-y); if(d<bd){bd=d;bs=[x,y]}}
-    if(!bs||bd<=6||bd>80) continue;
+    if(!bs||bd<=6||bd>(maxd||80)) continue;
     let be=null,ed=1e9; for(const p of ends){const d=Math.hypot(g.x-p[0],g.y-p[1]); if(d<ed){ed=d;be=p}}
     const t=(be&&ed<=bd+8)?be:bs, nx=Math.round(t[0]), ny=Math.round(t[1]);
     if(state.rst.some(o=>o!==g&&Math.hypot(o.x-nx,o.y-ny)<20)||state.gst.some(o=>Math.hypot(o.x-nx,o.y-ny)<20)) continue;
@@ -1000,7 +999,7 @@ function stationClick(e){
     const id=freeId('R',state.rst,40);
     if(!id) msg='Högst 40 regionnätsstationer.';
     else if(clash) msg='För nära en annan station. Klicka en bit därifrån.';
-    else state.rst.push({id,...xy,nm:'',j:jn});
+    else {const ng={id,...xy,nm:'',j:jn}; state.rst.push(ng); if(!jn) snapStations([ng],15)}
   }else{
     const id=freeId('R',state.rst,40);
     if(!id) msg='Högst 40 regionnätsstationer.';
@@ -1324,7 +1323,6 @@ $('#buildbox').addEventListener('click',e=>{
   if(ac&&ac.dataset.act==='loadstam'){loadStamnat();return}
   if(ac&&ac.dataset.act==='ownfile'){$('#stfile').click();return}
   if(ac&&ac.dataset.act==='loadnat'){loadNat();return}
-  if(ac&&ac.dataset.act==='snap'){const n=snapStations(); state.wsmsg=n?`Flyttade ${n} regionnätsstationer till närmaste ledning eller ledningsände.`:'Inga stationer behövde flyttas.'; layoutKey='x'; render(); return}
   if(ac&&ac.dataset.act==='tolines'){state.tab='build';state.wsmsg='';render();return}
   const si=e.target.closest('[data-setin]'); if(si){const [id,v]=si.dataset.setin.split(':'); const el=$('#'+id); if(el)el.value=v; return}
   const osc=e.target.closest('[data-owscope]'); if(osc){state.owscope=osc.dataset.owscope; render(); return}
