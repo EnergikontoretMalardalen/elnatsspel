@@ -33,10 +33,11 @@ const NODES = [
   {id:'OST',base:30, kind:'industri',gen:[{kind:'vind',mw:60}],   name:'Östhammar',  desc:'industri'}
 ];
 /* passiva regionnätsstationer R1..R40 (ingen last eller produktion); används i Blank karta */
-for(let i=1;i<=40;i++) NODES.push({id:'R'+i,name:'Regionnätsstation '+i});
+for(let i=1;i<=40;i++) NODES.push({id:'R'+i,name:'Regionnätsstation '+i,desc:'',base:0,kind:'blandat',gen:[],r:true});
 const IDX = Object.fromEntries(NODES.map((n,i)=>[n.id,i]));
 const byId = Object.fromEntries(NODES.map(n=>[n.id,n]));
 const LOADS = NODES.filter(n=>n.base!=null);
+const KOM = LOADS.filter(n=>!n.r);   /* kommunnoder, används i uppdragen 1–4; regionnätsstationer (r) har last i Blank karta */
 /* kartpositioner (px) från map.js; avstånd i km styr reaktansen hos nya ledningar */
 const POS = {G:MAP.G, ...Object.fromEntries(Object.entries(MAP.stations).map(([k,v])=>[k,{x:v.x,y:v.y}]))};
 const kmP = (a,b,pos)=>Math.max(8,Math.hypot(pos[a].x-pos[b].x,pos[a].y-pos[b].y)/MAP.pxPerKm);
@@ -48,7 +49,7 @@ const XOHM = 0.4;                /* ohm/km för luftledning 50–200 kV; med ang
 const XK = 0.275;                /* reaktans = XK * längd(km) / kapacitet(MW); 40 km och 60 MW ger ca 0,18 */
 const STAR = {UPP:230,ENK:110,HEB:55,HAB:70,KNI:75,TIE:90,ALV:45,OST:110};
 /* startnät: stjärna, varje kommunstation har en egen ledning till stamnätsstationen */
-const BASE_LINES = LOADS.map((n,i)=>({id:'L'+(i+1),a:'G',b:n.id,cap:STAR[n.id],x:XK*kmBetween('G',n.id)/STAR[n.id],label:'anslutningen till stamnätet i '+n.name,km:kmBetween('G',n.id)}));
+const BASE_LINES = KOM.map((n,i)=>({id:'L'+(i+1),a:'G',b:n.id,cap:STAR[n.id],x:XK*kmBetween('G',n.id)/STAR[n.id],label:'anslutningen till stamnätet i '+n.name,km:kmBetween('G',n.id)}));
 const UPG = 1.5;                 /* standard (om ingen mängd anges): +50 %. cfg.up[id] kan vara true eller antal extra MW; reaktansen skalas med kapaciteten */
 /* noder som är sammankopplade med stamnätet (G) när ledning `out` är ur drift */
 function reach(out,lines){
@@ -95,7 +96,7 @@ function makeNet(cfg){
   const key=JSON.stringify(cfg);
   if(NETCACHE[key]) return NETCACHE[key];
   const pos=cfg.pos||POS, base=cfg.base==='none'?[]:BASE_LINES;
-  const present=new Set(cfg.ks||LOADS.map(n=>n.id));
+  const present=new Set(cfg.ks||KOM.map(n=>n.id));
   const lines=base.map(l=>{const e=(cfg.up||{})[l.id]; if(!e) return {...l}; const ex=e===true?l.cap*(UPG-1):e; const f=(l.cap+ex)/l.cap; return {...l,cap:l.cap+ex,x:l.x/f,up:true,extra:ex}})
     .concat(cfg.add.map(a=>{const ex=a.extra||0, cap=a.cap+ex, km=a.km||kmP(a.a,a.b,pos); return {id:a.id,a:a.a,b:a.b,cap,x:a.kv>0?XOHM*km*100/(a.kv*a.kv):XK*km/cap,km,kv:a.kv,gid:a.gid,label:`${a.gid?'regionnätsledning':'ny ledning'} ${stName(a.a)}–${stName(a.b)}`,added:true,up:ex>0,extra:ex}}));
   const act0=reach(-1,lines);
@@ -155,7 +156,7 @@ function compute(placed,mode,hour,crit,net){
     const parts=NODES.slice(1).map(n=>(n.base==null||!net.present.has(n.id))?{load:0,gen:0}:nodeParts(net.cfg&&net.cfg.nodes&&net.cfg.nodes[n.id]?{...n,...net.cfg.nodes[n.id]}:n,h,placed));
     const P=parts.map(p=>p.gen-p.load);
     const inHl=hl.includes(h);
-    if(inHl) for(const n of LOADS){const p=parts[IDX[n.id]-1];load[n.id]=Math.max(load[n.id],p.load);gen[n.id]=Math.max(gen[n.id],p.gen)}
+    if(inHl) for(const n of LOADS){if(!net.present.has(n.id)) continue; const p=parts[IDX[n.id]-1];load[n.id]=Math.max(load[n.id],p.load);gen[n.id]=Math.max(gen[n.id],p.gen)}
     for(const s of scen){
       /* N-1: en ledning faller bort och noder blir utan matning, alltså ingen reserv alls */
       if(inHl) for(const id of s.iso){availU[id]=0;availI[id]=0;bindU[id]=bindI[id]={line:s.out,out:s.out,h}}
@@ -166,6 +167,7 @@ function compute(placed,mode,hour,crit,net){
         if(inHl&&a>worst[l].abs) worst[l]={abs:a,signed:f[l],out:s.out,h};
       }
       if(inHl) for(const n of LOADS){
+        if(!net.present.has(n.id)) continue;
         const ru=dmaxFor(f,s.PT[IDX[n.id]],1,lines);
         if(ru.d<availU[n.id]){availU[n.id]=ru.d;bindU[n.id]={line:ru.l,out:s.out,h}}
         const ri=dmaxFor(f,s.PT[IDX[n.id]],-1,lines);
