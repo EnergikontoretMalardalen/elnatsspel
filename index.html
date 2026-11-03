@@ -234,7 +234,7 @@ dialog#help[open]{display:flex;flex-direction:column}
   <header>
     <h1>Regionnätsspelet</h1>
     <p>Hur påverkar en stor etablering i en annan kommun er kommuns möjlighet att få ny förbrukning eller produktion ansluten? Pröva i ett förenklat, fiktivt regionnät över Uppsala län.</p>
-    <p class="notice"><b>Det här är ett spel.</b> Stationer, ledningar och siffror är påhittade och speglar inte det verkliga elnätet eller någon kommuns eller nätägares verksamhet.</p>
+    <p class="notice"><b>Det här är ett spel.</b> Kapacitet, last, produktion och etableringar är påhittade och speglar inte det verkliga elnätet eller någon kommuns eller nätägares verksamhet. Stationer och ledningar i uppdragen är påhittade. Om ni laddar stamnät och regionnät i Blank karta ligger de på ungefärliga verkliga lägen (Lantmäteriet, OpenStreetMap och Vattenfall) och kan vara ofullständiga eller felaktiga.</p>
     <button type="button" class="helpbtn" id="helpbtn" aria-haspopup="dialog">Så fungerar det</button>
   </header>
 
@@ -432,7 +432,7 @@ const MISSIONS = [
       {label:'Älvkarleby har minst 40 MW ledigt för produktion', test:m=>m.mineI>=40}]}
 ];
 MISSIONS.push({title:'Bygg ert eget regionnät', short:'Blank karta', mine:null, metric:null, goal:null, ws:true,
-    text:'Kartan är tom. Bestäm tillsammans var stamnätet kommer in i länet, var varje kommun har sin regionstation och hur ledningarna dras. Sedan kan ni placera etableringar och se hur grannarna påverkas. Stationer, ledningar och siffror är påhittade.', queue:null, goals:[]});
+    text:'Kartan är tom från början. Bestäm tillsammans var stamnätet kommer in i länet, var varje kommun har sin regionstation och hur ledningarna dras. Ni kan också ladda stamnät och regionnät, så placeras stationer och ledningar på ungefärliga verkliga lägen och regionnätsledningar kan tas med i beräkningen när ni anger deras kapacitet. Sedan kan ni placera etableringar och se hur grannarna påverkas. Kapacitet, last och produktion är påhittade.', queue:null, goals:[]});
 const TAB_ORDER=[5,1,2,3,4,0];
 
 const $ = s=>document.querySelector(s);
