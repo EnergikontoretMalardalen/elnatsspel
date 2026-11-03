@@ -331,6 +331,12 @@ dialog#help[open]{display:flex;flex-direction:column}
         <div id="sens"></div>
       </section>
 
+      <section class="card" id="kommuncard" hidden>
+        <h2>Så påverkas kommunerna</h2>
+        <p class="help" id="kommunsub" style="margin-top:0"></p>
+        <div id="kommunsum"></div>
+      </section>
+
       <details class="card why" id="whybox">
         <summary>Varför blir det så? Visa detaljer</summary>
         <div id="why"></div>
@@ -397,9 +403,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261105"></script>
-<script src="sim.js?v=20261105"></script>
-<script src="shp.js?v=20261105"></script>
+<script src="map.js?v=20261106"></script>
+<script src="sim.js?v=20261106"></script>
+<script src="shp.js?v=20261106"></script>
 <script>
 
 const ART = {dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -435,10 +441,12 @@ const MISSIONS = [
 ];
 MISSIONS.push({title:'Bygg ert eget regionnät', short:'Blank karta', mine:null, metric:null, goal:null, ws:true,
     text:'Kartan är tom från början. Bestäm tillsammans var stamnätet kommer in i länet, var regionnätsstationerna ligger och hur ledningarna dras. Stationerna har en förvald last (schablon) som nätägarens siffror kan ersätta, och nya verksamheter ansluts till stationerna. Ni kan också ladda stamnät och regionnät, så placeras stationer och ledningar på ungefärliga verkliga lägen och regionnätsledningar kan tas med i beräkningen när ni anger deras kapacitet. Sedan kan ni placera etableringar och se hur grannarna påverkas. Kapacitet, last och produktion är påhittade.', queue:null, goals:[]});
-const TAB_ORDER=[5,1,2,3,4,0];
+MISSIONS.push({title:'Workshop: en stor förbrukare i Heby', short:'Workshop', mine:null, metric:'U', goal:null, ws:true, scen:'heby',
+    text:'Regionnätet i Uppsala län är förladdat med stationer och ledningar på ungefärliga verkliga lägen. Ett datacenter på 40 MW är anslutet i Heby. Titta i tabellen under kartan: hur påverkas lediga kapaciteten i de andra kommunerna? Flytta datacentret till en annan station, ändra storlek, eller förstärk en ledning och se vad som händer. Ledningarnas kapacitet (100 MW), stationernas last (schablon) och allt annat är påhittat tills nätägarens siffror finns.', queue:null, goals:[]});
+const TAB_ORDER=[6,5,1,2,3,4,0];
 
 const $ = s=>document.querySelector(s);
-const state = {mission:5, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:'', ext:[], rst:[], stamnat:null, nat:null, natvis:true, natmsg:'', ow:null, owcap:0, owkv:0, owscope:'group', kn:{}, ke:null, vf:null, vfvis:false};
+const state = {mission:6, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:'', ext:[], rst:[], stamnat:null, nat:null, natvis:true, natmsg:'', ow:null, owcap:0, owkv:0, owscope:'group', kn:{}, ke:null, vf:null, vfvis:false};
 
 const BW=108, BH=68;
 const L0 = {G:{x:MAP.G.x-50,y:MAP.G.y-17,w:100,h:34}};
@@ -924,9 +932,9 @@ function snapStations(only,maxd){
   return moved;
 }
 function attachVf(){ if(!VFREF) return; for(const g of state.rst){const v=VFREF.filter(r=>Math.hypot(r.x-g.x,r.y-g.y)<=6).sort((a,b)=>Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y))[0]; if(v) g.vf=v.c>=4?'>50':({0:'<1',1:'1–17',2:'18–34',3:'35–50'})[v.c]}}
-function loadStamnat(){
+function loadStamnat(after){
   const get=u=>fetch(u).then(r=>{if(!r.ok)throw 0;return r.json()});
-  fetch('vattenfall_ref.json').then(r=>r.ok?r.json():null).catch(()=>null).then(v=>{VFREF=v}).then(()=>get('stamnat.json')).catch(()=>get('lm_uppsala.json')).catch(()=>get('osm_uppsala.json')).then(d=>{applyStamnat(d);render()}).catch(()=>{$('#stfile').click()});
+  fetch('vattenfall_ref.json').then(r=>r.ok?r.json():null).catch(()=>null).then(v=>{VFREF=v}).then(()=>get('stamnat.json')).catch(()=>get('lm_uppsala.json')).catch(()=>get('osm_uppsala.json')).then(d=>{applyStamnat(d); if(after) after(); render()}).catch(()=>{if(!after) $('#stfile').click()});
 }
 $('#stfile').addEventListener('change',e=>{const f=[...e.target.files]; e.target.value=''; readLayer(f,sets=>{const d=SHP.stamnat(sets); if(!d.stations.length) throw new Error('inga stationer i länet'); return d},applyStamnat,'stamnatmsg')});
 function removeStation(id){
@@ -1119,6 +1127,20 @@ function renderSens(v){
   host.innerHTML=`<div class="sens">${rows.map(r=>`<button type="button" class="srow ${state.sel===r.id?'sel':''}" data-sens="${r.id}" aria-label="${gname(r.id)}${r.id===m?' (er kommun)':''}: ${sg(r.d)} MW"><span class="sl">${gname(r.id)}<small>${byId[r.id].desc}${r.id===m?' · er':''}</small></span>${barRow(r.d,max)}</button>`).join('')}</div>`;
 }
 
+/* ---------- per kommun ---------- */
+function renderKommun(v){
+  const card=$('#kommuncard'); if(!ws()||!state.placed.length||!VL().length){card.hidden=true;return}
+  const ref=compute([],state.mode,state.hour,state.crit,makeNet(cfgOf(false))), g={};
+  for(const n of VL()){const k=n.desc||'Utanför kommun'; (g[k]=g[k]||[]).push({id:n.id,now:val(v.cur,n.id),d:val(v.cur,n.id)-val(ref,n.id)})}
+  const hostK=new Set(state.placed.map(p=>byId[p.node]&&byId[p.node].desc));
+  const rows=Object.keys(g).map(k=>({k,st:g[k],now:Math.min(...g[k].map(x=>x.now)),d:Math.min(...g[k].map(x=>x.d))})).sort((a,b)=>a.d-b.d||a.k.localeCompare(b.k));
+  const word=MET[state.metric].word, max=Math.max(10,...rows.map(r=>Math.abs(r.d)));
+  card.hidden=false;
+  const hostNames=[...hostK], none=rows.every(r=>r.d===0||hostK.has(r.k));
+  $('#kommunsub').textContent=(none?'Ingen annan kommun påverkas här: stationerna i '+hostNames.join(' och ')+' har egen väg till stamnätet i det påhittade nätet. Prova att flytta etableringen till en annan station (rad i listan under kartan). ':'')+`Ändring i lediga MW för ${word}, jämfört med utan era etableringar. Siffran är den station i kommunen som påverkas mest. Etableringarna: ${state.placed.map(p=>`${ART[p.kind].toLowerCase()} ${p.mw} MW i ${(byId[p.node]&&byId[p.node].desc)||'okänd kommun'}`).join(', ')}.`;
+  $('#kommunsum').innerHTML=`<div class="sens">${rows.map(r=>`<div class="srow"><span class="sl">${r.k}<small>${r.st.length} station${r.st.length>1?'er':''}${hostK.has(r.k)?' · etableringen':''}</small></span>${barRow(r.d,max)}</div>`).join('')}</div>`;
+}
+
 /* ---------- chart ---------- */
 function renderChart(v){
   if(!LINES.length){$('#charttitle').textContent='';$('#chart').innerHTML='';return}
@@ -1199,7 +1221,7 @@ function renderControls(v){
   $('#undo').disabled=!state.placed.length; $('#reset').disabled=!state.placed.length;
 }
 
-function render(){const v=getView();renderMission(v);renderControls(v);renderResult(v);renderDiagram(v);renderBuild(v);renderAction(v);renderSens(v);renderWhy(v);renderChart(v)}
+function render(){const v=getView();renderMission(v);renderControls(v);renderResult(v);renderDiagram(v);renderBuild(v);renderAction(v);renderSens(v);renderKommun(v);renderWhy(v);renderChart(v)}
 
 /* ---------- events ---------- */
 function openHelp(id){
@@ -1382,6 +1404,18 @@ $('#undo').addEventListener('click',()=>{
   if(!state.placed.length)return; const p=state.placed.pop();
   if(MISSIONS[state.mission].queue) state.qi--; state.flex=p.flex; render();
 });
+function startScenario(){
+  loadStamnat(()=>{
+    state.owscope='all'; const Ls=state.stamnat.lines;
+    for(let i=0;i<Ls.length;i++) if(Ls[i].v>0&&Ls[i].v<200) activateWay(i,100,Ls[i].v>=100?130:70);
+    layoutKey='x'; syncLayout();
+    const heby=state.rst.filter(isLoadR).find(g=>byId[g.id].desc==='Heby'), other=state.rst.filter(isLoadR).find(g=>byId[g.id].desc==='Uppsala');
+    state.kind='dc'; state.mw=40; state.flex=false;
+    if(heby){state.placed=[{id:state.uid++,kind:'dc',mw:40,flex:false,node:heby.id}]}
+    if(other) state.mine=other.id;
+    state.tab='place'; state.sel=null; state.wsmsg='';
+  });
+}
 function resetAll(){state.placed=[];state.qi=0;state.sel=null;state.flex=false;state.up={};state.add=[];state.bline=null;state.bnodes=[];state.chartLine=null}
 $('#reset').addEventListener('click',()=>{if(ws()){state.placed=[];state.qi=0;state.sel=null;state.flex=false}else resetAll();render()});
 $('#missionseg').addEventListener('click',e=>{
@@ -1389,7 +1423,7 @@ $('#missionseg').addEventListener('click',e=>{
   state.mission=+b.dataset.mission; const m=MISSIONS[state.mission];
   if(m.mine) state.mine=m.mine; if(m.metric) state.metric=m.metric;
   const aq=m.queue&&m.queue.find(q=>q.adjust); if(aq) state.mw=aq.mw;
-  resetAll(); wsClear(); if(m.ws) state.ncap=150; state.tab=m.ws?'stations':(m.queue&&m.queue.length===0)?'build':'place'; render();
+  resetAll(); wsClear(); if(m.ws) state.ncap=150; if(m.scen) startScenario(); state.tab=m.scen?'place':m.ws?'stations':(m.queue&&m.queue.length===0)?'build':'place'; render();
 });
 $('#mineseg').addEventListener('click',e=>{const b=e.target.closest('[data-mine]');if(!b||b.disabled)return;state.mine=b.dataset.mine;render()});
 $('#kindbox').addEventListener('click',e=>{
@@ -1399,7 +1433,7 @@ $('#kindbox').addEventListener('click',e=>{
 $('#kindbox').addEventListener('input',e=>{
   if(e.target.id!=='mw')return;
   state.mw=+e.target.value; const mv=$('#mwval'); if(mv) mv.textContent=state.mw+' MW';
-  const keep=e.target; const v=getView(); renderResult(v);renderDiagram(v);renderBuild(v);renderAction(v);renderSens(v);renderWhy(v);renderChart(v);renderMission(v);
+  const keep=e.target; const v=getView(); renderResult(v);renderDiagram(v);renderBuild(v);renderAction(v);renderSens(v);renderKommun(v);renderWhy(v);renderChart(v);renderMission(v);
   $('#kindbox').dataset.k=state.kind+state.mw;
 });
 $('#flex').addEventListener('change',e=>{state.flex=e.target.checked;render()});
@@ -1423,7 +1457,7 @@ function srcData(){
   <p class="help">Flexibel last sänker förbrukningen till ${f0(FLEXF(18)*100)} % klockan 16–20.</p>`;
 }
 $('#srcdata').innerHTML=srcData();
-render();
+if(MISSIONS[state.mission].scen) startScenario(); else render();
 </script>
 
 </body>
