@@ -44,6 +44,7 @@ const kmBetween = (a,b)=>kmP(a,b,POS);
 /* fysiska stamnätsstationer heter G, G1, G2 ... och är alla samma elektriska nod (stamnätet, referensnod) */
 const E = id=>(id[0]==='G'||id[0]==='X')?'G':id;  /* X = anslutning utanför länet, räknas som starkt nät som stamnätet */
 const stName = id=>id==='G'?'Stamnätet':id[0]==='G'?'Stamnätet '+id.slice(1):id[0]==='X'?'Utanför länet '+id.slice(1):byId[id].name;
+const XOHM = 0.4;                /* ohm/km för luftledning 50–200 kV; med angiven spänning kV: reaktans = XOHM * km * 100 / kV² (per-unit, 100 MVA) */
 const XK = 0.275;                /* reaktans = XK * längd(km) / kapacitet(MW); 40 km och 60 MW ger ca 0,18 */
 const STAR = {UPP:230,ENK:110,HEB:55,HAB:70,KNI:75,TIE:90,ALV:45,OST:110};
 /* startnät: stjärna, varje kommunstation har en egen ledning till stamnätsstationen */
@@ -96,7 +97,7 @@ function makeNet(cfg){
   const pos=cfg.pos||POS, base=cfg.base==='none'?[]:BASE_LINES;
   const present=new Set(cfg.ks||LOADS.map(n=>n.id));
   const lines=base.map(l=>{const e=(cfg.up||{})[l.id]; if(!e) return {...l}; const ex=e===true?l.cap*(UPG-1):e; const f=(l.cap+ex)/l.cap; return {...l,cap:l.cap+ex,x:l.x/f,up:true,extra:ex}})
-    .concat(cfg.add.map(a=>{const ex=a.extra||0, cap=a.cap+ex, km=a.km||kmP(a.a,a.b,pos); return {id:a.id,a:a.a,b:a.b,cap,x:XK*km/cap,km,gid:a.gid,label:`${a.gid?'regionnätsledning':'ny ledning'} ${stName(a.a)}–${stName(a.b)}`,added:true,up:ex>0,extra:ex}}));
+    .concat(cfg.add.map(a=>{const ex=a.extra||0, cap=a.cap+ex, km=a.km||kmP(a.a,a.b,pos); return {id:a.id,a:a.a,b:a.b,cap,x:a.kv>0?XOHM*km*100/(a.kv*a.kv):XK*km/cap,km,kv:a.kv,gid:a.gid,label:`${a.gid?'regionnätsledning':'ny ledning'} ${stName(a.a)}–${stName(a.b)}`,added:true,up:ex>0,extra:ex}}));
   const act0=reach(-1,lines);
   const scen=[{out:-1,X:buildX(-1,lines,act0),iso:[]}];
   const inPresent=NODES.filter(n=>n.base!=null&&present.has(n.id)).map(n=>n.id);
@@ -151,7 +152,7 @@ function compute(placed,mode,hour,crit,net){
   const availU={},availI={},bindU={},bindI={},load={},gen={};
   for(const n of LOADS){availU[n.id]=Infinity;availI[n.id]=Infinity;bindU[n.id]=null;bindI[n.id]=null;load[n.id]=0;gen[n.id]=0}
   for(const h of HRS){
-    const parts=NODES.slice(1).map(n=>(n.base==null||!net.present.has(n.id))?{load:0,gen:0}:nodeParts(n,h,placed));
+    const parts=NODES.slice(1).map(n=>(n.base==null||!net.present.has(n.id))?{load:0,gen:0}:nodeParts(net.cfg&&net.cfg.nodes&&net.cfg.nodes[n.id]?{...n,...net.cfg.nodes[n.id]}:n,h,placed));
     const P=parts.map(p=>p.gen-p.load);
     const inHl=hl.includes(h);
     if(inHl) for(const n of LOADS){const p=parts[IDX[n.id]-1];load[n.id]=Math.max(load[n.id],p.load);gen[n.id]=Math.max(gen[n.id],p.gen)}

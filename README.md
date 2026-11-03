@@ -102,3 +102,9 @@ OSM-ledningarna under 200 kV läses som en vektor per ledningssträcka. De är b
 
 ### Uppdatering: Lantmäteriets ledningar och stationer
 `lm_uppsala.json` görs nu med `tools/lm_till_json.py` av Lantmäteriets GeoPackage-filer (ledningar_ln01 Stockholm, ln03 Uppsala, ln19 Västmanland, ln21 Gästrikland). Stationerna kommer från lagren transformatoromrade och transformatoromradespunkt (exakta lägen). Stationer nära en stamnätsledning blir stamnätsstationer, övriga regionnätsstationer. Ledningsbitar som möts i två ändar slås ihop. Vattenfalls stationer (`vattenfall_ref.json`) flyttas till närmaste station i filerna (högst 5 km). Kommandot står överst i skriptet.
+
+### Röda och gröna regionnätsledningar, kommunvärden
+Regionnätsledningarna är röda som standard (0 kV, 0 MW, ingår inte). Klicka på en i fliken Ledningar, ange kV och MW, så blir den grön och ingår i beräkningen. Reaktans med angiven spänning: 0,4 Ω/km · km · 100 / kV² (per-unit, 100 MVA). Egna ledningar utan spänning räknas som förut (0,275·km/MW). Kommunernas högsta last och installerad vind- och solkraft kan ändras under Stationer (Last och produktion); förvalen är påhittade tills verkliga siffror finns.
+
+### Ledningar inom länet och stråk
+`lm_uppsala.json` innehåller bara de delar av regionnätsledningarna som ligger i länet (plus en punkt utanför länsgränsen så att ledningen når gränsen). Vid aktivering kan kV och MW gälla en ledning, hela stråket (ledningar som möts utan station emellan) eller alla regionnätsledningar i länet.
