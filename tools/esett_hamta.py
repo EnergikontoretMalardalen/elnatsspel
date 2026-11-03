@@ -7,7 +7,7 @@ Användning (kräver bara Python 3, inga paket):
   python3 tools/esett_hamta.py 10YSE-HBY------G --start 2025-01-01 --slut 2025-01-08   # test: en vecka
   python3 tools/esett_hamta.py KOD1 KOD2 KOD3 --ut esett_2025.json
 """
-import sys, json, argparse, urllib.request, urllib.parse
+import sys, json, argparse, urllib.request, urllib.error, urllib.parse
 
 ap = argparse.ArgumentParser()
 ap.add_argument('mga', nargs='+')
@@ -23,9 +23,16 @@ for mga in a.mga:
                                 'mba': a.mba, 'mga': mga, 'resolution': 'hour'})
     req = urllib.request.Request('https://api.opendata.esett.com/EXP18/Aggregate?' + q, headers={'accept': 'application/json'})
     try:
-        with urllib.request.urlopen(req, timeout=120) as r: d = json.load(r)
+        with urllib.request.urlopen(req, timeout=120) as r:
+            raw = r.read(); status = r.status; ctype = r.headers.get('Content-Type')
+    except urllib.error.HTTPError as e:
+        print(mga, 'HTTP-FEL', e.code, e.reason, '-', e.read()[:500].decode('utf-8', 'replace')); continue
     except Exception as e:
         print(mga, 'FEL:', e); continue
+    print(mga, 'status', status, ctype, 'bytes', len(raw))
+    try: d = json.loads(raw)
+    except Exception:
+        print('  Svaret är inte JSON. Början av svaret:', raw[:500].decode('utf-8', 'replace')); continue
     res[mga] = d
     print(mga, 'antal rader:', len(d) if isinstance(d, list) else type(d).__name__)
     if isinstance(d, list) and d: print('  exempel:', json.dumps(d[0], ensure_ascii=False)[:300])
