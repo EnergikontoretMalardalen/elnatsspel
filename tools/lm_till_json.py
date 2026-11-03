@@ -145,6 +145,9 @@ def main():
             c['snap'] = False; extra.append((c['x'], c['y']))
     json.dump(vf, open(os.path.join(ROOT, 'vattenfall_ref.json'), 'w'), ensure_ascii=False)
     R += extra   # Vattenfall-stationer utan station i filerna (ungefärligt läge)
+    # stationer som bara har anslutning utanför länet (Stockholm) tas bort efter handpåläggning
+    EXKL = [(319, 776)]
+    R = [p for p in R if not any(abs(p[0] - x) <= 3 and abs(p[1] - y) <= 3 for x, y in EXKL)]
     fm = lambda p: [round(p[0]), round(p[1]), '']
     json.dump({'src': 'lm', 'stations': [fm(p) for p in G], 'rstations': [fm(p) for p in R], 'lines': outl}, open(out, 'w'), separators=(',', ':'))
     print(len(G), 'stamnätsstationer,', len(R), 'regionnätsstationer (varav', len(extra), 'från Vattenfall utan träff),', len(outl), 'ledningar,', os.path.getsize(out) // 1024, 'kB')
