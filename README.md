@@ -43,7 +43,7 @@ Bakgrundskartan är statisk (ingen kartserver, inga anrop från besökarens webb
 
 ## Workshop-läge
 
-Spelet startar i **Blank karta**, och uppdragen 1–4 och *Prova själv* ligger som alternativ i uppdragsraden. Deltagarna placerar själva stamnätsstationer (högst fyra) och en regionstation per kommun, drar ledningar mellan stationerna och placerar sedan etableringar. Kommuner som inte nås av någon ledning visas som *Ej ansluten*. Tanken är att visa en verklig karta (till exempel Svenska kraftnäts) på projektorn och låta gruppen bestämma hur nätet ska se ut; inga verkliga stationsdata finns i spelet.
+Spelet startar i **Blank karta**, och uppdragen 1–4 och *Prova själv* ligger som alternativ i uppdragsraden. Deltagarna placerar själva stamnätsstationer (högst fyra) och regionnätsstationer, drar ledningar mellan stationerna och placerar sedan etableringar. Varje regionnätsstation har en last (schablon 30 MW tills nätägarens siffror finns; ändras under *Last och produktion*) och nya etableringar ansluts till stationerna. Resultat visas per station, grupperat efter kommun. *Station på ledning* ger en knutpunkt utan last. Stationer som inte nås av någon ledning visas som *Ej ansluten*. Vattenfalls värde för ledig kapacitet visas som referens vid stationen (Vattenfalls data styr: ersätt schablonen med deras siffror i *Last och produktion*). Tanken är att visa en verklig karta (till exempel Svenska kraftnäts) på projektorn och låta gruppen bestämma hur nätet ska se ut; inga verkliga stationsdata finns i spelet.
 
 ### Stamnätet från Svenska kraftnäts filer (valfritt)
 
