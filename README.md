@@ -99,3 +99,6 @@ OSM-ledningarna under 200 kV läses som en vektor per ledningssträcka. De är b
 
 ### Lantmäteriets ledningar
 `lm_uppsala.json` har ledningar från Lantmäteriet Topografi 100 Nedladdning vektor (lager Ledningslinje, objekttyp 1702 stam och 1703 region, CC0), stamnätsstationer från OSM och regionnätsstationer från Vattenfalls kapacitetskarta (ungefärligt läge). Den läses före `osm_uppsala.json`. Lantmäteriet anger bara region (25–200 kV) och stam (över 200 kV), inte exakt kV. Omräkning: SWEREF 99 TM till kartans koordinater, förenklad med 0,8 px tolerans.
+
+### Uppdatering: Lantmäteriets ledningar och stationer
+`lm_uppsala.json` görs nu med `tools/lm_till_json.py` av Lantmäteriets GeoPackage-filer (ledningar_ln01 Stockholm, ln03 Uppsala, ln19 Västmanland, ln21 Gästrikland). Stationerna kommer från lagren transformatoromrade och transformatoromradespunkt (exakta lägen). Stationer nära en stamnätsledning blir stamnätsstationer, övriga regionnätsstationer. Ledningsbitar som möts i två ändar slås ihop. Vattenfalls stationer (`vattenfall_ref.json`) flyttas till närmaste station i filerna (högst 5 km). Kommandot står överst i skriptet.

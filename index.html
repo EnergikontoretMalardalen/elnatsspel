@@ -875,11 +875,11 @@ function activateWay(i,cap){
     return best;
   };
   const e0=pts[0], e1=pts[pts.length-1], s0=snap(e0), s1=snap(e1);
-  const need=(s0?0:1)+(s1?0:1)-((!s0&&!s1&&Math.hypot(e0[0]-e1[0],e0[1]-e1[1])<=14)?1:0);
+  const need=(s0?0:1)+(s1?0:1)-((!s0&&!s1&&Math.hypot(e0[0]-e1[0],e0[1]-e1[1])<=4)?1:0);
   const free=40-state.rst.length; if(need>free) return 'Det finns inte plats för fler regionnätsstationer (högst 40).';
   if(s0&&s0===s1) return 'Båda ändarna hamnar på samma station. Ta bort stationen eller välj en annan ledning.';
   const mk=(p)=>{const id=freeId('R',state.rst,40); state.rst.push({id,x:Math.round(p[0]),y:Math.round(p[1]),nm:''}); return id};
-  const a=s0||mk(e0), b=s1||(Math.hypot(e0[0]-e1[0],e0[1]-e1[1])<=14&&!s0?a:mk(e1));
+  const a=s0||mk(e0), b=s1||(Math.hypot(e0[0]-e1[0],e0[1]-e1[1])<=4&&!s0?a:mk(e1));
   if(a===b) return 'Ledningen är för kort för att koppla mellan två stationer.';
   if(state.add.some(l=>(l.a===a&&l.b===b)||(l.a===b&&l.b===a))) return `Det finns redan en ledning mellan ${gname(a)} och ${gname(b)}. Ta bort den först.`;
   state.add.push({id:'W'+i,a,b,cap:Math.round(cap),km:+km.toFixed(1),gid:i});
