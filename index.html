@@ -234,7 +234,7 @@ dialog#help[open]{display:flex;flex-direction:column}
   <header>
     <h1>Regionnätsspelet</h1>
     <p>Hur påverkar en stor etablering i en annan kommun er kommuns möjlighet att få ny förbrukning eller produktion ansluten? Pröva i ett förenklat, fiktivt regionnät över Uppsala län.</p>
-    <p class="notice"><b>Det här är ett spel.</b> Stationer, ledningar och siffror är påhittade och speglar inte det verkliga elnätet eller någon kommuns eller nätägares verksamhet.</p>
+    <p class="notice"><b>Det här är ett spel.</b> Kapacitet, last, produktion och etableringar är påhittade och speglar inte det verkliga elnätet eller någon kommuns eller nätägares verksamhet. Stationer och ledningar i uppdragen är påhittade. Om ni laddar stamnät och regionnät i Blank karta ligger de på ungefärliga verkliga lägen (Lantmäteriet, OpenStreetMap och Vattenfall) och kan vara ofullständiga eller felaktiga.</p>
     <button type="button" class="helpbtn" id="helpbtn" aria-haspopup="dialog">Så fungerar det</button>
   </header>
 
@@ -432,7 +432,7 @@ const MISSIONS = [
       {label:'Älvkarleby har minst 40 MW ledigt för produktion', test:m=>m.mineI>=40}]}
 ];
 MISSIONS.push({title:'Bygg ert eget regionnät', short:'Blank karta', mine:null, metric:null, goal:null, ws:true,
-    text:'Kartan är tom. Bestäm tillsammans var stamnätet kommer in i länet, var varje kommun har sin regionstation och hur ledningarna dras. Sedan kan ni placera etableringar och se hur grannarna påverkas. Stationer, ledningar och siffror är påhittade.', queue:null, goals:[]});
+    text:'Kartan är tom från början. Bestäm tillsammans var stamnätet kommer in i länet, var varje kommun har sin regionstation och hur ledningarna dras. Ni kan också ladda stamnät och regionnät, så placeras stationer och ledningar på ungefärliga verkliga lägen och regionnätsledningar kan tas med i beräkningen när ni anger deras kapacitet. Sedan kan ni placera etableringar och se hur grannarna påverkas. Kapacitet, last och produktion är påhittade.', queue:null, goals:[]});
 const TAB_ORDER=[5,1,2,3,4,0];
 
 const $ = s=>document.querySelector(s);
@@ -702,7 +702,7 @@ function renderDiagram(v){
   }
   $('#diagram').innerHTML=`<svg viewBox="0 0 ${MAP.w} ${MAP.h}" role="group" aria-label="Karta över Uppsala län med ${ws()?'stationer som deltagarna placerar':'åtta kommuner och ett fiktivt regionnät'}">${s}</svg>`;
   const natLeg=(ws()&&state.nat)?`<label class="natchk"><input type="checkbox" data-natvis ${state.natvis?'checked':''}> Visa nätområden</label>`+(state.natvis?natOwners().list.map(o=>`<span><i class="nt" style="border-color:${o[1]};background:${o[1]}22"></i>${o[0]}</span>`).join(''):''):'';
-  const vfLeg=ws()?`<label class="natchk"><input type="checkbox" data-vfvis ${state.vfvis?'checked':''}> Visa Vattenfalls kapacitetskarta (jämförelse)</label>`+(state.vfvis&&state.vf?`<span>Ledig kapacitet för hög elkonsumtion i regionnätsstationer, MW (ungefärligt läge, närliggande stationer ihopslagna, högsta värdet gäller; värden enligt Vattenfalls karta, färg efter klass). Visar bara 70–130 kV-stationer. Källa: Vattenfall Eldistribution.</span>`+VFCOL.map((c,i)=>`<span><i style="background:${c};border:1px solid #1d2b2c;border-radius:50%"></i>${VFLAB[i]} MW</span>`).join(''):''):'';
+  const vfLeg=ws()?`<label class="natchk"><input type="checkbox" data-vfvis ${state.vfvis?'checked':''}> Visa Vattenfalls kapacitetskarta (jämförelse)</label>`+(state.vfvis&&state.vf?`<span>Ledig kapacitet för hög elkonsumtion i regionnätsstationer, MW (ungefärligt läge, närliggande stationer ihopslagna, högsta värdet gäller; värden enligt Vattenfalls karta, färg efter klass). Visar bara 70–130 kV-stationer. 50 MW betyder 50 MW eller mer (tills verkliga siffror finns). Källa: Vattenfall Eldistribution.</span>`+VFCOL.map((c,i)=>`<span><i style="background:${c};border:1px solid #1d2b2c;border-radius:50%"></i>${VFLAB[i]} MW</span>`).join(''):''):'';
   $('#maplegend').innerHTML=natLeg+vfLeg+`<span><i class="ok"></i>20 MW ledigt eller mer</span><span><i class="warn"></i>1–19 MW</span><span><i class="bad"></i>0 MW</span>`+(anyShare?`<span><i class="acc"></i>Vägarna den nya effekten tar (tjockare = större andel)</span>`:'')+(ws()&&state.stamnat?`<span><i class="stl"></i>Stamnätets ledningar (bakgrund)</span>`+(state.stamnat.lines.some(l=>l.v>0&&l.v<200)?`<span><i class="stl r"></i>Regionnätsledning, inte med (0 kV, 0 MW)</span><span><i class="stl g"></i>Regionnätsledning med i beräkningen</span>`:'')+(state.stamnat.src==='osm'?`<span>Data: © OpenStreetMap-bidragsgivare (ODbL). Kan vara ofullständig eller felaktig.</span>`:state.stamnat.src==='lm'?`<span>Ledningar: © Lantmäteriet, Topografi 100 (CC0). Stamnätsstationer: © OpenStreetMap-bidragsgivare (ODbL). Regionnätsstationer: ungefärligt läge enligt Vattenfalls kapacitetskarta. Kan vara ofullständigt eller felaktigt.</span>`:''):'')+(LINES.some(l=>l.up)?`<span><i class="thick"></i>Förstärkt ledning</span>`:'')+((!ws()&&LINES.some(l=>l.added))||(v.pend&&v.pend.type==='add')?`<span><i class="dash"></i>Ny ledning</span>`:'');
 }
 
