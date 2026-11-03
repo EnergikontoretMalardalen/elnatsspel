@@ -483,6 +483,11 @@ function arrowFor(i,signed){
 const ROUTES={};
 function routeOf(ln){
   const key=ln.a+'-'+ln.b; if(ROUTES[key]) return ROUTES[key];
+  if(ln.gid!=null&&state.stamnat&&state.stamnat.lines[ln.gid]){
+    const pts=pathPts(state.stamnat.lines[ln.gid].d), cum=[0]; for(let k=1;k<pts.length;k++) cum.push(cum[k-1]+Math.hypot(pts[k][0]-pts[k-1][0],pts[k][1]-pts[k-1][1]));
+    const tot=cum[cum.length-1]||1, at=t=>{const q=t*tot; let k=1; while(k<cum.length-1&&cum[k]<q)k++; const u=(q-cum[k-1])/((cum[k]-cum[k-1])||1); return {x:pts[k-1][0]+(pts[k][0]-pts[k-1][0])*u,y:pts[k-1][1]+(pts[k][1]-pts[k-1][1])*u}};
+    return (ROUTES[key]={d:state.stamnat.lines[ln.gid].d,mid:at(.5),at});
+  }
   const a=ctr(ln.a),b=ctr(ln.b);
   const rects=Object.keys(L).filter(id=>id!==ln.a&&id!==ln.b).map(id=>({x:L[id].x-4,y:L[id].y-4,w:L[id].w+8,h:L[id].h+8}));
   const hit=(f)=>{for(let i=1;i<40;i++){const p=f(i/40);if(p.x<8||p.x>MAP.w-8||p.y<4||p.y>MAP.h-4)return true;if(rects.some(r=>p.x>r.x&&p.x<r.x+r.w&&p.y>r.y&&p.y<r.y+r.h))return true}return false};
@@ -906,11 +911,11 @@ function wayScope(i){
   if(state.owscope==='all') return L.map((l,k)=>k).filter(reg);
   if(state.owscope!=='group') return [i];
   const stn=[...state.gst,...state.rst];
-  const near=p=>stn.some(g=>Math.hypot(g.x-p[0],g.y-p[1])<=16), key=p=>Math.round(p[0]/3)+','+Math.round(p[1]/3);
+  const near=p=>stn.some(g=>isLoadR(g)?(Math.abs(g.x-p[0])<=40&&Math.abs(g.y-p[1])<=24):Math.hypot(g.x-p[0],g.y-p[1])<=16), key=p=>Math.round(p[0]/3)+','+Math.round(p[1]/3);
   const ends={}; L.forEach((l,k)=>{ if(!reg(k)) return; const pp=pathPts(l.d); if(pp.length<2) return;
     for(const p of [pp[0],pp[pp.length-1]]) if(!near(p)) (ends[key(p)]=ends[key(p)]||[]).push(k)});
   const seen=new Set([i]), q=[i];
-  while(q.length){const k=q.pop(), pp=pathPts(L[k].d); for(const p of [pp[0],pp[pp.length-1]]) for(const m of (ends[key(p)]||[])) if(!seen.has(m)){seen.add(m);q.push(m)}}
+  while(q.length){const k=q.pop(), pp=pathPts(L[k].d); for(const p of [pp[0],pp[pp.length-1]]) {const e=ends[key(p)]||[]; if(new Set(e).size>2) continue; for(const m of e) if(!seen.has(m)){seen.add(m);q.push(m)}}}
   return [...seen];
 }
 function activateWay(i,cap,kv){
@@ -924,7 +929,7 @@ function activateWay(i,cap,kv){
   const snap=p=>{
     let best=null,bd=1e9;
     for(const g of state.gst){const d=Math.hypot(g.x-p[0],g.y-p[1]); if(d<bd&&d<=16){bd=d;best=g.id}}
-    for(const g of state.rst){const d=Math.hypot(g.x-p[0],g.y-p[1]); if(d<bd&&d<=(isLoadR(g)?36:14)){bd=d;best=g.id}}
+    for(const g of state.rst){const d=Math.hypot(g.x-p[0],g.y-p[1]); if(d<bd&&(isLoadR(g)?(Math.abs(g.x-p[0])<=40&&Math.abs(g.y-p[1])<=24):d<=14)){bd=d;best=g.id}}
     return best;
   };
   const e0=pts[0], e1=pts[pts.length-1], s0=snap(e0), s1=snap(e1);
