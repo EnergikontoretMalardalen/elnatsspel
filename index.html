@@ -403,9 +403,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261106"></script>
-<script src="sim.js?v=20261106"></script>
-<script src="shp.js?v=20261106"></script>
+<script src="map.js?v=20261107"></script>
+<script src="sim.js?v=20261107"></script>
+<script src="shp.js?v=20261107"></script>
 <script>
 
 const ART = {dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -441,8 +441,8 @@ const MISSIONS = [
 ];
 MISSIONS.push({title:'Bygg ert eget regionnät', short:'Blank karta', mine:null, metric:null, goal:null, ws:true,
     text:'Kartan är tom från början. Bestäm tillsammans var stamnätet kommer in i länet, var regionnätsstationerna ligger och hur ledningarna dras. Stationerna har en förvald last (schablon) som nätägarens siffror kan ersätta, och nya verksamheter ansluts till stationerna. Ni kan också ladda stamnät och regionnät, så placeras stationer och ledningar på ungefärliga verkliga lägen och regionnätsledningar kan tas med i beräkningen när ni anger deras kapacitet. Sedan kan ni placera etableringar och se hur grannarna påverkas. Kapacitet, last och produktion är påhittade.', queue:null, goals:[]});
-MISSIONS.push({title:'Workshop: en stor förbrukare i Heby', short:'Workshop', mine:null, metric:'U', goal:null, ws:true, scen:'heby',
-    text:'Regionnätet i Uppsala län är förladdat med stationer och ledningar på ungefärliga verkliga lägen. Ett datacenter på 40 MW är anslutet i Heby. Titta i tabellen under kartan: hur påverkas lediga kapaciteten i de andra kommunerna? Flytta datacentret till en annan station, ändra storlek, eller förstärk en ledning och se vad som händer. Ledningarnas kapacitet (100 MW), stationernas last (schablon) och allt annat är påhittat tills nätägarens siffror finns.', queue:null, goals:[]});
+MISSIONS.push({title:'Workshop: en stor förbrukare', short:'Workshop', mine:null, metric:'U', goal:null, ws:true, scen:'heby',
+    text:'Regionnätet i Uppsala län är förladdat med stationer och ledningar på ungefärliga verkliga lägen. Välj en etablering (förvalt datacenter, 40 MW) och klicka på en station, till exempel i Heby. Tabellen under kartan visar hur lediga kapaciteten ändras i de andra kommunerna. Prova andra stationer och storlekar, eller förstärk en ledning, och se vad som händer. Ledningarnas kapacitet (100 MW), stationernas last (schablon) och allt annat är påhittat tills nätägarens siffror finns.', queue:null, goals:[]});
 const TAB_ORDER=[6,5,1,2,3,4,0];
 
 const $ = s=>document.querySelector(s);
@@ -1409,9 +1409,8 @@ function startScenario(){
     state.owscope='all'; const Ls=state.stamnat.lines;
     for(let i=0;i<Ls.length;i++) if(Ls[i].v>0&&Ls[i].v<200) activateWay(i,100,Ls[i].v>=100?130:70);
     layoutKey='x'; syncLayout();
-    const heby=state.rst.filter(isLoadR).find(g=>byId[g.id].desc==='Heby'), other=state.rst.filter(isLoadR).find(g=>byId[g.id].desc==='Uppsala');
+    const other=state.rst.filter(isLoadR).find(g=>byId[g.id].desc==='Uppsala');
     state.kind='dc'; state.mw=40; state.flex=false;
-    if(heby){state.placed=[{id:state.uid++,kind:'dc',mw:40,flex:false,node:heby.id}]}
     if(other) state.mine=other.id;
     state.tab='place'; state.sel=null; state.wsmsg='';
   });
