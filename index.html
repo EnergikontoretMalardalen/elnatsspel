@@ -369,7 +369,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     <h3 id="h-placera">Placera en etablering</h3>
     <ol>
       <li>Välj etablering och effekt (i uppdrag är den given).</li>
-      <li>Klicka på en kommun i schemat, eller på en rad i listan "Spelar platsen roll?". Den streckade ramen är en förhandsvisning.</li>
+      <li>Klicka på en kommun i schemat (i Blank karta och Workshop: på en regionnätsstation på kartan), eller på en rad i listan "Spelar platsen roll?". Den streckade ramen är en förhandsvisning.</li>
       <li>Klicka <b>Anslut</b> överst i schemakortet för att låsa den. <i>Ångra senaste</i> tar bort den, Esc avbryter förhandsvisningen.</li>
     </ol>
     <p><i>Flexibel last</i> sänker lasten till 25 % klockan 16–20, när nätet är som mest belastat.</p>
@@ -403,9 +403,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261107"></script>
-<script src="sim.js?v=20261107"></script>
-<script src="shp.js?v=20261107"></script>
+<script src="map.js?v=20261108"></script>
+<script src="sim.js?v=20261108"></script>
+<script src="shp.js?v=20261108"></script>
 <script>
 
 const ART = {dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -1046,7 +1046,7 @@ function renderAction(v){
     $('#actmsg').innerHTML=`<strong>${gname(state.sel)}</strong><small>Förhandsvisning. Klicka "Anslut" för att placera etableringen här.</small>`;
   }else{
     btn.disabled=true;
-    $('#actmsg').innerHTML=`<strong>Klicka på en kommun i schemat</strong><small>Där placeras ${ART[c.kind].toLowerCase()} på ${c.mw} MW.</small>`;
+    $('#actmsg').innerHTML=`<strong>${ws()?'Klicka på en station på kartan':'Klicka på en kommun i schemat'}</strong><small>Där placeras ${ART[c.kind].toLowerCase()} på ${c.mw} MW.</small>`;
   }
 }
 
