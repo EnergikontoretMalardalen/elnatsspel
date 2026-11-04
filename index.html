@@ -403,9 +403,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261109"></script>
-<script src="sim.js?v=20261109"></script>
-<script src="shp.js?v=20261109"></script>
+<script src="map.js?v=20261110"></script>
+<script src="sim.js?v=20261110"></script>
+<script src="shp.js?v=20261110"></script>
 <script>
 
 const ART = {dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -977,7 +977,7 @@ function activateWay(i,cap,kv){
   const snap=p=>{
     let best=null,bd=1e9;
     for(const g of state.gst){const d=Math.hypot(g.x-p[0],g.y-p[1]); if(d<bd&&d<=16){bd=d;best=g.id}}
-    for(const g of state.rst){const d=Math.hypot(g.x-p[0],g.y-p[1]); if(d<bd&&d<=16){bd=d;best=g.id}}
+    for(const g of state.rst){const d=Math.hypot(g.x-p[0],g.y-p[1]); if(d<bd&&d<=(isLoadR(g)?16:4)){bd=d;best=g.id}}
     return best;
   };
   const e0=pts[0], e1=pts[pts.length-1], s0=snap(e0), s1=snap(e1);
