@@ -104,27 +104,44 @@ def main():
     by = {1702: [], 1703: []}
     for t, parts in lines.values(): by[t] += parts
     outl = []; sp = []
-    def clip_lan(q):
-        """Behåller bara de delar av en regionnätsledning som ligger i länet (plus en punkt utanför per ände)."""
+    def dens(q):
         d = []   # tätare punkter så att länsgränsen träffas någorlunda
         for a_, b_ in zip(q[:-1], q[1:]):
             n = max(1, int(np.hypot(b_[0] - a_[0], b_[1] - a_[1]) / (0.7 * PXKM)))
             d += [(a_[0] + (b_[0] - a_[0]) * i / n, a_[1] + (b_[1] - a_[1]) * i / n) for i in range(n)]
         d.append(tuple(q[-1]))
-        ins = [inlan(p) for p in d]; runs = []; i = 0
+        return d
+    def clip_lan(q):
+        """Delar upp en regionnätsledning i sträckor i länet och 'svansar' utanför.
+        Returnerar (sträckor, svansar). En sträcka är i länet plus en punkt utanför per ände. En ledning som lämnar
+        länet och kommer tillbaka inom 30 km behålls hel. En svans är den del som går från länsgränsen ut till
+        ledningens ände (en station utanför länet)."""
+        d = dens(q); ins = [inlan(p) for p in d]; runs = []; i = 0
         while i < len(d):
             if ins[i]:
                 j = i
                 while j + 1 < len(d) and ins[j + 1]: j += 1
-                runs.append(d[max(0, i - 1):min(len(d), j + 2)]); i = j + 1
+                runs.append((max(0, i - 1), min(len(d), j + 2))); i = j + 1
             else: i += 1
-        return runs
+        merged = []
+        for r in runs:
+            if merged and r[0] - merged[-1][1] <= 43: merged[-1] = (merged[-1][0], r[1])
+            else: merged.append(r)
+        tails = []
+        if merged:
+            if merged[0][0] > 0: tails.append(('start', d[:merged[0][0] + 1][::-1]))   # från gränsen ut till änden
+            if merged[-1][1] < len(d): tails.append(('end', d[merged[-1][1] - 1:]))
+        return [d[i:j] for i, j in merged], tails, d, merged
+    reg_in, reg_tails, reg_out = [], [], []
     for t, parts in by.items():
         for q in merge_chains(parts):
             if t == 1703:
-                for r in clip_lan(q):
-                    r = rdp(r, 0.8)
-                    if len(r) >= 2: outl.append({'v': 70, 'd': 'M' + 'L'.join(f'{x:.1f} {y:.1f}' for x, y in r)})
+                runs, tails, d, mg = clip_lan(q)
+                if not runs:
+                    reg_out.append(dens(q)); continue
+                for k, r in enumerate(runs):
+                    reg_in.append({'run': r, 'first': k == 0, 'last': k == len(runs) - 1})
+                for side, tl in tails: reg_tails.append((side, tl, len(reg_in) - (len(runs) if side == 'start' else 1)))
                 continue
             q = rdp(q, 0.8)
             if not any(0 <= x <= M['w'] and 0 <= y <= M['h'] for x, y in q): continue
@@ -132,6 +149,63 @@ def main():
             if t == 1702:
                 for a, b in zip(q[:-1], q[1:]):
                     n = max(1, int(np.hypot(*(b - a)) / 1.5)); sp += [a + (b - a) * i / n for i in range(n)]
+    # utflykter utanför länet: behåll svansar och ledningar helt utanför länet om de tillsammans förbinder
+    # minst två ställen på länsgränsen (t.ex. en ledning via en station i Stockholms län)
+    TOL = 8.0; LIM = 40 * PXKM
+    plen = lambda q: sum(np.hypot(q[k][0] - q[k - 1][0], q[k][1] - q[k - 1][1]) for k in range(1, len(q)))
+    nodes = []   # klusterpunkter
+    def node(p):
+        for n, c in enumerate(nodes):
+            if np.hypot(p[0] - c[0], p[1] - c[1]) <= TOL: return n
+        nodes.append(tuple(p)); return len(nodes) - 1
+    edges = []   # (nodA, nodB, polyline, art, ref)
+    for side, tl, ri in reg_tails:
+        far = tl[-1]; edges.append((('T', ri, side), node(far), tl))
+    for q in reg_out: edges.append((('O',), node(q[0]), q)); edges[-1] = (('O',), (node(q[0]), node(q[-1])), q)
+    import heapq
+    adj = collections.defaultdict(list)
+    for idx, (a, e, q) in enumerate(edges):
+        if a[0] == 'O':
+            w = plen(q); adj[e[0]].append((e[1], w, idx)); adj[e[1]].append((e[0], w, idx))
+    tl_idx = [i for i, (a, e, q) in enumerate(edges) if a[0] == 'T']
+    accepted = set()
+    def dijk(src, dst, lim):
+        dist = {src: 0.0}; prev = {}; hp = [(0.0, src)]
+        while hp:
+            dd, u = heapq.heappop(hp)
+            if dd > dist.get(u, 1e18) or dd > lim: continue
+            if u == dst: break
+            for v, w, ei in adj[u]:
+                nd = dd + w
+                if nd < dist.get(v, 1e18) and nd <= lim: dist[v] = nd; prev[v] = (u, ei); heapq.heappush(hp, (nd, v))
+        if dst not in dist: return None
+        path = []; u = dst
+        while u != src: u, ei = prev[u]; path.append(ei)
+        return path
+    for x in range(len(tl_idx)):
+        for y in range(x + 1, len(tl_idx)):
+            ix, iy = tl_idx[x], tl_idx[y]
+            if edges[ix][0][1:] == edges[iy][0][1:]: continue
+            lim = LIM - plen(edges[ix][2]) - plen(edges[iy][2])
+            if lim < 0: continue
+            path = dijk(edges[ix][1], edges[iy][1], lim)
+            if path is not None: accepted.update([ix, iy] + path)
+    # kopiera nodernas lägen så att ändarna sammanfaller exakt
+    for idx in accepted:
+        a, e, q = edges[idx]
+        if a[0] == 'O':
+            q = [nodes[e[0]]] + list(q[1:-1]) + [nodes[e[1]]]
+            r = rdp(q, 0.8); outl.append({'v': 70, 'd': 'M' + 'L'.join(f'{x:.1f} {y:.1f}' for x, y in r)})
+    ext = {}   # (ref, side) -> svans med slutpunkt i klustret
+    for idx in accepted:
+        a, e, q = edges[idx]
+        if a[0] == 'T': ext[(a[1], a[2])] = list(q[:-1]) + [nodes[e]]
+    for ri, rr in enumerate(reg_in):
+        r = list(rr['run'])
+        if (ri, 'start') in ext: r = ext[(ri, 'start')][::-1] + r[1:]
+        if (ri, 'end') in ext: r = r[:-1] + ext[(ri, 'end')]
+        r = rdp(r, 0.8)
+        if len(r) >= 2: outl.append({'v': 70, 'd': 'M' + 'L'.join(f'{x:.1f} {y:.1f}' for x, y in r)})
     from scipy.spatial import cKDTree
     ts = cKDTree(np.array(sp))
     G = [p for p in merged if ts.query(p)[0] / PXKM < 0.5]; R = [p for p in merged if ts.query(p)[0] / PXKM >= 0.5]
