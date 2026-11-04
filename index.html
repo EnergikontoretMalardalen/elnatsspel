@@ -369,7 +369,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     <h3 id="h-placera">Placera en etablering</h3>
     <ol>
       <li>Välj etablering och effekt (i uppdrag är den given).</li>
-      <li>Klicka på en kommun i schemat (i Blank karta och Workshop: på en regionnätsstation på kartan), eller på en rad i listan "Spelar platsen roll?". Den streckade ramen är en förhandsvisning.</li>
+      <li>Klicka på en kommun i schemat (i Befintligt nät och Blank karta: på en regionnätsstation på kartan), eller på en rad i listan "Spelar platsen roll?". Den streckade ramen är en förhandsvisning.</li>
       <li>Klicka <b>Anslut</b> överst i schemakortet för att låsa den. <i>Ångra senaste</i> tar bort den, Esc avbryter förhandsvisningen.</li>
     </ol>
     <p><i>Flexibel last</i> sänker lasten till 25 % klockan 16–20, när nätet är som mest belastat.</p>
@@ -441,9 +441,9 @@ const MISSIONS = [
 ];
 MISSIONS.push({title:'Bygg ert eget regionnät', short:'Blank karta', mine:null, metric:null, goal:null, ws:true,
     text:'Kartan är tom från början. Bestäm tillsammans var stamnätet kommer in i länet, var regionnätsstationerna ligger och hur ledningarna dras. Stationerna har en förvald last (schablon) som nätägarens siffror kan ersätta, och nya verksamheter ansluts till stationerna. Ni kan också ladda stamnät och regionnät, så placeras stationer och ledningar på ungefärliga verkliga lägen och regionnätsledningar kan tas med i beräkningen när ni anger deras kapacitet. Sedan kan ni placera etableringar och se hur grannarna påverkas. Kapacitet, last och produktion är påhittade.', queue:null, goals:[]});
-MISSIONS.push({title:'Workshop: en stor förbrukare', short:'Workshop', mine:null, metric:'U', goal:null, ws:true, scen:'heby',
+MISSIONS.push({title:'Befintligt nät: en stor förbrukare', short:'Befintligt nät', mine:null, metric:'U', goal:null, ws:true, scen:'heby',
     text:'Regionnätet i Uppsala län är förladdat med stationer och ledningar på ungefärliga verkliga lägen. Välj en etablering (förvalt datacenter, 40 MW) och klicka på en station, till exempel i Heby. Tabellen under kartan visar hur lediga kapaciteten ändras i de andra kommunerna. Prova andra stationer och storlekar, eller förstärk en ledning, och se vad som händer. Ledningarnas kapacitet (100 MW), stationernas last (schablon) och allt annat är påhittat tills nätägarens siffror finns.', queue:null, goals:[]});
-const TAB_ORDER=[6,5,1,2,3,4,0];
+const TAB_ORDER=[6,5];   /* uppdragen 1–4 och Prova själv finns kvar i koden men visas inte */
 
 const $ = s=>document.querySelector(s);
 const state = {mission:6, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:'', ext:[], rst:[], stamnat:null, nat:null, natvis:true, natmsg:'', ow:null, owcap:0, owkv:0, owscope:'group', kn:{}, ke:null, vf:null, vfvis:false};
