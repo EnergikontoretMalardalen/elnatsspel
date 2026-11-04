@@ -442,11 +442,11 @@ const MISSIONS = [
 MISSIONS.push({title:'Bygg ert eget regionnät', short:'Blank karta', mine:null, metric:null, goal:null, ws:true,
     text:'Kartan är tom från början. Bestäm tillsammans var stamnätet kommer in i länet, var regionnätsstationerna ligger och hur ledningarna dras. Stationerna har en förvald last (schablon) som nätägarens siffror kan ersätta, och nya verksamheter ansluts till stationerna. Ni kan också ladda stamnät och regionnät, så placeras stationer och ledningar på ungefärliga verkliga lägen och regionnätsledningar kan tas med i beräkningen när ni anger deras kapacitet. Sedan kan ni placera etableringar och se hur grannarna påverkas. Kapacitet, last och produktion är påhittade.', queue:null, goals:[]});
 MISSIONS.push({title:'Befintligt nät: en stor förbrukare', short:'Befintligt nät', mine:null, metric:'U', goal:null, ws:true, scen:'heby',
-    text:'Regionnätet i Uppsala län är förladdat med stationer och ledningar på ungefärliga verkliga lägen. Välj en etablering (förvalt datacenter, 40 MW) och klicka på en station, till exempel i Heby. Tabellen under kartan visar hur lediga kapaciteten ändras i de andra kommunerna. Prova andra stationer och storlekar, eller förstärk en ledning, och se vad som händer. Ledningarnas kapacitet (100 MW), stationernas last (schablon) och allt annat är påhittat tills nätägarens siffror finns.', queue:null, goals:[]});
+    text:'Regionnätet i Uppsala län är förladdat med stationer och ledningar på ungefärliga verkliga lägen. Välj först er station, sedan en etablering (förvalt datacenter, 40 MW), och klicka på en regionnätsstation på kartan. Tabellen under kartan visar hur lediga kapaciteten ändras i de andra regionnätsstationerna, grupperade per kommun. De blåmarkerade ledningarna på kartan är de vägar den nya effekten tar genom nätet. Effekten delar sig mellan parallella vägar efter ledningarnas reaktans, och ju tjockare markering, desto större andel av effekten går den vägen. Prova andra stationer och storlekar, eller förstärk en ledning, och se vad som händer. Ledningarnas kapacitet (100 MW), stationernas last (schablon) och allt annat är påhittat tills nätägarens siffror finns.', queue:null, goals:[]});
 const TAB_ORDER=[6,5];   /* uppdragen 1–4 och Prova själv finns kvar i koden men visas inte */
 
 const $ = s=>document.querySelector(s);
-const state = {mission:6, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:'', ext:[], rst:[], stamnat:null, nat:null, natvis:true, natmsg:'', ow:null, owcap:0, owkv:0, owscope:'group', kn:{}, ke:null, vf:null, vfvis:false};
+const state = {mineSet:false, mission:6, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:'', ext:[], rst:[], stamnat:null, nat:null, natvis:true, natmsg:'', ow:null, owcap:0, owkv:0, owscope:'group', kn:{}, ke:null, vf:null, vfvis:false};
 
 const BW=108, BH=68;
 const L0 = {G:{x:MAP.G.x-50,y:MAP.G.y-17,w:100,h:34}};
@@ -593,6 +593,7 @@ function cfgOf(pend){
   if(pend){const p=pendingMeasure(); if(p&&p.type==='up'){if(ws())cfg.add=cfg.add.map(a=>a.id===p.id?{...a,extra:(a.extra||0)+p.extra}:a); else cfg.up[p.id]=p.extra} if(p&&p.type==='add')cfg.add.push({id:'NP',a:p.a,b:p.b,cap:p.cap})}
   return cfg;
 }
+const mineOn = ()=>!ws()||state.mineSet;
 function ensureMine(){const vl=VL(); if(ws()&&vl.length&&!vl.some(n=>n.id===state.mine)) state.mine=vl[0].id}
 function getView(){
   if(state.ext.length) state.ext=state.ext.filter(x=>state.bnodes.includes(x.id)||state.add.some(a=>a.a===x.id||a.b===x.id));
@@ -622,6 +623,11 @@ function renderResult(v){
   $('#resultcard').style.display=(ws()&&!state.sel&&!state.placed.length)?'none':'';
   if(ws()&&!VL().length){
     $('#headline').innerHTML='Placera en regionnätsstation för att börja.'; $('#meter').innerHTML=''; $('#alert').hidden=true; $('#basis').textContent='';
+    document.querySelectorAll('#metricseg button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.metric===state.metric)));
+    return;
+  }
+  if(ws()&&!state.mineSet){
+    $('#headline').innerHTML='Välj vilken station som är er (under <b>1 Er station</b>) för att se hur den påverkas.'; $('#meter').innerHTML=''; $('#alert').hidden=true; $('#basis').textContent='';
     document.querySelectorAll('#metricseg button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.metric===state.metric)));
     return;
   }
@@ -706,7 +712,7 @@ function renderDiagram(v){
     if(n.r){
       const g=stObj(n.id), bl=LBL[n.id]||{x:b.x-24,y:b.y-30,w:64,h:34}, lx=Math.max(bl.x,Math.min(g.x,bl.x+bl.w)), ly=Math.max(bl.y,Math.min(g.y,bl.y+bl.h)), nr=n.id.slice(1), kn=n.desc||'', tg=[...new Set(((state.kn[n.id]&&state.kn[n.id].gen)||[]).map(x=>KINDS[x.kind].short))];
       const list2=kids[n.id]||[], sum2=list2.reduce((x,p)=>x+p.mw,0), newT=list2.length?(list2.length===1?`+${sum2} ${KINDS[list2[0].kind].short}`:`+${sum2} MW`):'', tw2=Math.max(46,newT.length*6.8+14);
-      const isSel2=bld?state.bnodes.includes(n.id):state.sel===n.id, host2=list2.some(p=>p.id!==0), mine2=state.mine===n.id;
+      const isSel2=bld?state.bnodes.includes(n.id):state.sel===n.id, host2=list2.some(p=>p.id!==0), mine2=state.mine===n.id&&mineOn();
       const vfT=g&&g.vf?` Vattenfall: ${g.vf} MW ledigt (för jämförelse).`:'';
       s+=`<g class="leaf rleaf t-${tcls} ${host2?'host':''} ${isSel2&&!bld?'sel':''} ${isSel2&&bld?'pickn':''}" data-leaf="${n.id}" tabindex="0" role="button" aria-label="Regionnätsstation ${nr}${kn?', '+kn:''}: ${vv} MW ledigt för ${MET[state.metric].word}" aria-pressed="${isSel2}">
         <title>Regionnätsstation ${nr}${kn?' ('+kn+')':''}${g&&g.ox!=null?' (flyttad '+(Math.hypot(g.x-g.ox,g.y-g.oy)/MAP.pxPerKm).toFixed(1).replace('.',',')+' km till närmaste ledning)':''}: last ${f0(cur.load[n.id])} MW, produktion ${f0(cur.gen[n.id])} MW. Ledigt för förbrukning ${avl(cur.availU[n.id])} MW, för produktion ${avl(cur.availI[n.id])} MW.${vfT}</title>
@@ -771,7 +777,7 @@ function effText(v){
   const w=MET[state.metric].word;
   const rows=VL().map(n=>({n,d:val(v.cur,n.id)-val(v.cres,n.id)}));
   const cell=o=>`${o.n.name.replace('Kommun ','')} <b class="${o.d<0?'neg':o.d>0?'pos':''}">${sg(o.d)}</b>`;
-  return `<p class="eff">Så ändras ledig kapacitet för ${w} (MW): ${rows.map(cell).join(' · ')}. <b class="${val(v.cur,state.mine)-val(v.cres,state.mine)<0?'neg':'pos'}">${byId[state.mine].name}: ${val(v.cres,state.mine)} → ${val(v.cur,state.mine)} MW</b></p>`;
+  return `<p class="eff">Så ändras ledig kapacitet för ${w} (MW): ${rows.map(cell).join(' · ')}${mineOn()?`. <b class="${val(v.cur,state.mine)-val(v.cres,state.mine)<0?'neg':'pos'}">${byId[state.mine].name}: ${val(v.cres,state.mine)} → ${val(v.cur,state.mine)} MW</b>`:''}</p>`;
 }
 function renderBuild(v){
   const box=$('#buildbox'); box.hidden=state.tab!=='build'&&state.tab!=='stations'; $('#actionbar').hidden=state.tab!=='place';
@@ -948,7 +954,7 @@ function removeStation(id){
   state.add=state.add.filter(a=>a.a!==id&&a.b!==id); state.sel=null; state.bline=null; state.bnodes=[]; state.chartLine=null;
 }
 const VFCOL=['#d9e7e8','#a6c6c9','#73a6a9','#40858a','#005c63'], VFLAB=['<1','1–17','18–34','35–50','>50'];
-function wsClear(){state.edl=null;state.nat=null;state.natown=null;state.natmsg='';state.stamnat=null;state.ow=null;state.kn={};state.ke=null;state.stamnatmsg='';state.gst=[];state.rst=[];state.ext=[];state.add=[];state.placed=[];state.tool='g';state.wsmsg='';state.sel=null;state.bline=null;state.bnodes=[];state.chartLine=null}
+function wsClear(){state.mineSet=false;state.edl=null;state.nat=null;state.natown=null;state.natmsg='';state.stamnat=null;state.ow=null;state.kn={};state.ke=null;state.stamnatmsg='';state.gst=[];state.rst=[];state.ext=[];state.add=[];state.placed=[];state.tool='g';state.wsmsg='';state.sel=null;state.bline=null;state.bnodes=[];state.chartLine=null}
 function nearestSeg(p){
   if(!state.stamnat||!state.stamnat.segs) return null;
   let best=null, bd=12;
@@ -1060,6 +1066,7 @@ function renderAction(v){
 function names(list){return list.length<2?list.join(''):list.slice(0,-1).join(', ')+' och '+list[list.length-1]}
 function renderWhy(v){
   if(!LINES.length||!VL().length){$('#why').innerHTML=ws()?'<p>Placera stationer och dra ledningar så visas här varför kapaciteten blir som den blir.</p>':'';return}
+  if(ws()&&!state.mineSet){$('#why').innerHTML='<p>Välj er station så visas här varför kapaciteten blir som den blir.</p>';return}
   const cons=v.consumers, M=byId[state.mine];
   if(!cons.length&&v.hasM){
     const rows=VL().map(l=>({l,d:val(v.cur,l.id)-val(v.base,l.id)}));
@@ -1106,6 +1113,7 @@ function barRow(v,max){
 function renderSens(v){
   const c=v.c, m=state.mine, host=$('#sens'), word=MET[state.metric].word;
   const targets=VL().filter(n=>!NET.iso0.includes(n.id));
+  if(ws()&&!state.mineSet){$('#senscard').hidden=false; $('#senstitle').textContent='Spelar platsen roll?'; $('#senssub').textContent=''; host.innerHTML='<p class="help">Välj er station under 1 Er station, så visas här hur platsen för en etablering påverkar den.</p>'; return}
   if(ws()&&(!targets.length||!byId[m])){
     $('#senscard').hidden=false; $('#senstitle').textContent='Spelar platsen roll?'; $('#senssub').textContent='';
     host.innerHTML='<p class="help">Koppla minst en regionnätsstation till stamnätet först.</p>'; return;
@@ -1195,7 +1203,7 @@ function renderMission(v){
 }
 function renderControls(v){
   const M=MISSIONS[state.mission], locked=!!M.queue, c=v.c;
-  const mb=n=>`<button type="button" data-mine="${n.id}" aria-label="${n.name}" aria-pressed="${n.id===state.mine}" ${locked?'disabled':''}>${(n.sh||n.name).replace('Kommun ','')}</button>`;
+  const mb=n=>`<button type="button" data-mine="${n.id}" aria-label="${n.name}" aria-pressed="${n.id===state.mine&&mineOn()}" ${locked?'disabled':''}>${(n.sh||n.name).replace('Kommun ','')}</button>`;
   if(ws()){const grp={}; VL().forEach(n=>{(grp[n.desc||'Utanför kommun']=grp[n.desc||'Utanför kommun']||[]).push(n)}); $('#mineseg').innerHTML=Object.keys(grp).sort().map(k=>`<span class="mgrp" style="font-size:12px;color:var(--mute,#555);margin:0 4px 0 8px">${k}</span>`+grp[k].map(mb).join('')).join('')}
   else $('#mineseg').innerHTML=VL().map(mb).join('');
   {$('#minetitle').textContent=ws()?'Er station':'Er kommun'; const w=ws()?'stationen':'kommunen'; $('#minehelp').textContent=(locked?'Bestämd av uppdraget. ':'')+`Siffrorna utgår från den här ${w}.`}
@@ -1431,7 +1439,6 @@ function startScenario(){
     layoutKey='x'; syncLayout();
     const other=state.rst.filter(isLoadR).find(g=>byId[g.id].desc==='Uppsala');
     state.kind='dc'; state.mw=40; state.flex=false;
-    if(other) state.mine=other.id;
     state.tab='place'; state.sel=null; state.wsmsg='';
   });
 }
@@ -1444,7 +1451,7 @@ $('#missionseg').addEventListener('click',e=>{
   const aq=m.queue&&m.queue.find(q=>q.adjust); if(aq) state.mw=aq.mw;
   resetAll(); wsClear(); if(m.ws) state.ncap=150; if(m.scen) startScenario(); state.tab=m.scen?'place':m.ws?'stations':(m.queue&&m.queue.length===0)?'build':'place'; render();
 });
-$('#mineseg').addEventListener('click',e=>{const b=e.target.closest('[data-mine]');if(!b||b.disabled)return;state.mine=b.dataset.mine;render()});
+$('#mineseg').addEventListener('click',e=>{const b=e.target.closest('[data-mine]');if(!b||b.disabled)return;state.mine=b.dataset.mine;state.mineSet=true;render()});
 $('#kindbox').addEventListener('click',e=>{
   const b=e.target.closest('[data-kind]'); if(!b)return;
   state.kind=b.dataset.kind; state.mw=KINDS[state.kind].mw; render();
