@@ -33,7 +33,7 @@ const NODES = [
   {id:'OST',base:30, kind:'industri',gen:[{kind:'vind',mw:60}],   name:'Östhammar',  desc:'industri'}
 ];
 /* passiva regionnätsstationer R1..R40 (ingen last eller produktion); används i Blank karta */
-for(let i=1;i<=40;i++) NODES.push({id:'R'+i,name:'Regionnätsstation '+i,desc:'',base:0,kind:'blandat',gen:[],r:true});
+for(let i=1;i<=80;i++) NODES.push({id:'R'+i,name:'Regionnätsstation '+i,desc:'',base:0,kind:'blandat',gen:[],r:true});
 const IDX = Object.fromEntries(NODES.map((n,i)=>[n.id,i]));
 const byId = Object.fromEntries(NODES.map(n=>[n.id,n]));
 const LOADS = NODES.filter(n=>n.base!=null);
