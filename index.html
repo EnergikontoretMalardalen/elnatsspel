@@ -403,9 +403,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261110"></script>
-<script src="sim.js?v=20261110"></script>
-<script src="shp.js?v=20261110"></script>
+<script src="map.js?v=20261111"></script>
+<script src="sim.js?v=20261111"></script>
+<script src="shp.js?v=20261111"></script>
 <script>
 
 const ART = {dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -817,8 +817,11 @@ function renderBuild(v){
   }else{
     h+=`<small>Klicka på en <b>ledning</b> för att förstärka den. För en ny ledning: dra från en grå punkt på en kommun till en annan (eller klicka på två). <button type="button" class="linkbtn" data-help="h-bygg">Hur gör jag?</button></small>`;
   }
-  const items=[...Object.keys(state.up).map(id=>({key:'up:'+id,t:(()=>{const l=ORIG.lines.find(x=>x.id===id),ex=state.up[id]===true?Math.round(l.cap*(UPG-1)):state.up[id];return `Förstärkt: ${l.label}, +${ex} MW (till ${l.cap+ex} MW)`})()})),...state.add.map(a=>({key:'add:'+a.id,t:`${ws()?'Ledning':'Ny ledning'} ${gname(a.a)} – ${gname(a.b)}, ${a.cap+(a.extra||0)} MW`}))];
-  if(items.length) h+=`<ul class="placed">${items.map(o=>`<li><span>${o.t}</span><button type="button" data-rm="${o.key}">Ta bort</button></li>`).join('')}</ul>`;
+  const items=[...Object.keys(state.up).map(id=>({key:'up:'+id,t:(()=>{const l=ORIG.lines.find(x=>x.id===id),ex=state.up[id]===true?Math.round(l.cap*(UPG-1)):state.up[id];return `Förstärkt: ${l.label}, +${ex} MW (till ${l.cap+ex} MW)`})()})),...state.add.map(a=>({key:'add:'+a.id,t:`${ws()?'Ledning':'Ny ledning'} ${gname(a.a)} – ${gname(a.b)}, ${a.cap+(a.extra||0)} MW${a.kv>0?', '+a.kv+' kV':''}`,aid:a.id}))];
+  if(items.length) h+=`<ul class="placed">${items.map(o=>{
+    const a=o.aid&&state.add.find(x=>x.id===o.aid);
+    if(a&&state.edl===a.id) return `<li style="display:block"><div>${o.t}</div><div class="row" style="gap:12px;flex-wrap:wrap;margin-top:6px;align-items:center"><label for="edkv">kV</label><input type="number" id="edkv" min="1" max="420" step="1" value="${a.kv>0?a.kv:70}" style="width:80px"><label for="edmw">MW</label><input type="number" id="edmw" min="1" max="2000" step="1" value="${a.cap}" style="width:80px"><button class="primary" type="button" data-act="edsave">Spara</button><button type="button" data-act="edcancel">Avbryt</button></div>${a.gid!=null&&state.add.filter(x=>x.gid===a.gid).length>1?'<small>Gäller alla delar av ledningen.</small>':''}</li>`;
+    return `<li><span>${o.t}</span><span>${a&&ws()?`<button type="button" data-edl="${a.id}">Ändra</button> `:''}<button type="button" data-rm="${o.key}">Ta bort</button></span></li>`}).join('')}</ul>`;
   box.innerHTML=h;
 }
 function osmQuery(){
@@ -943,7 +946,7 @@ function removeStation(id){
   state.add=state.add.filter(a=>a.a!==id&&a.b!==id); state.sel=null; state.bline=null; state.bnodes=[]; state.chartLine=null;
 }
 const VFCOL=['#d9e7e8','#a6c6c9','#73a6a9','#40858a','#005c63'], VFLAB=['<1','1–17','18–34','35–50','>50'];
-function wsClear(){state.nat=null;state.natown=null;state.natmsg='';state.stamnat=null;state.ow=null;state.kn={};state.ke=null;state.stamnatmsg='';state.gst=[];state.rst=[];state.ext=[];state.add=[];state.placed=[];state.tool='g';state.wsmsg='';state.sel=null;state.bline=null;state.bnodes=[];state.chartLine=null}
+function wsClear(){state.edl=null;state.nat=null;state.natown=null;state.natmsg='';state.stamnat=null;state.ow=null;state.kn={};state.ke=null;state.stamnatmsg='';state.gst=[];state.rst=[];state.ext=[];state.add=[];state.placed=[];state.tool='g';state.wsmsg='';state.sel=null;state.bline=null;state.bnodes=[];state.chartLine=null}
 function nearestSeg(p){
   if(!state.stamnat||!state.stamnat.segs) return null;
   let best=null, bd=12;
@@ -1380,6 +1383,19 @@ $('#buildbox').addEventListener('click',e=>{
   if(e.target.closest('[data-act="knon"]')){const id=state.ke,n=byId[id]; const v=k=>Math.max(0,Math.min(2000,+($('#kn-'+k)||{}).value||0)); const gen=[]; if(v('vind')>0)gen.push({kind:'vind',mw:v('vind')}); if(v('sol')>0)gen.push({kind:'sol',mw:v('sol')}); state.kn[id]={base:v('base'),gen}; const sg1=stObj(id); if(sg1&&sg1.j&&(v('base')>0||gen.length)) sg1.j=false; state.wsmsg=''; render(); return}
   if(e.target.closest('[data-act="knreset"]')){delete state.kn[state.ke]; render(); return}
   const nc=e.target.closest('[data-ncap]'); if(nc){state.ncap=+nc.dataset.ncap;render();return}
+  const edl=e.target.closest('[data-edl]'); if(edl){state.edl=edl.dataset.edl; state.wsmsg=''; render(); return}
+  const eda=e.target.closest('[data-act="edsave"],[data-act="edcancel"]');
+  if(eda){
+    if(eda.dataset.act==='edsave'){
+      const a=state.add.find(x=>x.id===state.edl), kv=+($('#edkv')||{}).value, mw=+($('#edmw')||{}).value;
+      if(a){
+        if(!(kv>0&&kv<=420)){state.wsmsg='Ange spänning (kV) mellan 1 och 420.'; render(); return}
+        if(!(mw>0&&mw<=2000)){state.wsmsg='Ange kapacitet (MW) mellan 1 och 2000.'; render(); return}
+        for(const x of state.add) if(x===a||(a.gid!=null&&x.gid===a.gid)){x.kv=Math.round(kv);x.cap=Math.round(mw);x.extra=0}
+      }
+    }
+    state.edl=null; state.wsmsg=''; state.chartLine=null; render(); return;
+  }
   const rm=e.target.closest('[data-rm]');
   if(rm){
     const [k,id]=rm.dataset.rm.split(':');
