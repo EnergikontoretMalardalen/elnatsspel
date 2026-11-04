@@ -300,7 +300,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     </aside>
 
     <main class="stack main">
-      <section class="card result" aria-live="polite">
+      <section class="card result" id="resultcard" aria-live="polite">
         <div class="cardhead">
           <h2>Resultat</h2>
           <div class="seg small" id="metricseg">
@@ -619,6 +619,7 @@ function mostUtil(res){let b=0;res.lines.forEach((r,i)=>{if(r.util>res.lines[b].
 
 /* ---------- result ---------- */
 function renderResult(v){
+  $('#resultcard').style.display=(ws()&&!state.sel&&!state.placed.length)?'none':'';
   if(ws()&&!VL().length){
     $('#headline').innerHTML='Placera en regionnätsstation för att börja.'; $('#meter').innerHTML=''; $('#alert').hidden=true; $('#basis').textContent='';
     document.querySelectorAll('#metricseg button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.metric===state.metric)));
