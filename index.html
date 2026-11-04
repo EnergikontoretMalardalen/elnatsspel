@@ -819,6 +819,7 @@ function renderBuild(v){
   }
   const items=[...Object.keys(state.up).map(id=>({key:'up:'+id,t:(()=>{const l=ORIG.lines.find(x=>x.id===id),ex=state.up[id]===true?Math.round(l.cap*(UPG-1)):state.up[id];return `Förstärkt: ${l.label}, +${ex} MW (till ${l.cap+ex} MW)`})()})),...state.add.map(a=>({key:'add:'+a.id,t:`${ws()?'Ledning':'Ny ledning'} ${gname(a.a)} – ${gname(a.b)}, ${a.cap+(a.extra||0)} MW`}))];
   if(items.length) h+=`<ul class="placed">${items.map(o=>`<li><span>${o.t}</span><button type="button" data-rm="${o.key}">Ta bort</button></li>`).join('')}</ul>`;
+  if(ws()) h+=`<div class="bact"><button class="primary" type="button" data-act="toplace">Klart, placera etableringar</button></div>`;
   box.innerHTML=h;
 }
 function osmQuery(){
@@ -1368,6 +1369,7 @@ $('#buildbox').addEventListener('click',e=>{
   if(ac&&ac.dataset.act==='loadstam'){loadStamnat();return}
   if(ac&&ac.dataset.act==='ownfile'){$('#stfile').click();return}
   if(ac&&ac.dataset.act==='loadnat'){loadNat();return}
+  if(ac&&ac.dataset.act==='toplace'){state.tab='place';state.ow=null;state.sel=null;state.bline=null;state.bnodes=[];state.wsmsg='';render();return}
   if(ac&&ac.dataset.act==='tolines'){state.tab='build';state.wsmsg='';render();return}
   const si=e.target.closest('[data-setin]'); if(si){const [id,v]=si.dataset.setin.split(':'); const el=$('#'+id); if(el)el.value=v; return}
   const osc=e.target.closest('[data-owscope]'); if(osc){state.owscope=osc.dataset.owscope; render(); return}
