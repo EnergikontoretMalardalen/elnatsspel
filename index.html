@@ -916,7 +916,7 @@ function segsOf(lines){
 function applyStamnat(d){
   if(!d||!Array.isArray(d.stations)||!Array.isArray(d.lines)) throw new Error('fel format');
   const nm=p=>String(p[2]||'').replace(/[<>&"]/g,'').slice(0,60);
-  state.stamnat={src:d.src||'',lines:d.lines.map(l=>({v:+l.v||0,d:String(l.d).replace(/[^0-9ML. \-]/g,'')}))};
+  state.stamnat={src:d.src||'',lines:d.lines.map(l=>({v:+l.v||0,d:String(l.d).replace(/[^0-9ML. \-]/g,''),...(l.x&&Array.isArray(l.xe)?{x:1,xs:l.xs==='start'?'start':'end',xe:[+l.xe[0]||0,+l.xe[1]||0]}:{})}))};
   state.stamnat.segs=segsOf(state.stamnat.lines); state.ow=null;
   state.gst=d.stations.slice(0,30).map((p,i)=>({id:'G'+(i+1),x:Math.round(p[0]),y:Math.round(p[1]),nm:nm(p)}));
   state.rst=(d.rstations||[]).slice(0,40).map((p,i)=>({id:'R'+(i+1),x:Math.round(p[0]),y:Math.round(p[1]),nm:nm(p),j:false}));
@@ -991,7 +991,14 @@ function activateWay(i,cap,kv){
     for(const g of state.rst){const d=Math.hypot(g.x-p[0],g.y-p[1]); if(d<bd&&d<=(isLoadR(g)?16:4)){bd=d;best=g.id}}
     return best;
   };
-  const e0=pts[0], e1=pts[pts.length-1], s0=snap(e0), s1=snap(e1);
+  const e0=pts[0], e1=pts[pts.length-1];
+  /* en ledning som fortsätter ut ur länet till ett stamnätsställe slutar i en anslutning utanför länet (X) */
+  let xid=null;
+  if(ln.x&&ln.xe){
+    xid=(state.ext.find(g=>Math.hypot(g.x-ln.xe[0],g.y-ln.xe[1])<=30)||{}).id||null;
+    if(!xid){xid=['X1','X2','X3','X4','X5','X6','X7','X8'].find(i=>!state.ext.some(g=>g.id===i)); if(!xid) return 'Högst åtta anslutningar utanför länet.'; state.ext.push({id:xid,x:ln.xe[0],y:ln.xe[1]})}
+  }
+  const s0=ln.x&&ln.xs==='start'?xid:snap(e0), s1=ln.x&&ln.xs==='end'?xid:snap(e1);
   const need=(s0?0:1)+(s1?0:1)-((!s0&&!s1&&Math.hypot(e0[0]-e1[0],e0[1]-e1[1])<=4)?1:0);
   const free=80-state.rst.length; if(need>free) return 'Det finns inte plats för fler skarvar i nätet.';
   if(s0&&s0===s1) return 'Båda ändarna hamnar på samma station. Ta bort stationen eller välj en annan ledning.';
@@ -1294,9 +1301,9 @@ function endDrag(e,cancel){
     const el=document.elementFromPoint(e.clientX,e.clientY);
     if(el&&el.matches&&el.matches('.sea,.land2')){
       const p=svgPt($('#diagram svg'),e), x=Math.round(Math.min(MAP.w-51,Math.max(51,p.x))), y=Math.round(Math.min(MAP.h-19,Math.max(19,p.y)));
-      const id=['X1','X2','X3','X4'].find(i=>!state.ext.some(g=>g.id===i));
+      const id=['X1','X2','X3','X4','X5','X6','X7','X8'].find(i=>!state.ext.some(g=>g.id===i));
       const clash=Object.values(L).some(b=>x+51>b.x&&x-51<b.x+b.w&&y+19>b.y&&y-19<b.y+b.h);
-      if(!id){state.wsmsg='Högst fyra anslutningar utanför länet.'}
+      if(!id){state.wsmsg='Högst åtta anslutningar utanför länet.'}
       else if(clash){state.wsmsg='För nära en annan station.'}
       else{state.ext.push({id,x,y});state.bline=null;state.bnodes=[d.from,id];state.wsmsg=''}
       render();
