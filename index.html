@@ -782,7 +782,9 @@ function effText(v){
   return `<p class="eff">Så ändras ledig kapacitet för ${w} (MW): ${rows.map(cell).join(' · ')}${mineOn()?`. <b class="${val(v.cur,state.mine)-val(v.cres,state.mine)<0?'neg':'pos'}">${byId[state.mine].name}: ${val(v.cres,state.mine)} → ${val(v.cur,state.mine)} MW</b>`:''}</p>`;
 }
 function renderBuild(v){
-  const box=$('#buildbox'); box.hidden=state.tab!=='build'&&state.tab!=='stations'; $('#actionbar').hidden=state.tab!=='place';
+  const box=$('#buildbox'); box.hidden=state.tab!=='build'&&state.tab!=='stations'; {const mc=$('#mapcard'),under=state.tab==='build'; /* ledningslistan ligger under kartan, övriga flikar ovanför */
+    if(under&&box.nextElementSibling!==null&&box.parentNode===mc&&mc.lastElementChild!==box) mc.appendChild(box);
+    else if(!under&&mc.lastElementChild===box) mc.insertBefore(box,$('#actionbar'));} $('#actionbar').hidden=state.tab!=='place';
   document.querySelector('#mapcard').classList.toggle('build',state.tab==='build');
   document.querySelector('#mapcard').classList.toggle('stations',state.tab==='stations');
   if(state.tab==='stations'){box.innerHTML=stationsHtml();return}
