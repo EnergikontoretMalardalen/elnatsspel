@@ -386,7 +386,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     <h3 id="h-workshop">Blank karta: bygg ert eget nät</h3>
     <p>Spelet startar i <b>Blank karta</b>, där ni bestämmer själva hur regionnätet ska se ut. Använd den till exempel tillsammans med en verklig karta på projektorn.</p>
     <ol>
-      <li><b>Stationer:</b> välj <i>Stamnätsstation</i> och klicka där stamnätet ska komma in (högst fyra). Välj sedan <i>Regionnätsstation</i> och klicka där stationen ska ligga. Varje regionnätsstation har en förvald last (schablon) som kan ändras under <i>Last och produktion</i>, och nya verksamheter ansluts till regionnätsstationer. <i>Station på ledning</i> bygger en ny regionnätsstation på en ledning i bakgrunden. Flytta en station genom att dra den (fungerar även under Ledningar); <i>Ta bort</i> i listan tar bort den.</li>
+      <li><b>Stationer:</b> välj <i>Stamnätsstation</i> och klicka där stamnätet ska komma in (högst fyra). Välj sedan <i>Regionnätsstation</i> och klicka där stationen ska ligga. Varje regionnätsstation har en förvald last (schablon) som kan ändras under <i>Last och produktion</i>, och nya verksamheter ansluts till regionnätsstationer. <i>Station på ledning</i> bygger en ny regionnätsstation på en ledning i bakgrunden. Flytta en station genom att dra den (under Stationer). Under Ledningar drar du från en station till en annan för att bygga en ledning; <i>Ta bort</i> i listan tar bort den.</li>
       <li><b>Ledningar:</b> dra från en grå punkt på en station till en annan. Välj kapacitet (60–300 MW). Klicka på en ledning för att förstärka den. En regionnätsstation som inte nås av någon ledning visas som <i>Ej ansluten</i> och har 0 MW. Stamnätsstationer kopplas inte ihop med varandra. <b>Ladda stamnät:</b> knappen läser in en fil (<code>stamnat.json</code>, gjord från Svenska kraftnäts stationer och ledningar med <code>tools/stamnat_till_json.py</code>). Då placeras stamnätsstationerna där de verkligen ligger och stamnätets ledningar visas som bakgrund. Filen läses bara i din webbläsare. Båda filerna väljs i en filväljare och läses bara i webbläsaren; se <i>Så laddar du stamnät och nätområden</i> under Stationer för var underlaget hämtas. <b>Regionnät och stationer på ledning:</b> under Stationer finns verktygen <i>Stamnätsstation</i>, <i>Kommunstation</i>, <i>Regionnätsstation</i> (en knutpunkt utan last) och <i>Station på ledning</i>, som bygger en egen station på en bakgrundsledning. Ledningar kan dras från alla stationer. Stamnätets ledningar i bakgrunden är bara underlag. Regionnätets ledningar är röda och räknas inte (0 kV, 0 MW). I fliken Ledningar kan ni klicka på en och ange spänning (kV) och kapacitet (MW): då blir den grön och räknas med. Längden tas från kartans geometri och reaktansen räknas ur spänning och längd. <b>Kommunernas last och produktion:</b> under Stationer, välj <i>Last och produktion</i> vid en kommunstation (eller klicka på den) för att ändra de förvalda värdena. Ändarna kopplas till närmaste station, annars skapas en regionnätsstation. Regionnätet kan hämtas från OpenStreetMap, men uppgifterna är inskickade av frivilliga och kan vara ofullständiga eller felaktiga. <b>Ladda nätområden:</b> lägger ett lager över kartan med lokalnätens nätområden (nätägare och områdesnamn), gjort med <code>tools/natomraden_till_json.py</code> från nätområdesstrukturen. De följer inte kommungränserna och kan stängas av med <i>Visa nätområden</i>. <b>Grannlän:</b> dra en ledning från en regionstation och släpp den utanför länets gräns (på havet eller på grannkommunerna), så skapas en anslutning utanför länet som går att flytta. Den antas höra till ett starkt nät, på samma sätt som stamnätet.</li>
       <li><b>Etableringar:</b> placera datacenter, vindpark med mera och se hur ledig kapacitet ändras i er egen kommun och hos grannarna. Använd <i>N-1</i> under Avancerat för att se om nätet klarar att en ledning faller bort.</li>
     </ol>
@@ -403,9 +403,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261111"></script>
-<script src="sim.js?v=20261111"></script>
-<script src="shp.js?v=20261111"></script>
+<script src="map.js?v=20261120"></script>
+<script src="sim.js?v=20261120"></script>
+<script src="shp.js?v=20261120"></script>
 <script>
 
 const ART = {dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -1268,20 +1268,30 @@ function pickNode(id){
 let dragInfo=null, justDragged=false;
 function svgPt(svg,e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const m=svg.getScreenCTM();return m?p.matrixTransform(m.inverse()):{x:0,y:0}}
 function nodeAt(e){
-  const el=document.elementFromPoint(e.clientX,e.clientY); if(!el||!el.closest)return null;
-  const t=el.closest('[data-port],[data-leaf],[data-station]'); if(!t)return null;
-  return t.dataset.port||t.dataset.leaf||t.dataset.station;
+  const el=document.elementFromPoint(e.clientX,e.clientY);
+  const t=el&&el.closest?el.closest('[data-port],[data-leaf],[data-station]'):null;
+  if(t) return t.dataset.port||t.dataset.leaf||t.dataset.station;
+  /* något ovanpå stationen (till exempel en MW-ruta på en ledning) skymmer den: sök närmaste station på kartan */
+  const svg=$('#diagram svg'); if(!svg) return null;
+  const p=svgPt(svg,e); let best=null,bd=1e9;
+  for(const id in L){
+    if(id[0]==='R'&&!isLoadR(stObj(id))) continue;
+    const b=L[id], cx=b.x+b.w/2, cy=b.y+b.h/2, d=Math.hypot(p.x-cx,p.y-cy), lim=id[0]==='R'?14:Math.max(b.w,b.h)/2+4;
+    if(d<=lim&&d<bd){bd=d;best=id}
+  }
+  return best;
 }
 function setHot(id){
   document.querySelectorAll('#diagram .hot').forEach(x=>x.classList.remove('hot'));
   if(id) document.querySelectorAll(`#diagram [data-leaf="${id}"],#diagram [data-station="${id}"]`).forEach(x=>x.classList.add('hot'));
 }
 $('#diagram').addEventListener('pointerdown',e=>{
-  const pt=e.target.closest&&e.target.closest('[data-port]'); if(!pt||state.tab!=='build'||(e.button!==undefined&&e.button>0))return;
+  const pt=e.target.closest&&e.target.closest('[data-port],[data-leaf],[data-station]'); if(!pt||state.tab!=='build'||(e.button!==undefined&&e.button>0))return;
+  const from=pt.dataset.port||pt.dataset.leaf||pt.dataset.station; if(!L[from])return;
   e.preventDefault();
-  const svg=pt.ownerSVGElement, from=pt.dataset.port, a=svgPt(svg,e);
+  const svg=pt.ownerSVGElement, a=svgPt(svg,e), isPort=pt.matches('[data-port]'), cc=ctr(from);
   const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
-  ln.setAttribute('class','dragline'); ln.setAttribute('x1',pt.getAttribute('cx')); ln.setAttribute('y1',pt.getAttribute('cy'));
+  ln.setAttribute('class','dragline'); ln.setAttribute('x1',isPort?pt.getAttribute('cx'):cc.x); ln.setAttribute('y1',isPort?pt.getAttribute('cy'):cc.y);
   ln.setAttribute('x2',a.x); ln.setAttribute('y2',a.y); svg.appendChild(ln);
   dragInfo={svg,from,ln,moved:false,sx:e.clientX,sy:e.clientY};
 });
@@ -1326,7 +1336,7 @@ function diagramAct(t){
 /* flytta stationer med drag and drop (Blank karta) */
 let moveInfo=null;
 $('#diagram').addEventListener('pointerdown',e=>{
-  if(!ws()||(state.tab!=='stations'&&state.tab!=='build')||(e.button!==undefined&&e.button>0))return;
+  if(!ws()||state.tab!=='stations'||(e.button!==undefined&&e.button>0))return;
   if(e.target.closest('[data-port]'))return;
   const el=e.target.closest('[data-station],[data-leaf]'); if(!el)return;
   const id=el.dataset.station||el.dataset.leaf, o=stObj(id); if(!o)return;
