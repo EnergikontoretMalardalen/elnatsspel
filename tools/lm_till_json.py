@@ -6,7 +6,7 @@ Behöver pyproj och numpy. Lagren som används: ledningslinje (1702 stam, 1703 r
 transformatoromrade och transformatoromradespunkt (stationer, exakta lägen).
 Stationer nära en stamnätsledning blir stamnätsstationer (G), övriga regionnätsstationer (R).
 Glapp på högst 10 km mellan delar av regionnätet överbryggas (antagen markkabel, k:1).
-Vattenfalls stationer (vattenfall_ref.json) flyttas till närmaste station i filerna (högst 5 km).
+Vattenfalls stationer (vattenfall_ref.json) flyttas till närmaste station i filerna (högst 5 km); de som saknar station i filerna tas bort.
 """
 import sqlite3, struct, json, sys, os, collections, re
 import numpy as np
@@ -268,11 +268,12 @@ def main():
         else:
             c['snap'] = False; extra.append((c['x'], c['y']))
     json.dump(vf, open(os.path.join(ROOT, 'vattenfall_ref.json'), 'w'), ensure_ascii=False)
-    R += extra   # Vattenfall-stationer utan station i filerna (ungefärligt läge)
+    # Vattenfall-stationer utan station i Lantmäteriets filer tas inte med (läget går inte att kontrollera i kartdata)
+    vf = [c for c in vf if c['snap']]; json.dump(vf, open(os.path.join(ROOT, 'vattenfall_ref.json'), 'w'), ensure_ascii=False)
     # stationer som bara har anslutning utanför länet (Stockholm) tas bort efter handpåläggning
     EXKL = [(319, 776)]
     R = [p for p in R if not any(abs(p[0] - x) <= 3 and abs(p[1] - y) <= 3 for x, y in EXKL)]
     fm = lambda p: [round(p[0]), round(p[1]), '']
     json.dump({'src': 'lm', 'stations': [fm(p) for p in G], 'rstations': [fm(p) for p in R], 'lines': outl}, open(out, 'w'), separators=(',', ':'))
-    print(len(G), 'stamnätsstationer,', len(R), 'regionnätsstationer (varav', len(extra), 'från Vattenfall utan träff),', len(outl), 'ledningar,', os.path.getsize(out) // 1024, 'kB')
+    print(len(G), 'stamnätsstationer,', len(R), 'regionnätsstationer (', len(extra), 'Vattenfall-stationer utan träff i Lantmäteriets filer togs bort),', len(outl), 'ledningar,', os.path.getsize(out) // 1024, 'kB')
 main()
