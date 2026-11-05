@@ -5,9 +5,10 @@ Användning: python3 tools/lm_till_json.py ledningar_ln01.gpkg ledningar_ln03.gp
 Behöver pyproj och numpy. Lagren som används: ledningslinje (1702 stam, 1703 region),
 transformatoromrade och transformatoromradespunkt (stationer, exakta lägen).
 Stationer nära en stamnätsledning blir stamnätsstationer (G), övriga regionnätsstationer (R).
+Glapp på högst 10 km mellan delar av regionnätet överbryggas (antagen markkabel, k:1).
 Vattenfalls stationer (vattenfall_ref.json) flyttas till närmaste station i filerna (högst 5 km).
 """
-import sqlite3, struct, json, sys, os, collections
+import sqlite3, struct, json, sys, os, collections, re
 import numpy as np
 from pyproj import Transformer
 from matplotlib.path import Path as MP
@@ -220,6 +221,35 @@ def main():
             ln = {'v': 70, 'd': 'M' + 'L'.join(f'{x:.1f} {y:.1f}' for x, y in r)}
             if xf: ln.update({'x': 1, 'xs': xf[0], 'xe': [round(min(M['w'] - 51, max(51, xf[1][0]))), round(min(M['h'] - 19, max(19, xf[1][1])))]})
             outl.append(ln)
+    # glapp i regionnätet: ledningar som går i kabel i mark syns inte i Lantmäteriets data. Små glapp (högst 10 km)
+    # mellan två fristående delar av regionnätet överbryggas med en rak ledning (k:1 = antagen markkabel).
+    GAP = 10 * PXKM; TJ = 4.0
+    def pts_of(l): return [tuple(map(float, m)) for m in re.findall(r'([\d.]+) ([\d.]+)', l['d'])]
+    rl = [(l, pts_of(l)) for l in outl if l['v'] == 70]
+    par = list(range(len(rl)))
+    def fnd(a):
+        while par[a] != a: par[a] = par[par[a]]; a = par[a]
+        return a
+    for i, (_, p) in enumerate(rl):
+        for j, (_, q) in enumerate(rl):
+            if i < j and (any(np.hypot(a[0] - b[0], a[1] - b[1]) <= TJ for a in (p[0], p[-1]) for b in q)
+                          or any(np.hypot(a[0] - b[0], a[1] - b[1]) <= TJ for a in (q[0], q[-1]) for b in p)): par[fnd(i)] = fnd(j)
+    while True:
+        best = None
+        for i, (l, p) in enumerate(rl):
+            for e in (0, len(p) - 1):
+                if l.get('x') and l.get('xs') == ('start' if e == 0 else 'end'): continue
+                a = p[e]
+                if any(j != i and any(np.hypot(a[0] - b[0], a[1] - b[1]) <= TJ for b in q) for j, (_, q) in enumerate(rl)): continue
+                for j, (_, q) in enumerate(rl):
+                    if fnd(j) == fnd(i): continue
+                    for b in q:
+                        dd = np.hypot(a[0] - b[0], a[1] - b[1])
+                        if dd <= GAP and (best is None or dd < best[0]): best = (dd, i, j, a, b)
+        if not best: break
+        dd, i, j, a, b = best; par[fnd(i)] = fnd(j)
+        outl.append({'v': 70, 'k': 1, 'd': f'M{a[0]:.1f} {a[1]:.1f}L{b[0]:.1f} {b[1]:.1f}'})
+        print(f'kabelglapp {dd / PXKM:.1f} km överbryggat vid ({a[0]:.0f},{a[1]:.0f})-({b[0]:.0f},{b[1]:.0f})')
     from scipy.spatial import cKDTree
     ts = cKDTree(np.array(sp))
     G = [p for p in merged if ts.query(p)[0] / PXKM < 0.5]; R = [p for p in merged if ts.query(p)[0] / PXKM >= 0.5]
