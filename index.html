@@ -406,9 +406,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261121"></script>
-<script src="sim.js?v=20261121"></script>
-<script src="shp.js?v=20261121"></script>
+<script src="map.js?v=20261122"></script>
+<script src="sim.js?v=20261122"></script>
+<script src="shp.js?v=20261122"></script>
 <script>
 
 const ART = {dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -700,7 +700,7 @@ function renderDiagram(v){
   if(ws()&&state.stamnat){
     const onW=new Set(state.add.filter(a=>a.gid!=null).map(a=>a.gid)), pick=ws()&&bld;
     s+=state.stamnat.lines.map((l,i)=>{
-      const reg=l.v>0&&l.v<200, on=reg&&onW.has(i);
+      const reg=l.v>0&&l.v<200, on=reg&&(onW.has(i)||(state.cov&&state.cov.has(i)));
       return `<path class="stam ${l.v>=380?'v400':l.v>=200?'v220':l.v>0?'vr':'v0'}${on?' on':''}${state.ow===i?' pick':''}" d="${l.d}"/>`+(pick&&reg?`<path class="owhit" data-ow="${i}" d="${l.d}"><title>Regionnätsledning (${on?'med i beräkningen':'0 kV, 0 MW, inte med'}): klicka och ange kV och MW</title></path>`:'');
     }).join('');
   }
@@ -960,7 +960,7 @@ function removeStation(id){
   state.add=state.add.filter(a=>a.a!==id&&a.b!==id); state.sel=null; state.bline=null; state.bnodes=[]; state.chartLine=null;
 }
 const VFCOL=['#d9e7e8','#a6c6c9','#73a6a9','#40858a','#005c63'], VFLAB=['<1','1–17','18–34','35–50','>50'];
-function wsClear(){state.mineSet=false;state.edl=null;state.nat=null;state.natown=null;state.natmsg='';state.stamnat=null;state.ow=null;state.kn={};state.ke=null;state.stamnatmsg='';state.gst=[];state.rst=[];state.ext=[];state.add=[];state.placed=[];state.tool='g';state.wsmsg='';state.sel=null;state.bline=null;state.bnodes=[];state.chartLine=null}
+function wsClear(){state.cov=null;state.mineSet=false;state.edl=null;state.nat=null;state.natown=null;state.natmsg='';state.stamnat=null;state.ow=null;state.kn={};state.ke=null;state.stamnatmsg='';state.gst=[];state.rst=[];state.ext=[];state.add=[];state.placed=[];state.tool='g';state.wsmsg='';state.sel=null;state.bline=null;state.bnodes=[];state.chartLine=null}
 function nearestSeg(p){
   if(!state.stamnat||!state.stamnat.segs) return null;
   let best=null, bd=12;
@@ -1494,7 +1494,8 @@ $('#undo').addEventListener('click',()=>{
 function startScenario(){
   loadStamnat(()=>{
     state.owscope='all'; const Ls=state.stamnat.lines;
-    for(let i=0;i<Ls.length;i++) if(Ls[i].v>0&&Ls[i].v<200) activateWay(i,100,Ls[i].v>=100?130:70);
+    state.cov=new Set(); /* delar som ligger i samma stråk som en ledning som redan är med: ritas som med, räknas inte dubbelt */
+    for(let i=0;i<Ls.length;i++) if(Ls[i].v>0&&Ls[i].v<200){const m=activateWay(i,100,Ls[i].v>=100?130:70); if(m&&/samma station|redan en ledning|för kort/.test(m)) state.cov.add(i)}
     layoutKey='x'; syncLayout();
     const other=state.rst.filter(isLoadR).find(g=>byId[g.id].desc==='Uppsala');
     state.kind='dc'; state.mw=40; state.flex=false;
