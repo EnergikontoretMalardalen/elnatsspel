@@ -170,7 +170,7 @@ def main():
         if a[0] == 'O':
             w = plen(q); adj[e[0]].append((e[1], w, idx)); adj[e[1]].append((e[0], w, idx))
     tl_idx = [i for i, (a, e, q) in enumerate(edges) if a[0] == 'T']
-    accepted = set()
+    accepted = set(); pairs = []
     def dijk(src, dst, lim):
         dist = {src: 0.0}; prev = {}; hp = [(0.0, src)]
         while hp:
@@ -191,7 +191,7 @@ def main():
             lim = LIM - plen(edges[ix][2]) - plen(edges[iy][2])
             if lim < 0: continue
             path = dijk(edges[ix][1], edges[iy][1], lim)
-            if path is not None: accepted.update([ix, iy] + path)
+            if path is not None: accepted.update([ix, iy] + path); pairs.append((ix, iy))
     # kopiera nodernas lägen så att ändarna sammanfaller exakt
     for idx in accepted:
         a, e, q = edges[idx]
@@ -202,8 +202,14 @@ def main():
     from scipy.spatial import cKDTree as _KD
     _st = _KD(np.array(sp_all)); xt = {}
     for side, tl, ri in reg_tails:
-        if any(e[0] == 'T' and e[1] == ri and e[2] == side for e in [edges[i][0] for i in accepted]): continue
         far = tl[-1]
+        tix = [i for i in tl_idx if edges[i][0][1:] == (ri, side)][0]
+        if tix in accepted:
+            # svans som redan är förbunden med en annan svans (slinga via ett ställe utanför länet): blir ändå en
+            # anslutning utanför länet om den slutar vid ett stamnätsställe och den andra änden inte gör det
+            near = lambda q: _st.query(q)[0] / PXKM <= 0.5
+            partners = [edges[y if x == tix else x][2][-1] for x, y in pairs if tix in (x, y)]
+            if not (near(far) and partners and not any(near(p) for p in partners)): continue
         if _st.query(far)[0] / PXKM <= 1.5 and plen(tl) <= 50 * PXKM: xt[(ri, side)] = list(tl)
     ext = {}   # (ref, side) -> svans med slutpunkt i klustret
     for idx in accepted:
@@ -211,8 +217,8 @@ def main():
         if a[0] == 'T': ext[(a[1], a[2])] = list(q[:-1]) + [nodes[e]]
     for ri, rr in enumerate(reg_in):
         r = list(rr['run'])
-        if (ri, 'start') in ext: r = ext[(ri, 'start')][::-1] + r[1:]
-        if (ri, 'end') in ext: r = r[:-1] + ext[(ri, 'end')]
+        if (ri, 'start') in ext and (ri, 'start') not in xt: r = ext[(ri, 'start')][::-1] + r[1:]
+        if (ri, 'end') in ext and (ri, 'end') not in xt: r = r[:-1] + ext[(ri, 'end')]
         xf = None
         if (ri, 'start') in xt: r = xt[(ri, 'start')][::-1] + r[1:]; xf = ('start', r[0])
         elif (ri, 'end') in xt: r = r[:-1] + xt[(ri, 'end')]; xf = ('end', r[-1])
