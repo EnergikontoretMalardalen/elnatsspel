@@ -132,7 +132,7 @@ def main():
             if merged[0][0] > 0: tails.append(('start', d[:merged[0][0] + 1][::-1]))   # från gränsen ut till änden
             if merged[-1][1] < len(d): tails.append(('end', d[merged[-1][1] - 1:]))
         return [d[i:j] for i, j in merged], tails, d, merged
-    reg_in, reg_tails, reg_out = [], [], []
+    reg_in, reg_tails, reg_out = [], [], []; sp_all = []
     for t, parts in by.items():
         for q in merge_chains(parts):
             if t == 1703:
@@ -144,6 +144,7 @@ def main():
                 for side, tl in tails: reg_tails.append((side, tl, len(reg_in) - (len(runs) if side == 'start' else 1)))
                 continue
             q = rdp(q, 0.8)
+            if t == 1702: sp_all += dens(q)
             if not any(0 <= x <= M['w'] and 0 <= y <= M['h'] for x, y in q): continue
             outl.append({'v': 400 if t == 1702 else 70, 'd': 'M' + 'L'.join(f'{x:.1f} {y:.1f}' for x, y in q)})
             if t == 1702:
@@ -196,6 +197,13 @@ def main():
         if a[0] == 'O':
             q = [nodes[e[0]]] + list(q[1:-1]) + [nodes[e[1]]]
             r = rdp(q, 0.8); outl.append({'v': 70, 'd': 'M' + 'L'.join(f'{x:.1f} {y:.1f}' for x, y in r)})
+    # svansar som slutar vid ett stamnätsställe utanför länet blir anslutningar till grannlänets stamnät (flaggan x)
+    from scipy.spatial import cKDTree as _KD
+    _st = _KD(np.array(sp_all)); xt = {}
+    for side, tl, ri in reg_tails:
+        if any(e[0] == 'T' and e[1] == ri and e[2] == side for e in [edges[i][0] for i in accepted]): continue
+        far = tl[-1]
+        if _st.query(far)[0] / PXKM <= 1.5 and plen(tl) <= 50 * PXKM: xt[(ri, side)] = list(tl)
     ext = {}   # (ref, side) -> svans med slutpunkt i klustret
     for idx in accepted:
         a, e, q = edges[idx]
@@ -204,8 +212,14 @@ def main():
         r = list(rr['run'])
         if (ri, 'start') in ext: r = ext[(ri, 'start')][::-1] + r[1:]
         if (ri, 'end') in ext: r = r[:-1] + ext[(ri, 'end')]
+        xf = None
+        if (ri, 'start') in xt: r = xt[(ri, 'start')][::-1] + r[1:]; xf = ('start', r[0])
+        elif (ri, 'end') in xt: r = r[:-1] + xt[(ri, 'end')]; xf = ('end', r[-1])
         r = rdp(r, 0.8)
-        if len(r) >= 2: outl.append({'v': 70, 'd': 'M' + 'L'.join(f'{x:.1f} {y:.1f}' for x, y in r)})
+        if len(r) >= 2:
+            ln = {'v': 70, 'd': 'M' + 'L'.join(f'{x:.1f} {y:.1f}' for x, y in r)}
+            if xf: ln.update({'x': 1, 'xs': xf[0], 'xe': [round(min(M['w'] - 51, max(51, xf[1][0]))), round(min(M['h'] - 19, max(19, xf[1][1])))]})
+            outl.append(ln)
     from scipy.spatial import cKDTree
     ts = cKDTree(np.array(sp))
     G = [p for p in merged if ts.query(p)[0] / PXKM < 0.5]; R = [p for p in merged if ts.query(p)[0] / PXKM >= 0.5]
