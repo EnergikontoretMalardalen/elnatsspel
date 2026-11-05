@@ -230,6 +230,7 @@ dialog#help[open]{display:flex;flex-direction:column}
 .hbody li{margin-bottom:4px}
 .sw{display:inline-block;width:12px;height:12px;border-radius:2px;border:1.5px solid var(--line);vertical-align:-1px;margin-right:4px}
 .sw.ok{background:var(--ok-t);border-color:var(--ok)} .sw.warn{background:var(--warn-t);border-color:var(--warn)} .sw.bad{background:var(--bad-t);border-color:var(--bad)}
+.zoomctl{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;z-index:3}.zoomctl button{width:34px;height:34px;border:1px solid var(--line,#ccc);border-radius:8px;background:var(--bg,#fff);color:inherit;font-size:18px;line-height:1;cursor:pointer}.zoomctl button:disabled{opacity:.4;cursor:default}#diagram{position:relative}#diagram svg{touch-action:none}
 </style>
 
 <div class="wrap">
@@ -766,7 +767,8 @@ function renderDiagram(v){
         s+=`<circle class="port" data-port="${id}" cx="${px}" cy="${py}" r="6.5"><title>Dra till en annan station för att dra en ny ledning</title></circle>`;
     }
   }
-  $('#diagram').innerHTML=`<svg viewBox="0 0 ${MAP.w} ${MAP.h}" role="group" aria-label="Karta över Uppsala län med ${ws()?'stationer som deltagarna placerar':'åtta kommuner och ett fiktivt regionnät'}">${s}</svg>`;
+  zoomClamp();
+  $('#diagram').innerHTML=`<svg viewBox="${ZOOM.x.toFixed(1)} ${ZOOM.y.toFixed(1)} ${(MAP.w/ZOOM.k).toFixed(1)} ${(MAP.h/ZOOM.k).toFixed(1)}" role="group" aria-label="Karta över Uppsala län med ${ws()?'stationer som deltagarna placerar':'åtta kommuner och ett fiktivt regionnät'}">${s}</svg><div class="zoomctl" role="group" aria-label="Zoom"><button type="button" data-zoom="in" aria-label="Zooma in" title="Zooma in">+</button><button type="button" data-zoom="out" aria-label="Zooma ut" title="Zooma ut">−</button><button type="button" data-zoom="reset" aria-label="Återställ zoom" title="Visa hela kartan"${ZOOM.k===1?' disabled':''}>⤢</button></div>`;
   const natLeg=(ws()&&state.nat)?`<label class="natchk"><input type="checkbox" data-natvis ${state.natvis?'checked':''}> Visa nätområden</label>`+(state.natvis?natOwners().list.map(o=>`<span><i class="nt" style="border-color:${o[1]};background:${o[1]}22"></i>${o[0]}</span>`).join(''):''):'';
   const vfLeg=ws()?`<label class="natchk"><input type="checkbox" data-vfvis ${state.vfvis?'checked':''}> Visa Vattenfalls kapacitetskarta (jämförelse)</label>`+(state.vfvis&&state.vf?`<span>Ledig kapacitet för hög elkonsumtion i regionnätsstationer, MW (ungefärligt läge, närliggande stationer ihopslagna, högsta värdet gäller; värden enligt Vattenfalls karta, färg efter klass). Visar bara 70–130 kV-stationer. 50 MW betyder 50 MW eller mer (tills verkliga siffror finns). Källa: Vattenfall Eldistribution.</span>`+VFCOL.map((c,i)=>`<span><i style="background:${c};border:1px solid #1d2b2c;border-radius:50%"></i>${VFLAB[i]} MW</span>`).join(''):''):'';
   $('#maplegend').innerHTML=natLeg+vfLeg+`<span><i class="ok"></i>20 MW ledigt eller mer</span><span><i class="warn"></i>1–19 MW</span><span><i class="bad"></i>0 MW</span>`+(anyShare?`<span><i class="acc"></i>Vägarna den nya effekten tar (tjockare = större andel)</span>`:'')+(ws()&&state.stamnat?`<span><i class="stl"></i>Stamnätets ledningar (bakgrund)</span>`+(state.stamnat.lines.some(l=>l.v>0&&l.v<200)?`<span><i class="stl r"></i>Regionnätsledning, inte med (0 kV, 0 MW)</span><span><i class="stl g"></i>Regionnätsledning med i beräkningen</span>`:'')+(state.stamnat.src==='osm'?`<span>Data: © OpenStreetMap-bidragsgivare (ODbL). Kan vara ofullständig eller felaktig.</span>`:state.stamnat.src==='lm'?`<span>Ledningar: © Lantmäteriet, Topografi 100 (CC0). Stamnätsstationer: © OpenStreetMap-bidragsgivare (ODbL). Regionnätsstationer: ungefärligt läge enligt Vattenfalls kapacitetskarta. Kan vara ofullständigt eller felaktigt.</span>`:''):'')+(LINES.some(l=>l.up)?`<span><i class="thick"></i>Förstärkt ledning</span>`:'')+((!ws()&&LINES.some(l=>l.added))||(v.pend&&v.pend.type==='add')?`<span><i class="dash"></i>Ny ledning</span>`:'');
@@ -1266,6 +1268,28 @@ function pickNode(id){
   render();
 }
 let dragInfo=null, justDragged=false;
+const ZOOM={k:1,x:0,y:0,max:3};
+function zoomClamp(){ZOOM.k=Math.min(ZOOM.max,Math.max(1,ZOOM.k));ZOOM.x=Math.min(MAP.w-MAP.w/ZOOM.k,Math.max(0,ZOOM.x));ZOOM.y=Math.min(MAP.h-MAP.h/ZOOM.k,Math.max(0,ZOOM.y))}
+function zoomTo(k,fx,fy){ /* fx,fy: kartkoordinat som ska stå still (annars mitten) */
+  const o=ZOOM.k; k=Math.min(ZOOM.max,Math.max(1,k)); if(fx==null){fx=ZOOM.x+MAP.w/o/2;fy=ZOOM.y+MAP.h/o/2}
+  ZOOM.x=fx-(fx-ZOOM.x)*o/k; ZOOM.y=fy-(fy-ZOOM.y)*o/k; ZOOM.k=k; zoomClamp(); render();
+}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-zoom]'); if(!b)return; const m=b.dataset.zoom;
+  if(m==='reset'){ZOOM.k=1;ZOOM.x=0;ZOOM.y=0;render()} else zoomTo(ZOOM.k*(m==='in'?1.5:1/1.5))});
+$('#diagram').addEventListener('wheel',e=>{ if(!e.ctrlKey&&!e.metaKey)return; const svg=$('#diagram svg'); if(!svg)return; e.preventDefault();
+  const p=svgPt(svg,e); zoomTo(ZOOM.k*(e.deltaY<0?1.15:1/1.15),p.x,p.y)},{passive:false});
+let panInfo=null;
+$('#diagram').addEventListener('pointerdown',e=>{
+  if(ZOOM.k<=1||(e.button!==undefined&&e.button>0)||!e.target.closest||e.target.closest('[data-port],[data-leaf],[data-station],[data-zoom]'))return;
+  const svg=$('#diagram svg'); if(!svg)return; const m=svg.getScreenCTM(); if(!m)return;
+  panInfo={sx:e.clientX,sy:e.clientY,x:ZOOM.x,y:ZOOM.y,u:1/m.a,moved:false};
+});
+window.addEventListener('pointermove',e=>{ if(!panInfo)return; const dx=e.clientX-panInfo.sx, dy=e.clientY-panInfo.sy;
+  if(!panInfo.moved&&Math.hypot(dx,dy)<5)return; panInfo.moved=true;
+  const svg=$('#diagram svg'); ZOOM.x=panInfo.x-dx*panInfo.u; ZOOM.y=panInfo.y-dy*panInfo.u; zoomClamp();
+  if(svg)svg.setAttribute('viewBox',`${ZOOM.x.toFixed(1)} ${ZOOM.y.toFixed(1)} ${(MAP.w/ZOOM.k).toFixed(1)} ${(MAP.h/ZOOM.k).toFixed(1)}`)});
+window.addEventListener('pointerup',()=>{ if(panInfo&&panInfo.moved){justDragged=true;setTimeout(()=>{justDragged=false},0)} panInfo=null});
+
 function svgPt(svg,e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const m=svg.getScreenCTM();return m?p.matrixTransform(m.inverse()):{x:0,y:0}}
 function nodeAt(e){
   const el=document.elementFromPoint(e.clientX,e.clientY);
