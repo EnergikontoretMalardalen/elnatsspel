@@ -231,6 +231,7 @@ dialog#help[open]{display:flex;flex-direction:column}
 .sw{display:inline-block;width:12px;height:12px;border-radius:2px;border:1.5px solid var(--line);vertical-align:-1px;margin-right:4px}
 .sw.ok{background:var(--ok-t);border-color:var(--ok)} .sw.warn{background:var(--warn-t);border-color:var(--warn)} .sw.bad{background:var(--bad-t);border-color:var(--bad)}
 .zoomctl{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;z-index:3}.zoomctl button{width:34px;height:34px;border:1px solid var(--line,#ccc);border-radius:8px;background:var(--bg,#fff);color:inherit;font-size:18px;line-height:1;cursor:pointer}.zoomctl button:disabled{opacity:.4;cursor:default}#diagram{position:relative}#diagram svg{touch-action:none}
+.coordro{font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted,#5a6570);padding:6px 2px 0;min-height:1.4em}
 </style>
 
 <div class="wrap">
@@ -324,6 +325,7 @@ dialog#help[open]{display:flex;flex-direction:column}
         </div>
         <div class="scroll"><div id="diagram"></div></div>
         <div class="maplegend" id="maplegend"></div>
+        <div class="coordro" id="coordro">Håll muspekaren över kartan för att se koordinater.</div>
       </section>
 
       <section class="card" id="senscard">
@@ -404,9 +406,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261120"></script>
-<script src="sim.js?v=20261120"></script>
-<script src="shp.js?v=20261120"></script>
+<script src="map.js?v=20261121"></script>
+<script src="sim.js?v=20261121"></script>
+<script src="shp.js?v=20261121"></script>
 <script>
 
 const ART = {dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -1280,6 +1282,14 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
   if(m==='reset'){ZOOM.k=1;ZOOM.x=0;ZOOM.y=0;render()} else zoomTo(ZOOM.k*(m==='in'?1.5:1/1.5))});
 $('#diagram').addEventListener('wheel',e=>{ if(!e.ctrlKey&&!e.metaKey)return; const svg=$('#diagram svg'); if(!svg)return; e.preventDefault();
   const p=svgPt(svg,e); zoomTo(ZOOM.k*(e.deltaY<0?1.15:1/1.15),p.x,p.y)},{passive:false});
+/* koordinater under muspekaren: kartpunkter (origo uppe till vänster) och latitud/longitud (WGS84) */
+$('#diagram').addEventListener('pointermove',e=>{
+  const svg=$('#diagram svg'),o=$('#coordro'); if(!svg||!o||e.pointerType==='touch')return; const p=svgPt(svg,e);
+  if(p.x<0||p.y<0||p.x>MAP.w||p.y>MAP.h){o.textContent='Håll muspekaren över kartan för att se koordinater.';return}
+  const P=MAP.proj, lon=P.minx+p.x/(P.k*P.sx), lat=P.maxy-p.y/P.sx;
+  o.textContent=`Kartpunkt x ${Math.round(p.x)}, y ${Math.round(p.y)}  ·  WGS84 ${lat.toFixed(5)}° N, ${lon.toFixed(5)}° E`;
+});
+$('#diagram').addEventListener('pointerleave',()=>{const o=$('#coordro'); if(o)o.textContent='Håll muspekaren över kartan för att se koordinater.'});
 let panInfo=null;
 $('#diagram').addEventListener('pointerdown',e=>{
   if(ZOOM.k<=1||(e.button!==undefined&&e.button>0)||!e.target.closest||e.target.closest('[data-port],[data-leaf],[data-station],[data-zoom]'))return;
