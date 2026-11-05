@@ -993,6 +993,7 @@ function activateWay(i,cap,kv){
     let best=null,bd=1e9;
     for(const g of state.gst){const d=Math.hypot(g.x-p[0],g.y-p[1]); if(d<bd&&d<=16){bd=d;best=g.id}}
     for(const g of state.rst){const d=Math.hypot(g.x-p[0],g.y-p[1]); if(d<bd&&d<=(isLoadR(g)?16:4)){bd=d;best=g.id}}
+    for(const g of state.ext){const d=Math.hypot(g.x-p[0],g.y-p[1]); if(d<bd&&d<=4){bd=d;best=g.id}}
     return best;
   };
   const e0=pts[0], e1=pts[pts.length-1];
@@ -1001,6 +1002,11 @@ function activateWay(i,cap,kv){
   if(ln.x&&ln.xe){
     xid=(state.ext.find(g=>Math.hypot(g.x-ln.xe[0],g.y-ln.xe[1])<=30)||{}).id||null;
     if(!xid){xid=['X1','X2','X3','X4','X5','X6','X7','X8'].find(i=>!state.ext.some(g=>g.id===i)); if(!xid) return 'Högst åtta anslutningar utanför länet.'; state.ext.push({id:xid,x:ln.xe[0],y:ln.xe[1]})}
+    /* en skarv som redan ligger i anslutningens läge (en annan ledning slutar där) blir anslutningen */
+    for(const j of state.rst.filter(g=>g.j&&Math.hypot(g.x-ln.xe[0],g.y-ln.xe[1])<=4)){
+      for(const q of state.add){if(q.a===j.id)q.a=xid; if(q.b===j.id)q.b=xid}
+      state.rst.splice(state.rst.indexOf(j),1);
+    }
   }
   const s0=ln.x&&ln.xs==='start'?xid:snap(e0), s1=ln.x&&ln.xs==='end'?xid:snap(e1);
   const need=(s0?0:1)+(s1?0:1)-((!s0&&!s1&&Math.hypot(e0[0]-e1[0],e0[1]-e1[1])<=4)?1:0);
