@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Gör lm_uppsala.json av Lantmäteriets Topografi 100 Nedladdning vektor (lagret Ledningar, GeoPackage).
+"""Gör lm_uppsala.json av Lantmäteriets Topografi 50 Nedladdning vektor (lagret Ledningar, GeoPackage).
 
 Användning: python3 tools/lm_till_json.py ledningar_ln01.gpkg ledningar_ln03.gpkg ... [--ut lm_uppsala.json]
 Behöver pyproj och numpy. Lagren som används: ledningslinje (1702 stam, 1703 region),
-transformatoromrade och transformatoromradespunkt (stationer, exakta lägen; stationernas lägen finns enbart i Topografi 50).
+transformatoromrade och transformatoromradespunkt (stationer, exakta lägen).
 Stationer nära en stamnätsledning blir stamnätsstationer (G), övriga regionnätsstationer (R).
 Glapp på högst 10 km mellan delar av regionnätet överbryggas (antagen markkabel, k:1).
 Vattenfalls stationer (vattenfall_ref.json) flyttas till närmaste station i filerna (högst 5 km); de som saknar station i filerna tas bort.

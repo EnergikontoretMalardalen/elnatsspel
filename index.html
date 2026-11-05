@@ -406,9 +406,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261124"></script>
-<script src="sim.js?v=20261124"></script>
-<script src="shp.js?v=20261124"></script>
+<script src="map.js?v=20261125"></script>
+<script src="sim.js?v=20261125"></script>
+<script src="shp.js?v=20261125"></script>
 <script>
 
 const ART = {dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -858,7 +858,7 @@ function stationsHtml(){
   h+=`<details class="filehelp"><summary>Så laddar du stamnät, regionnät och nätområden</summary>
     <p><b>Ladda stamnät/regionnät</b> läser in underlaget som följer med spelet för Uppsala län. Det behövs ingen fil och inget konto. Stationer och ledningar hamnar på ungefärliga verkliga lägen, men kapacitet, last och produktion är påhittade. Underlaget består av:</p>
     <ul>
-      <li><b>Ledningar:</b> Lantmäteriets Topografi 100 Nedladdning vektor (lagret Ledningslinje: region 25–200 kV och stam över 200 kV, öppna data, CC0). Spänningen anges bara som klass, så kV och MW anger ni själva när ni tar med en regionnätsledning i beräkningen.</li>
+      <li><b>Ledningar:</b> Lantmäteriets Topografi 50 Nedladdning vektor (lagret Ledningslinje: region 25–200 kV och stam över 200 kV, öppna data, CC0). Spänningen anges bara som klass, så kV och MW anger ni själva när ni tar med en regionnätsledning i beräkningen.</li>
       <li><b>Stationer:</b> Lantmäteriets transformatorstationer (exakta lägen). Stationer vid stamnätsledningar är stamnätsstationer, övriga regionnätsstationer.</li>
       <li><b>Vattenfalls kapacitetskarta:</b> ungefärliga lägen och ledig kapacitet (hög elkonsumtion) som jämförelse. Lagret slås på under kartan och ingår inte i beräkningen.</li>
       <li>Stamnätsstationer som saknas i Lantmäteriets underlag kommer från OpenStreetMap (© OpenStreetMap-bidragsgivare, ODbL).</li>
