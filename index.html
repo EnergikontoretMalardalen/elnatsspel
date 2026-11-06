@@ -232,6 +232,7 @@ dialog#help[open]{display:flex;flex-direction:column}
 .sw.ok{background:var(--ok-t);border-color:var(--ok)} .sw.warn{background:var(--warn-t);border-color:var(--warn)} .sw.bad{background:var(--bad-t);border-color:var(--bad)}
 .zoomctl{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;z-index:3}.zoomctl button{width:34px;height:34px;border:1px solid var(--line,#ccc);border-radius:8px;background:var(--bg,#fff);color:inherit;font-size:18px;line-height:1;cursor:pointer}.zoomctl button:disabled{opacity:.4;cursor:default}#diagram{position:relative}#diagram svg{touch-action:none}
 .coordro{font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted,#5a6570);padding:6px 2px 0;min-height:1.4em}
+.calcexp p{margin:.5em 0;line-height:1.5}
 </style>
 
 <div class="wrap">
@@ -344,6 +345,15 @@ dialog#help[open]{display:flex;flex-direction:column}
         <summary>Varför blir det så? Visa detaljer</summary>
         <div id="why"></div>
       </details>
+
+      <details class="card why" id="calcbox">
+        <summary>Så räknar spelet och vad som är förenklat</summary>
+        <div class="calcexp">
+          <p>Spelet räknar ut hur ny förbrukning eller produktion fördelar sig över ledningarna. Tänk på vatten i ett rörsystem: strömmen delar upp sig på flera vägar och tar mest där det är lättast att gå.</p>
+          <p><b>Bara effekten räknas.</b> Verkliga nätbolag räknar också på spänning, på energi som går förlorad som värme och på en andra sorts effekt som bara pendlar fram och tillbaka (reaktiv effekt). Det kallas AC-flöde. Spelet använder den enklare metoden DC-flöde, som bara ser på hur många MW som går i varje ledning. Då syns tydligt vilka ledningar en ny anslutning belastar och vilken som blir full först.</p>
+          <p><b>Så ska siffrorna läsas.</b> De visar var det blir trångt, inte om en anslutning är möjlig. I verkligheten kan spänningen eller den reaktiva effekten sätta gränsen före ledningens kapacitet, och förlusterna gör flödet något större, ofta några procent. Spelet kan därför visa mer ledig kapacitet än det finns. Vattenfalls kapacitetskarta bygger på en mer detaljerad modell och kan avvika, därför finns den med som jämförelse.</p>
+        </div>
+      </details>
     </main>
   </div>
 
@@ -406,9 +416,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261126"></script>
-<script src="sim.js?v=20261126"></script>
-<script src="shp.js?v=20261126"></script>
+<script src="map.js?v=20261127"></script>
+<script src="sim.js?v=20261127"></script>
+<script src="shp.js?v=20261127"></script>
 <script>
 
 const ART = {dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
