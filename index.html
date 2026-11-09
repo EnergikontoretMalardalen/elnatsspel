@@ -417,9 +417,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261128"></script>
-<script src="sim.js?v=20261128"></script>
-<script src="shp.js?v=20261128"></script>
+<script src="map.js?v=20261129"></script>
+<script src="sim.js?v=20261129"></script>
+<script src="shp.js?v=20261129"></script>
 <script>
 
 const ART = {dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -994,6 +994,7 @@ function wayScope(i){
   while(q.length){const k=q.pop(), pp=pathPts(L[k].d); for(const p of [pp[0],pp[pp.length-1]]) {const e=ends[key(p)]||[]; if(new Set(e).size>2) continue; for(const m of e) if(!seen.has(m)){seen.add(m);q.push(m)}}}
   return [...seen];
 }
+const SNAPSTN=MAP.pxPerKm; /* en ledningsände kopplas till en stamnätsstation bara om den ligger inom 1 km; längre sträckor kan vara markkabel som inte syns i kartan */
 function activateWay(i,cap,kv){
   const ln=state.stamnat&&state.stamnat.lines[i]; if(!ln) return 'Ledningen hittades inte.';
   if(!(kv>0&&kv<=420)) return 'Ange spänning (kV) större än 0.';
@@ -1004,7 +1005,7 @@ function activateWay(i,cap,kv){
   let km=0; for(let k=1;k<pts.length;k++) km+=Math.hypot(pts[k][0]-pts[k-1][0],pts[k][1]-pts[k-1][1]); km=Math.max(1,km/MAP.pxPerKm);
   const snap=p=>{
     let best=null,bd=1e9;
-    for(const g of state.gst){const d=Math.hypot(g.x-p[0],g.y-p[1]); if(d<bd&&d<=16){bd=d;best=g.id}}
+    for(const g of state.gst){const d=Math.hypot(g.x-p[0],g.y-p[1]); if(d<bd&&d<=SNAPSTN){bd=d;best=g.id}}
     for(const g of state.rst){const d=Math.hypot(g.x-p[0],g.y-p[1]); if(d<bd&&d<=(isLoadR(g)?16:4)){bd=d;best=g.id}}
     for(const g of state.ext){const d=Math.hypot(g.x-p[0],g.y-p[1]); if(d<bd&&d<=4){bd=d;best=g.id}}
     return best;
