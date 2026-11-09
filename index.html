@@ -417,9 +417,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261129"></script>
-<script src="sim.js?v=20261129"></script>
-<script src="shp.js?v=20261129"></script>
+<script src="map.js?v=20261130"></script>
+<script src="sim.js?v=20261130"></script>
+<script src="shp.js?v=20261130"></script>
 <script>
 
 const ART = {dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -487,7 +487,7 @@ function syncLayout(){
   state.rst.forEach(g=>{L[g.id]={x:g.x-8,y:g.y-8,w:16,h:16}});
   for(const k of Object.keys(LBL)) delete LBL[k];
   placeLabels();
-  state.rst.forEach(g=>{const o=byId[g.id]; o.desc=kommunAt(g.x,g.y); o.sh=g.nm||('Reg '+g.id.slice(1)); o.name=o.sh+(o.desc?' ('+o.desc+')':'')});
+  state.rst.forEach(g=>{const o=byId[g.id]; o.desc=kommunAt(g.x,g.y); o.sh=g.nm||('Reg '+g.id.slice(1)); o.name=o.sh+(o.desc||g.kv?' ('+[o.desc,g.kv?g.kv+' kV':''].filter(Boolean).join(', ')+')':'')});
 }
 const LBL={};
 /* lägger etiketterna utanför stationspunkterna så att de inte hamnar ovanpå varandra */
@@ -936,7 +936,7 @@ function applyStamnat(d){
   state.stamnat={src:d.src||'',lines:d.lines.map(l=>({v:+l.v||0,d:String(l.d).replace(/[^0-9ML. \-]/g,''),...(l.x&&Array.isArray(l.xe)?{x:1,xs:l.xs==='start'?'start':'end',xe:[+l.xe[0]||0,+l.xe[1]||0]}:{})}))};
   state.stamnat.segs=segsOf(state.stamnat.lines); state.ow=null;
   state.gst=d.stations.slice(0,30).map((p,i)=>({id:'G'+(i+1),x:Math.round(p[0]),y:Math.round(p[1]),nm:nm(p)}));
-  state.rst=(d.rstations||[]).slice(0,40).map((p,i)=>({id:'R'+(i+1),x:Math.round(p[0]),y:Math.round(p[1]),nm:nm(p),j:false}));
+  state.rst=(d.rstations||[]).slice(0,40).map((p,i)=>({id:'R'+(i+1),x:Math.round(p[0]),y:Math.round(p[1]),nm:nm(p),j:false,kv:+p[3]||0}));
   state.kn={}; state.ke=null; attachVf(); snapStations();
   state.add=state.add.filter(a=>!(a.gid!=null||a.a[0]==='G'||a.b[0]==='G'||a.a[0]==='R'||a.b[0]==='R')); state.bnodes=[]; state.bline=null; state.sel=null;
   state.stamnatmsg=`Laddade ${state.gst.length} stamnätsstationer`+(state.rst.length?`, ${state.rst.length} regionnätsstationer`:'')+` i länet och ledningar${state.stamnat.src==='osm'?' från OpenStreetMap (kan vara ofullständiga eller felaktiga)':state.stamnat.src==='lm'?' från Lantmäteriet (ledningarna anges bara som region- eller stamnät, inte med exakt spänning)':''}. Stamnätets ledningar är bara bakgrund. Regionnätets ledningar är röda (0 kV, 0 MW) och räknas först när ni klickar på dem och anger kV och MW, då blir de gröna; de ledningar ni drar själva räknas alltid.`+(d.stations.some(p=>p[2])?'':' Stationerna har inga namn i underlaget, så de numreras.')+' Placera kommunstationer och dra ledningar.';
@@ -1518,6 +1518,12 @@ function startScenario(){
     state.owscope='all'; const Ls=state.stamnat.lines;
     state.cov=new Set(); /* delar som ligger i samma stråk som en ledning som redan är med: ritas som med, räknas inte dubbelt */
     for(let i=0;i<Ls.length;i++) if(Ls[i].v>0&&Ls[i].v<200){const m=activateWay(i,100,Ls[i].v>=100?130:70); if(m&&/samma station|redan en ledning|för kort/.test(m)) state.cov.add(i)}
+    /* regionnätsstationens spänning (kV) gäller ledningarna som går ut från den, genom hjälpnoder utan förgrening */
+    {const piecesAt=id=>state.add.filter(q=>q.a===id||q.b===id), isJ=id=>{const g=state.rst.find(x=>x.id===id);return !!g&&g.j};
+     for(const st of state.rst.filter(g=>!g.j&&g.kv>0)){
+       for(let p of piecesAt(st.id)){ let node=st.id, guard=0;
+         while(p&&guard++<200){ if(!(p.kv>=st.kv)) p.kv=st.kv; node=(p.a===node?p.b:p.a); if(!isJ(node))break;
+           const nx=piecesAt(node); if(nx.length!==2)break; p=nx[0]===p?nx[1]:nx[0]; } } }}
     layoutKey='x'; syncLayout();
     const other=state.rst.filter(isLoadR).find(g=>byId[g.id].desc==='Uppsala');
     state.kind='dc'; state.mw=40; state.flex=false;
