@@ -271,9 +271,16 @@ def main():
     # Vattenfall-stationer utan station i Lantmäteriets filer tas inte med (läget går inte att kontrollera i kartdata)
     vf = [c for c in vf if c['snap']]; json.dump(vf, open(os.path.join(ROOT, 'vattenfall_ref.json'), 'w'), ensure_ascii=False)
     # stationer som bara har anslutning utanför länet (Stockholm) tas bort efter handpåläggning
-    EXKL = [(319, 776), (308, 259)]   # (319,776): bara anslutning mot Stockholm; (308,259) Reg 3: bara järnväg (132 kV)
+    # stationer som tagits bort / lagts till efter genomgång (lista från användaren), och stationernas spänning (kV)
+    EXKL = [(319, 776), (308, 259), (291, 761)]   # (319,776): bara anslutning mot Stockholm; (308,259): bara järnväg (132 kV); (291,761): finns inte
+    EXKL_G = [(453, 75), (512, 206), (297, 258), (283, 737)]   # stamnätsstationer som inte stämmer
+    NYA = [(266, 120), (277, 97)]                              # regionnätsstationer som saknades
+    SPANNING = {(192, 365): 77, (209, 219): 145, (410, 346): 70, (579, 299): 70, (525, 363): 70, (599, 359): 70, (222, 713): 70, (171, 726): 70, (149, 723): 70, (371, 610): 70, (258, 44): 145, (388, 157): 70, (301, 489): 70, (355, 448): 70, (81, 517): 77}
     R = [p for p in R if not any(abs(p[0] - x) <= 3 and abs(p[1] - y) <= 3 for x, y in EXKL)]
-    vf = [c for c in vf if not any(abs(c['x'] - x) <= 3 and abs(c['y'] - y) <= 3 for x, y in EXKL)]; json.dump(vf, open(os.path.join(ROOT, 'vattenfall_ref.json'), 'w'), ensure_ascii=False)
+    G = [p for p in G if not any(abs(p[0] - x) <= 3 and abs(p[1] - y) <= 3 for x, y in EXKL_G)]
+    R += [(x, y, '') for x, y in NYA]
+    R = [(p[0], p[1], '', SPANNING.get((round(p[0]), round(p[1])), 70)) for p in R]
+    vf = [c for c in vf if not any(abs(c['x'] - x) <= 3 and abs(c['y'] - y) <= 3 for x, y in EXKL + EXKL_G)]; json.dump(vf, open(os.path.join(ROOT, 'vattenfall_ref.json'), 'w'), ensure_ascii=False)
     # ledningar som bara matar järnvägen (132 kV, 16,7 Hz) ska inte vara med. Lantmäteriets data skiljer dem inte från
     # regionnätet, så de pekas ut för hand som "ledningen mellan två ställen" (kartpunkter) och tas bort med den väg
     # genom regionnätet som är kortast. Delar som då inte längre hänger ihop med någon station tas också bort.
@@ -346,7 +353,7 @@ def main():
         for i in sorted(drop, reverse=True): print('järnväg: tar bort ledning', i, outl[i]['d'][:30]); del outl[i]
     import heapq
     rm_jarnvag(outl)
-    fm = lambda p: [round(p[0]), round(p[1]), '']
+    fm = lambda p: [round(p[0]), round(p[1]), ''] + ([p[3]] if len(p) > 3 else [])
     json.dump({'src': 'lm', 'stations': [fm(p) for p in G], 'rstations': [fm(p) for p in R], 'lines': outl}, open(out, 'w'), separators=(',', ':'))
     print(len(G), 'stamnätsstationer,', len(R), 'regionnätsstationer (', len(extra), 'Vattenfall-stationer utan träff i Lantmäteriets filer togs bort),', len(outl), 'ledningar,', os.path.getsize(out) // 1024, 'kB')
 main()
