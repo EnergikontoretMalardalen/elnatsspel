@@ -271,8 +271,81 @@ def main():
     # Vattenfall-stationer utan station i Lantmäteriets filer tas inte med (läget går inte att kontrollera i kartdata)
     vf = [c for c in vf if c['snap']]; json.dump(vf, open(os.path.join(ROOT, 'vattenfall_ref.json'), 'w'), ensure_ascii=False)
     # stationer som bara har anslutning utanför länet (Stockholm) tas bort efter handpåläggning
-    EXKL = [(319, 776)]
+    EXKL = [(319, 776), (308, 259)]   # (319,776): bara anslutning mot Stockholm; (308,259) Reg 3: bara järnväg (132 kV)
     R = [p for p in R if not any(abs(p[0] - x) <= 3 and abs(p[1] - y) <= 3 for x, y in EXKL)]
+    vf = [c for c in vf if not any(abs(c['x'] - x) <= 3 and abs(c['y'] - y) <= 3 for x, y in EXKL)]; json.dump(vf, open(os.path.join(ROOT, 'vattenfall_ref.json'), 'w'), ensure_ascii=False)
+    # ledningar som bara matar järnvägen (132 kV, 16,7 Hz) ska inte vara med. Lantmäteriets data skiljer dem inte från
+    # regionnätet, så de pekas ut för hand som "ledningen mellan två ställen" (kartpunkter) och tas bort med den väg
+    # genom regionnätet som är kortast. Delar som då inte längre hänger ihop med någon station tas också bort.
+    JARNVAG = [((242, 183), (349, 538)),   # Stn 2 – Stn 11
+               ((371, 610), 'X:422,718')]  # Reg 11 – söderut ut ur länet
+    def rm_jarnvag(outl):
+        P = [pts_of(l) if l['v'] == 70 else None for l in outl]
+        nid = {}
+        def cl(pt):
+            for k, c in nid.items():
+                if np.hypot(pt[0] - c[0], pt[1] - c[1]) <= TJ: return k
+            nid[len(nid)] = pt; return len(nid) - 1
+        ends = [(cl(p[0]), cl(p[-1])) if p else None for p in P]
+        plen_ = lambda p: sum(np.hypot(p[k][0] - p[k - 1][0], p[k][1] - p[k - 1][1]) for k in range(1, len(p)))
+        def at(pos, rad):
+            c = min(nid, key=lambda k: np.hypot(nid[k][0] - pos[0], nid[k][1] - pos[1]))
+            return c if np.hypot(nid[c][0] - pos[0], nid[c][1] - pos[1]) <= rad else None
+        st_nodes = {}   # stationsnoder: alla klusterpunkter nära en station sammanförs
+        parent = list(range(len(nid)))
+        stations = [(p, 16) for p in G] + [(p, 16) for p in R]
+        def find(a):
+            while parent[a] != a: parent[a] = parent[parent[a]]; a = parent[a]
+            return a
+        for p, rad in stations:
+            ks = [k for k in nid if np.hypot(nid[k][0] - p[0], nid[k][1] - p[1]) <= rad]
+            for k in ks[1:]: parent[find(k)] = find(ks[0])
+        def target(t):
+            if isinstance(t, str):
+                x, y = map(float, t[2:].split(',')); r = [i for i, l in enumerate(outl) if l.get('x') and np.hypot(l['xe'][0] - x, l['xe'][1] - y) <= 4]
+                if not r: return None
+                p = P[r[0]]; return find(ends[r[0]][0] if outl[r[0]]['xs'] == 'start' else ends[r[0]][1])
+            c = at(t, 16); return None if c is None else find(c)
+        drop = set()
+        for A, B in JARNVAG:
+            a, b = target(A), target(B)
+            if a is None or b is None: print('järnväg: hittade inte', A, B); continue
+            dist = {a: 0}; prev = {}; hp = [(0, a)]
+            while hp:
+                d_, u = heapq.heappop(hp)
+                if d_ > dist.get(u, 1e18): continue
+                if u == b: break
+                for i, e in enumerate(ends):
+                    if e is None or i in drop: continue
+                    x, y = find(e[0]), find(e[1])
+                    for p_, q_ in ((x, y), (y, x)):
+                        if p_ == u and d_ + plen_(P[i]) < dist.get(q_, 1e18): dist[q_] = d_ + plen_(P[i]); prev[q_] = (u, i); heapq.heappush(hp, (dist[q_], q_))
+            if b not in prev: print('järnväg: ingen väg', A, B); continue
+            u = b
+            while u != a: u, i = prev[u]; drop.add(i)
+        # kvarvarande delar utan station tas bort
+        changed = True
+        while changed and drop:
+            changed = False
+            keep = [i for i in range(len(outl)) if i not in drop and ends[i] is not None]
+            comp = {i: i for i in keep}
+            def cf(a):
+                while comp[a] != a: comp[a] = comp[comp[a]]; a = comp[a]
+                return a
+            byn = collections.defaultdict(list)
+            for i in keep:
+                for k in ends[i]: byn[find(k)].append(i)
+            for v in byn.values():
+                for j in v[1:]: comp[cf(j)] = cf(v[0])
+            has = collections.defaultdict(bool)
+            stn_nodes = {find(k) for p, rad in stations for k in nid if np.hypot(nid[k][0] - p[0], nid[k][1] - p[1]) <= rad}
+            for i in keep:
+                if any(find(k) in stn_nodes for k in ends[i]) or outl[i].get('x'): has[cf(i)] = True
+            for i in keep:
+                if not has[cf(i)]: drop.add(i); changed = True
+        for i in sorted(drop, reverse=True): print('järnväg: tar bort ledning', i, outl[i]['d'][:30]); del outl[i]
+    import heapq
+    rm_jarnvag(outl)
     fm = lambda p: [round(p[0]), round(p[1]), '']
     json.dump({'src': 'lm', 'stations': [fm(p) for p in G], 'rstations': [fm(p) for p in R], 'lines': outl}, open(out, 'w'), separators=(',', ':'))
     print(len(G), 'stamnätsstationer,', len(R), 'regionnätsstationer (', len(extra), 'Vattenfall-stationer utan träff i Lantmäteriets filer togs bort),', len(outl), 'ledningar,', os.path.getsize(out) // 1024, 'kB')
