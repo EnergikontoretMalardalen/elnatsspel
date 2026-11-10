@@ -284,7 +284,7 @@ def main():
     # ledningar som bara matar järnvägen (132 kV, 16,7 Hz) ska inte vara med. Lantmäteriets data skiljer dem inte från
     # regionnätet, så de pekas ut för hand som "ledningen mellan två ställen" (kartpunkter) och tas bort med den väg
     # genom regionnätet som är kortast. Delar som då inte längre hänger ihop med någon station tas också bort.
-    JARNVAG = [((242, 183), (349, 538)),   # Stn 2 – Stn 11
+    JARNVAG = [((242, 183), (355, 448)),   # Stn 2 – Reg 14 (järnvägsledningen slutar vid Reg 14; Reg 14–Stn 11 är regionnät)
                ((371, 610), 'X:422,718')]  # Reg 11 – söderut ut ur länet
     def rm_jarnvag(outl):
         P = [pts_of(l) if l['v'] == 70 else None for l in outl]
@@ -352,6 +352,25 @@ def main():
                 if not has[cf(i)]: drop.add(i); changed = True
         for i in sorted(drop, reverse=True): print('järnväg: tar bort ledning', i, outl[i]['d'][:30]); del outl[i]
     import heapq
+    def dela_vid_stationer(outl):
+        """Delar regionledningar som passerar (högst 10 punkter från) en regionnätsstation i två delar vid stationen."""
+        for st in R:
+            for i in range(len(outl)):
+                l = outl[i]
+                if l['v'] != 70 or l.get('x'): continue
+                p = pts_of(l); best = None
+                for k in range(len(p) - 1):
+                    (ax, ay), (bx, by) = p[k], p[k + 1]; dx, dy = bx - ax, by - ay
+                    t = 0 if dx == dy == 0 else max(0, min(1, ((st[0] - ax) * dx + (st[1] - ay) * dy) / (dx * dx + dy * dy)))
+                    q = (ax + t * dx, ay + t * dy); dd = np.hypot(st[0] - q[0], st[1] - q[1])
+                    if best is None or dd < best[0]: best = (dd, k, q)
+                dd, k, q = best
+                if dd > 10 or np.hypot(q[0] - p[0][0], q[1] - p[0][1]) <= TJ or np.hypot(q[0] - p[-1][0], q[1] - p[-1][1]) <= TJ: continue
+                a_ = p[:k + 1] + [q]; b_ = [q] + p[k + 1:]
+                mk = lambda pp: 'M' + 'L'.join(f'{x:.1f} {y:.1f}' for x, y in pp)
+                l2 = dict(l); l['d'] = mk(a_); l2['d'] = mk(b_); outl.insert(i + 1, l2); print(f'delad vid station ({st[0]},{st[1]}): ledning {i}')
+                break
+    dela_vid_stationer(outl)
     rm_jarnvag(outl)
     fm = lambda p: [round(p[0]), round(p[1]), ''] + ([p[3]] if len(p) > 3 else [])
     json.dump({'src': 'lm', 'stations': [fm(p) for p in G], 'rstations': [fm(p) for p in R], 'lines': outl}, open(out, 'w'), separators=(',', ':'))
