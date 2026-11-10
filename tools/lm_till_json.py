@@ -287,6 +287,7 @@ def main():
     JARNVAG = [((242, 183), (258.7, 194.2)),   # Stn 2 – (259,194)
                ((297.6, 257.3), (355, 448)),    # (298,257) – Reg 14. Stycket (298,257)–(264,199) är 70 kV regionnät (OSM) och ligger kvar; Reg 14–Stn 7 är regionnät
                ((371, 610), 'X:422,718')]  # Reg 11 – söderut ut ur länet
+    RUTOR = [(321, 673, 417, 726)]   # (x0, y0, x1, y1) i kartpunkter: järnväg utanför länet söder om Uppsala
     def rm_jarnvag(outl):
         P = [pts_of(l) if l['v'] == 70 else None for l in outl]
         nid = {}
@@ -331,6 +332,13 @@ def main():
             if b not in prev: print('järnväg: ingen väg', A, B); continue
             u = b
             while u != a: u, i = prev[u]; drop.add(i)
+        # ledningar i angivna rutor (järnväg, utanför länet) tas bort: minst 90 % av ledningen ligger i rutan
+        for x0, y0, x1, y1 in RUTOR:
+            for i, p in enumerate(P):
+                if p is None or i in drop: continue
+                dp = [q for a_, b_ in zip(p, p[1:]) for q in [(a_[0] + (b_[0] - a_[0]) * t / 5, a_[1] + (b_[1] - a_[1]) * t / 5) for t in range(5)]] + [p[-1]]
+                if sum(x0 <= q[0] <= x1 and y0 <= q[1] <= y1 for q in dp) >= 0.9 * len(dp): drop.add(i)
+        drop |= set()
         # kvarvarande delar utan station tas bort
         changed = True
         while changed and drop:
