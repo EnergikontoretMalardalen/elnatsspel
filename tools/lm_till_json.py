@@ -284,7 +284,8 @@ def main():
     # ledningar som bara matar järnvägen (132 kV, 16,7 Hz) ska inte vara med. Lantmäteriets data skiljer dem inte från
     # regionnätet, så de pekas ut för hand som "ledningen mellan två ställen" (kartpunkter) och tas bort med den väg
     # genom regionnätet som är kortast. Delar som då inte längre hänger ihop med någon station tas också bort.
-    JARNVAG = [((242, 183), (355, 448)),   # Stn 2 – Reg 14 (järnvägsledningen slutar vid Reg 14; Reg 14–Stn 11 är regionnät)
+    JARNVAG = [((242, 183), (258.7, 194.2)),   # Stn 2 – (259,194)
+               ((297.6, 257.3), (355, 448)),    # (298,257) – Reg 14. Stycket (298,257)–(264,199) är 70 kV regionnät (OSM) och ligger kvar; Reg 14–Stn 7 är regionnät
                ((371, 610), 'X:422,718')]  # Reg 11 – söderut ut ur länet
     def rm_jarnvag(outl):
         P = [pts_of(l) if l['v'] == 70 else None for l in outl]
