@@ -293,7 +293,8 @@ def main():
     # genom regionnätet som är kortast. Delar som då inte längre hänger ihop med någon station tas också bort.
     JARNVAG = [((242, 183), (258.7, 194.2)),   # Stn 2 – (259,194)
                ((297.6, 257.3), (355, 448)),    # (298,257) – Reg 14. Stycket (298,257)–(264,199) är 70 kV regionnät (OSM) och ligger kvar; Reg 14–Stn 7 är regionnät
-               ((371, 610), 'X:422,718')]  # Reg 11 – söderut ut ur länet
+               ((371, 610), 'X:422,718'),   # Reg 11 – söderut ut ur länet
+               ((285.5, 757.1), (282.9, 736.1))]  # (286,757) – (283,736): 132 kV järnväg
     RUTOR = [(321, 673, 417, 726)]   # (x0, y0, x1, y1) i kartpunkter: järnväg utanför länet söder om Uppsala
     def rm_jarnvag(outl):
         P = [pts_of(l) if l['v'] == 70 else None for l in outl]
