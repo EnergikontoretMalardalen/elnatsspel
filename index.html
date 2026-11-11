@@ -109,6 +109,7 @@ svg .mono{font-family:var(--f-mono)}
 body.pal #tabseg,body.pal #buildbox,body.pal #actionbar,body.pal #etabcard,body.pal #placedcard{display:none!important}
 g.unit{cursor:grab}g.unit.sel circle.uc,g.unit.sel polygon.uc{stroke:#2955d9;stroke-width:3}g.unit text{font-size:10px;font-weight:700;paint-order:stroke;stroke:#fff;stroke-width:3px;fill:#1d2b2c;pointer-events:none}g.unit .stub{stroke:#555;stroke-width:1.4}
 #diagram svg .selring{fill:none;stroke:#2955d9;stroke-width:3;stroke-dasharray:4 3;pointer-events:none}
+.wire.gpend{stroke:#8a9099!important;opacity:.2;stroke-dasharray:none}.gpendr{fill:none;stroke:#8a9099;stroke-width:10;opacity:.2;stroke-linecap:round;pointer-events:none}g.unit.gpend{opacity:.2}g.unit.gpend .uc{fill:#8a9099;stroke:#555}
 .gscore{display:flex;gap:4px 16px;flex-wrap:wrap;font-size:13px;margin:6px 0}.gst{display:flex;flex-direction:column;gap:6px;margin:6px 0}.gk{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}.gk>b{min-width:150px;font-size:13px}.gk button{display:flex;flex-direction:column;align-items:center;padding:3px 10px;border:1.5px solid var(--line,#c9cfc6);border-radius:8px;background:#fff;cursor:pointer;font-size:12px}.gk button small{font-size:11px;color:var(--ink2)}.gk button.ok{border-color:#2e8b57}.gk button.warn{border-color:#c98a1b}.gk button.bad{border-color:#b3261e}.gk button[aria-pressed="true"]{background:#dbe7ff;box-shadow:0 0 0 2px #2955d9}.gres{margin:8px 0;font-size:13px}.gres .neg{color:#b3261e;font-weight:600}.gres .pos{color:#1f6f3d}
 .bgl{fill:none;stroke:#9aa0a8;stroke-width:1.1;opacity:.55;pointer-events:none;stroke-linecap:round}.bgl.v2{stroke-width:1.4}.bgl.v4{stroke-width:2;opacity:.45}.bgs{fill:#cfd3d8;stroke:#8a9099;stroke-width:1;pointer-events:none}.nrv{font-size:11px;font-weight:700;paint-order:stroke;stroke:#fff;stroke-width:3px;pointer-events:none}.nrv.ok{fill:#1f6f3d}.nrv.warn{fill:#a15c00}.nrv.bad{fill:#b3261e}.nrtab{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}.nrtab th,.nrtab td{padding:3px 8px;text-align:left;border-bottom:1px solid var(--line,#d6dbd3)}.nrtab .n{text-align:right;font-variant-numeric:tabular-nums}.nrtab .ok{color:#1f6f3d}.nrtab .warn{color:#a15c00;font-weight:600}.nrtab .bad{color:#b3261e;font-weight:700}
 .natchk{display:inline-flex;gap:6px;align-items:center;cursor:pointer}.maplegend i.nt{border-style:dashed}
@@ -437,9 +438,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261206"></script>
-<script src="sim.js?v=20261206"></script>
-<script src="shp.js?v=20261206"></script>
+<script src="map.js?v=20261207"></script>
+<script src="sim.js?v=20261207"></script>
+<script src="shp.js?v=20261207"></script>
 <script>
 
 const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -728,7 +729,9 @@ function renderDiagram(v){
     const r=cur.lines[i], cls=r.flow>ln.cap+0.05?'bad':(r.util>0.8?'warn':'ok');
     const ex=((ln.added&&!ws())||ln.id==='NP'?' new':'')+(ln.up?' up':'')+(ln.id==='NP'?' pend':'');
     if(bld&&state.bline===i) s+=`<path class="pickl" d="${wirePath(ln)}"/>`;
-    s+=`<path class="wire ${cls}${ex}" d="${wirePath(ln)}"/>`;
+    const ga=ws()&&state.game?state.add.find(a=>a.id===ln.id):null;
+    s+=`<path class="wire ${cls}${ex}${ga&&gPend(ga.until)?' gpend':''}" d="${wirePath(ln)}"/>`;
+    if(ga&&ga.rf&&gPend(ga.rf.until)) s+=`<path class="gpendr" d="${wirePath(ln)}"><title>Förstärkning under byggnad, klar ${2026+ga.rf.until}</title></path>`;
   });
   const lastC=v.consumers[v.consumers.length-1];
   let anyShare=false;
@@ -944,7 +947,7 @@ function palUnitsSvg(){
     by[id].forEach((p,i)=>{
       const a=ANG[i%8]*Math.PI/180, rr=R+Math.floor(i/8)*16, x=c.x+rr*Math.cos(a), y=c.y+rr*Math.sin(a), gen=isGen(p.kind), isel=sel&&sel.t==='u'&&sel.id===p.id;
       const sym=gen?`<circle class="uc" r="7" fill="#5aaa6b" stroke="#1f6f3d" stroke-width="1.5"/><path d="M-4.5 0 q2.2 -4 4.5 0 t4.5 0" stroke="#fff" stroke-width="1.5" fill="none"/>`:`<polygon class="uc" points="0,7 -7,-6 7,-6" fill="#e0892f" stroke="#7a4310" stroke-width="1.5" stroke-linejoin="round"/>`;
-      s+=`<g class="unit ${gen?'gen':'load'}${isel?' sel':''}" data-unit="${p.id}" data-at="${id}" tabindex="0"><line class="stub" x1="${(c.x+R0*Math.cos(a)).toFixed(1)}" y1="${(c.y+R0*Math.sin(a)).toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/><g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${sym}</g><text x="${x.toFixed(1)}" y="${(y+18).toFixed(1)}" text-anchor="middle">${p.mw}</text><title>${KINDS[p.kind].name} ${p.mw} MW${p.flex?' (flexibel)':''}, ansluten till ${gname(id)}</title></g>`;
+      s+=`<g class="unit ${gen?'gen':'load'}${isel?' sel':''}${gPend(p.until)?' gpend':''}" data-unit="${p.id}" data-at="${id}" tabindex="0"><line class="stub" x1="${(c.x+R0*Math.cos(a)).toFixed(1)}" y1="${(c.y+R0*Math.sin(a)).toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/><g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${sym}</g><text x="${x.toFixed(1)}" y="${(y+18).toFixed(1)}" text-anchor="middle">${p.mw}</text><title>${KINDS[p.kind].name} ${p.mw} MW${p.flex?' (flexibel)':''}, ansluten till ${gname(id)}${gPend(p.until)?'. Under byggnad, klar '+(2026+p.until):''}</title></g>`;
     });
   }
   const ring=id=>{if(!L[id])return ''; const c=ctr(id), b=L[id]; return `<ellipse class="selring" cx="${c.x}" cy="${c.y}" rx="${b.w/2+6}" ry="${b.h/2+6}"/>`};
@@ -1096,23 +1099,24 @@ function gameNext(){
   const host=rnd(km.length>1?km.filter(k=>k!==last):km), [kind,mws]=rnd(GAME_OPTS), mw=rnd(mws);
   g.req={kind,mw,host,from:rnd(GAME_SRC)}; state.kind=kind; state.mw=mw; state.flex=false; state.metric=isGen(kind)?'I':'U'; state.sel=null;
 }
-function gameStart(){state.game={round:1,log:[],req:null,last:null,pend:null}; gameNext(); render()}
+function gameStart(){state.add.forEach(a=>{delete a.until;delete a.rf}); state.placed.forEach(p=>{delete p.until}); state.game={round:1,log:[],req:null,last:null,pend:null}; gameNext(); render()}
 function gameEnd(){state.game=null; state.sel=null; render()}
+const gPend=u=>!!(state.game&&u&&state.game.round<u);   /* åtgärd som ännu inte är byggd: visas grå och 20 % */
 const GAME_YEARS={up:3,line:8};   /* tidsåtgång i år: förstärkning respektive ny ledning (förstärkningens 3 år är en gissning) */
 const gameNet=()=>makeNet(cfgOf(false));
 const gameRef=()=>compute(state.placed,state.mode,state.hour,state.crit,gameNet());
 function gameBind(node){const r=gameRef(), b=(state.metric==='I'?r.bindI:r.bindU)[node], net=gameNet(); return b&&b.line!=null&&net.lines[b.line]?net.lines[b.line]:null}
-function gameReinforce(node,mw){
+function gameReinforce(node,mw,until){
   const ch={}; let ok=false;
   for(let it=0;it<20;it++){
     if(val(gameRef(),node)>=mw){ok=true;break}
     const l=gameBind(node), a=l&&state.add.find(x=>x.id===l.id); if(!a) break;
     const inc=Math.max(10,Math.ceil(a.cap*0.5/10)*10);
-    (ch[a.id]=ch[a.id]||{a:a.a,b:a.b,from:a.cap}).to=a.cap+inc; a.cap+=inc;
+    (ch[a.id]=ch[a.id]||{a:a.a,b:a.b,from:a.cap}).to=a.cap+inc; a.cap+=inc; a.rf={until,from:(a.rf&&gPend(a.rf.until))?a.rf.from:ch[a.id].from};
   }
   return {ok,changes:Object.values(ch)};
 }
-function gameNewLine(node,mw){
+function gameNewLine(node,mw,until){
   const o=stObj(node); if(!o) return null;
   const linked=id=>state.add.some(l=>(l.a===node&&l.b===id)||(l.b===node&&l.a===id));
   const d=id=>{const q=stObj(id); return Math.hypot(q.x-o.x,q.y-o.y)};
@@ -1120,7 +1124,7 @@ function gameNewLine(node,mw){
   const partner=pick([...state.gst.map(g=>g.id),...state.ext.map(g=>g.id)])||pick(state.rst.filter(isLoadR).map(g=>g.id));
   if(!partner) return null;
   const cap=Math.max(100,Math.ceil(mw*1.5/10)*10);
-  state.add.push({id:'N'+state.nid++,a:node,b:partner,cap,kv:130});
+  state.add.push({id:'N'+state.nid++,a:node,b:partner,cap,kv:130,until});
   return {a:node,b:partner,cap};
 }
 function gameAfter(){
@@ -1136,12 +1140,12 @@ function gameDecide(ok,measure){
     const node=state.sel, ref0=gameRef(), fit=val(ref0,node)>=r.mw;
     if(!fit&&!measure){g.pend={node}; render(); return}
     rec.fit=fit; rec.node=node; rec.kommun=(byId[node]&&byId[node].desc)||'Utanför länet';
-    if(!fit&&measure==='up'){const res=gameReinforce(node,r.mw); rec.measure='up'; rec.years=GAME_YEARS.up; rec.changes=res.changes; rec.solved=res.ok}
-    else if(!fit&&measure==='line'){const nl=gameNewLine(node,r.mw); rec.measure='line'; rec.years=GAME_YEARS.line; rec.newLine=nl; rec.solved=!!nl&&val(gameRef(),node)>=r.mw}
+    if(!fit&&measure==='up'){const res=gameReinforce(node,r.mw,g.round+GAME_YEARS.up); rec.measure='up'; rec.until=g.round+GAME_YEARS.up; rec.years=GAME_YEARS.up; rec.changes=res.changes; rec.solved=res.ok}
+    else if(!fit&&measure==='line'){const nl=gameNewLine(node,r.mw,g.round+GAME_YEARS.line); rec.measure='line'; rec.until=g.round+GAME_YEARS.line; rec.years=GAME_YEARS.line; rec.newLine=nl; rec.solved=!!nl&&val(gameRef(),node)>=r.mw}
     const byK={}, bf=gameRef(), af=compute([...state.placed,{kind:r.kind,mw:r.mw,flex:false,node,id:0}],state.mode,state.hour,state.crit,gameNet());
     for(const n of VL()){const k=n.desc||'Utanför länet'; byK[k]=Math.min(byK[k]??0,val(af,n.id)-val(bf,n.id))}
     rec.hit=Object.keys(byK).filter(k=>k!==rec.kommun&&byK[k]<=-10);
-    state.placed.push({id:state.uid++,kind:r.kind,mw:r.mw,flex:false,node});
+    state.placed.push({id:state.uid++,kind:r.kind,mw:r.mw,flex:false,node,until:rec.years?g.round+rec.years:0});
     rec.left=gameAfter();
   }
   g.pend=null; g.log.push(rec); g.last=rec; g.req=null; g.round++;
@@ -1152,10 +1156,17 @@ function gameLastHtml(rec){
   if(!rec||!rec.ok) return rec?`<p class="gres">Förra beslutet: avslog ${KINDS[rec.kind].name.toLowerCase()} ${rec.mw} MW i ${rec.host}.</p>`:'';
   const nm=id=>sname(id), ln=c=>`${nm(c.a)}–${nm(c.b)}`;
   let t=`Förra beslutet: godkände ${KINDS[rec.kind].name.toLowerCase()} ${rec.mw} MW i ${nm(rec.node)}.`;
-  if(rec.measure==='up') t+=` Elnätet var överbelastat, så ni förstärkte ${rec.changes.length?rec.changes.map(c=>`${ln(c)} från ${c.from} till ${c.to} MW`).join(', '):'nätet'} (${rec.years} år att bygga).${rec.solved?'':' Det räckte inte helt, nätet är fortfarande begränsat.'}`;
-  else if(rec.measure==='line') t+=` Elnätet var överbelastat, så ni byggde en ny ledning ${rec.newLine?ln(rec.newLine)+' ('+rec.newLine.cap+' MW, 130 kV)':''} (${rec.years} år att bygga).${rec.solved?'':' Det räckte inte helt, nätet är fortfarande begränsat.'}`;
+  if(rec.measure==='up') t+=` Elnätet var överbelastat, så ni förstärkte ${rec.changes.length?rec.changes.map(c=>`${ln(c)} från ${c.from} till ${c.to} MW`).join(', '):'nätet'} (${rec.years} år att bygga, klart ${2026+rec.until}).${rec.solved?'':' Det räckte inte helt, nätet är fortfarande begränsat.'}`;
+  else if(rec.measure==='line') t+=` Elnätet var överbelastat, så ni byggde en ny ledning ${rec.newLine?ln(rec.newLine)+' ('+rec.newLine.cap+' MW, 130 kV)':''} (${rec.years} år att bygga, klart ${2026+rec.until}).${rec.solved?'':' Det räckte inte helt, nätet är fortfarande begränsat.'}`;
+  if(rec.measure) t+=' Etableringen och åtgärden visas grå och svagt på kartan tills de är klara.';
   t+=' Lediga MW efter etableringen'+(rec.measure?' och den förstärkta nätet':'')+': '+Object.keys(rec.left).sort().map(k=>`${k} ${rec.left[k]}`).join(' · ')+'.';
   return `<p class="gres">${t}</p>`;
+}
+function gamePendHtml(){
+  const it=[];
+  state.placed.filter(p=>gPend(p.until)).forEach(p=>it.push(`${KINDS[p.kind].name.toLowerCase()} ${p.mw} MW i ${sname(p.node)}, klar ${2026+p.until}`));
+  state.add.forEach(a=>{ if(gPend(a.until)) it.push(`ny ledning ${sname(a.a)} – ${sname(a.b)}, klar ${2026+a.until}`); if(a.rf&&gPend(a.rf.until)) it.push(`förstärkning ${sname(a.a)} – ${sname(a.b)} till ${a.cap} MW, klar ${2026+a.rf.until}`)});
+  return it.length?`<p class="help"><b>Under byggnad</b> (grått och svagt på kartan): ${it.join('; ')}.</p>`:'';
 }
 function renderGame(v){
   const card=$('#gamecard'); card.hidden=!ws(); if(!ws()) return;
@@ -1174,8 +1185,8 @@ function renderGame(v){
     return;
   }
   const r=g.req, k=KINDS[r.kind], ref=gameRef(), sel=state.sel;
-  let h=gameLastHtml(g.last)+`<div class="greq"><small>Förfrågan ${g.round} av ${GAME_TOTAL}</small><div class="headline" style="font-size:17px;margin:2px 0">${r.host}: ${r.from} vill ${isGen(r.kind)?'ansluta':'etablera'} ${ART[r.kind].toLowerCase()} på ${r.mw} MW</div><small>${k.desc}. Det är ${isGen(r.kind)?'produktion, så det som räknas är hur mycket produktion nätet tar emot':'förbrukning, så det som räknas är hur mycket last nätet klarar'}.</small></div>${score}
-    <p class="help">Prata med grannkommunerna och välj sedan station. Ni kan godkänna den i ${r.host}, föreslå en annan kommun eller avslå. Siffran är lediga MW i stationen just nu.</p><div class="gst">`;
+  let h=gameLastHtml(g.last)+`<div class="greq"><small>Förfrågan ${g.round} av ${GAME_TOTAL} · år ${2026+g.round}</small><div class="headline" style="font-size:17px;margin:2px 0">${r.host}: ${r.from} vill ${isGen(r.kind)?'ansluta':'etablera'} ${ART[r.kind].toLowerCase()} på ${r.mw} MW</div><small>${k.desc}. Det är ${isGen(r.kind)?'produktion, så det som räknas är hur mycket produktion nätet tar emot':'förbrukning, så det som räknas är hur mycket last nätet klarar'}.</small></div>${score}
+    ${gamePendHtml()}<p class="help">Prata med grannkommunerna och välj sedan station. Ni kan godkänna den i ${r.host}, föreslå en annan kommun eller avslå. Siffran är lediga MW i stationen just nu.</p><div class="gst">`;
   h+=Object.keys(kk).sort((a,b)=>a.localeCompare(b)).map(km=>`<div class="gk"><b>${km}${km===r.host?' (förfrågan kom hit)':''}</b>${kk[km].map(id=>{const a=val(ref,id); return `<button type="button" data-gsel="${id}" aria-pressed="${sel===id}" class="${a>=r.mw?'ok':a>0?'warn':'bad'}">${sname(id)}<small>${a} MW ledigt</small></button>`}).join('')}</div>`).join('')+`</div>`;
   if(sel&&byId[sel]){
     const after=v.cur, g2={};
