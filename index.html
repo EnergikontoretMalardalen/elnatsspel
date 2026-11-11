@@ -109,6 +109,7 @@ svg .mono{font-family:var(--f-mono)}
 body.pal #tabseg,body.pal #buildbox,body.pal #actionbar,body.pal #etabcard,body.pal #placedcard{display:none!important}
 g.unit{cursor:grab}g.unit.sel circle.uc,g.unit.sel polygon.uc{stroke:#2955d9;stroke-width:3}g.unit text{font-size:10px;font-weight:700;paint-order:stroke;stroke:#fff;stroke-width:3px;fill:#1d2b2c;pointer-events:none}g.unit .stub{stroke:#555;stroke-width:1.4}
 #diagram svg .selring{fill:none;stroke:#2955d9;stroke-width:3;stroke-dasharray:4 3;pointer-events:none}
+.gscore{display:flex;gap:4px 16px;flex-wrap:wrap;font-size:13px;margin:6px 0}.gst{display:flex;flex-direction:column;gap:6px;margin:6px 0}.gk{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}.gk>b{min-width:150px;font-size:13px}.gk button{display:flex;flex-direction:column;align-items:center;padding:3px 10px;border:1.5px solid var(--line,#c9cfc6);border-radius:8px;background:#fff;cursor:pointer;font-size:12px}.gk button small{font-size:11px;color:var(--ink2)}.gk button.ok{border-color:#2e8b57}.gk button.warn{border-color:#c98a1b}.gk button.bad{border-color:#b3261e}.gk button[aria-pressed="true"]{background:#dbe7ff;box-shadow:0 0 0 2px #2955d9}.gres{margin:8px 0;font-size:13px}.gres .neg{color:#b3261e;font-weight:600}.gres .pos{color:#1f6f3d}
 .bgl{fill:none;stroke:#9aa0a8;stroke-width:1.1;opacity:.55;pointer-events:none;stroke-linecap:round}.bgl.v2{stroke-width:1.4}.bgl.v4{stroke-width:2;opacity:.45}.bgs{fill:#cfd3d8;stroke:#8a9099;stroke-width:1;pointer-events:none}.nrv{font-size:11px;font-weight:700;paint-order:stroke;stroke:#fff;stroke-width:3px;pointer-events:none}.nrv.ok{fill:#1f6f3d}.nrv.warn{fill:#a15c00}.nrv.bad{fill:#b3261e}.nrtab{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}.nrtab th,.nrtab td{padding:3px 8px;text-align:left;border-bottom:1px solid var(--line,#d6dbd3)}.nrtab .n{text-align:right;font-variant-numeric:tabular-nums}.nrtab .ok{color:#1f6f3d}.nrtab .warn{color:#a15c00;font-weight:600}.nrtab .bad{color:#b3261e;font-weight:700}
 .natchk{display:inline-flex;gap:6px;align-items:center;cursor:pointer}.maplegend i.nt{border-style:dashed}
 .filehelp{margin:10px 0 0;font-size:13px;color:var(--ink2)}.filehelp summary{cursor:pointer;font-weight:600;color:var(--ink)}.filehelp p,.filehelp li{margin:6px 0}
@@ -325,6 +326,11 @@ dialog#help[open]{display:flex;flex-direction:column}
         <p class="help" id="basis"></p>
       </section>
 
+      <section class="card" id="gamecard" aria-label="Förfrågningar" hidden>
+        <div class="cardhead"><h2>Förfrågningar till kommunerna</h2></div>
+        <div id="gamebody"></div>
+      </section>
+
       <section class="card" aria-label="Regionnätet" id="mapcard">
         <div class="cardhead"><h2>Regionnätet</h2><div class="seg small" id="tabseg"></div></div>
         <div class="pal" id="palbox" hidden><div class="palrow" id="pal" role="toolbar" aria-label="Spelbricka med symboler"></div><div class="palpar" id="palpar"></div></div>
@@ -431,9 +437,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261204"></script>
-<script src="sim.js?v=20261204"></script>
-<script src="shp.js?v=20261204"></script>
+<script src="map.js?v=20261205"></script>
+<script src="sim.js?v=20261205"></script>
+<script src="shp.js?v=20261205"></script>
 <script>
 
 const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -639,7 +645,7 @@ function getView(){
   setCfg(cfgOf(true));
   const cnet=makeNet(cfgOf(false));
   const c=currentConsumer();
-  const preview=(state.tab==='place'&&state.sel&&c)?{...c,node:state.sel,id:0}:null;
+  const preview=((state.tab==='place'||(PALON()&&state.game&&state.game.req))&&state.sel&&c)?{...c,node:state.sel,id:0}:null;
   const consumers=preview?[...state.placed,preview]:[...state.placed];
   const hasM=nMeasures()>0||!!live;
   const cur=compute(consumers,state.mode,state.hour,state.crit);
@@ -1074,6 +1080,74 @@ document.addEventListener('keydown',e=>{
   if(!PALON()||e.key!=='Escape') return;
   const ae=document.activeElement; if(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)) return;
   pal.tool='move'; pal.from=null; pal.msg=''; render();
+});
+
+
+/* ---------- Förfrågningsspelet: slumpade förfrågningar till länets kommuner ---------- */
+const GAME_TOTAL=8;
+const GAME_OPTS=[['dc',[40,60,80]],['batt',[30,50,70]],['h2',[40,60]],['ladd',[15,25,35]],['vind',[40,60,90]],['sol',[20,30,50]]];
+const GAME_SRC=['Ett utländskt bolag','Ett lokalt industriföretag','En energikoncern','Ett logistikföretag','Ett nystartat teknikbolag','Ett kommunalt bolag'];
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+function gameKommuner(){const m={}; for(const n of VL()) if(n.id[0]==='R'&&stObj(n.id)&&isLoadR(stObj(n.id))){const k=n.desc||'Utanför länet'; (m[k]=m[k]||[]).push(n.id)} return m}
+function gameCanStart(){return Object.keys(gameKommuner()).length>0&&state.add.length>0}
+function gameNext(){
+  const g=state.game, km=Object.keys(gameKommuner()); if(!km.length) return;
+  const last=g.log.length?g.log[g.log.length-1].host:null;
+  const host=rnd(km.length>1?km.filter(k=>k!==last):km), [kind,mws]=rnd(GAME_OPTS), mw=rnd(mws);
+  g.req={kind,mw,host,from:rnd(GAME_SRC)}; state.kind=kind; state.mw=mw; state.flex=false; state.metric=isGen(kind)?'I':'U'; state.sel=null;
+}
+function gameStart(){state.game={round:1,log:[],req:null}; gameNext(); render()}
+function gameEnd(){state.game=null; state.sel=null; render()}
+function gameDecide(ok){
+  const g=state.game; if(!g||!g.req) return;
+  const r=g.req, rec={round:g.round,kind:r.kind,mw:r.mw,host:r.host,ok};
+  if(ok){
+    if(!state.sel) return;
+    const ref=compute(state.placed,state.mode,state.hour,state.crit), after=getView().cur, byK={};
+    for(const n of VL()){const k=n.desc||'Utanför länet'; const d=val(after,n.id)-val(ref,n.id); byK[k]=Math.min(byK[k]??0,d)}
+    rec.node=state.sel; rec.kommun=(byId[state.sel]&&byId[state.sel].desc)||'Utanför länet'; rec.fit=val(ref,state.sel)>=r.mw;
+    rec.hit=Object.keys(byK).filter(k=>k!==rec.kommun&&byK[k]<=-10);
+    state.placed.push({id:state.uid++,kind:r.kind,mw:r.mw,flex:false,node:state.sel});
+  }
+  g.log.push(rec); g.req=null; g.round++;
+  if(g.round<=GAME_TOTAL) gameNext(); else state.sel=null;
+  render();
+}
+function renderGame(v){
+  const card=$('#gamecard'); card.hidden=!ws(); if(!ws()) return;
+  const g=state.game, body=$('#gamebody');
+  if(!g){
+    const ok=gameCanStart();
+    body.innerHTML=`<p class="help" style="margin-top:0">Bygg först ett nät med spelbrickan (stamnät, regionnätsstationer i flera kommuner och ledningar). Sedan kommer slumpade förfrågningar om etableringar till länets kommuner, ${GAME_TOTAL} stycken. Ni är kommunernas tjänstepersoner: bestäm tillsammans var varje etablering ska ligga, och prata med grannkommunerna innan ni bestämmer, eftersom en etablering kan ta kapacitet från andra.</p><div class="bact"><button class="primary" type="button" data-gact="start" ${ok?'':'disabled'}>Starta förfrågningarna</button></div>${ok?'':'<p class="help">Placera minst en regionnätsstation och en ledning först.</p>'}`;
+    return;
+  }
+  const kk=gameKommuner(), nlog=g.log.length;
+  const okN=g.log.filter(x=>x.ok), noFit=okN.filter(x=>!x.fit).length, hits=okN.filter(x=>x.hit&&x.hit.length).length;
+  const score=`<div class="gscore"><span><b>${okN.length}</b> godkända (${okN.reduce((a,x)=>a+x.mw,0)} MW)</span><span><b>${g.log.length-okN.length}</b> avslagna</span><span><b>${hits}</b> tog kapacitet från en annan kommun</span><span><b>${noFit}</b> kräver förstärkning</span></div>`;
+  if(!g.req){
+    const hist=g.log.map(x=>`<li>Förfrågan ${x.round}: ${KINDS[x.kind].name} ${x.mw} MW i ${x.host}. ${x.ok?`Godkänd i ${x.kommun}${x.kommun!==x.host?' (flyttad från '+x.host+')':''}.${x.fit?'':' Nätet klarade den inte utan förstärkning.'}${x.hit&&x.hit.length?' Tog kapacitet från '+x.hit.join(', ')+'.':''}`:'Avslagen.'}</li>`).join('');
+    body.innerHTML=`<p class="headline" style="font-size:16px;margin:0 0 6px">Alla ${GAME_TOTAL} förfrågningar är besvarade.</p>${score}<ul class="placed" style="margin-top:8px">${hist}</ul><p class="help">Diskutera: Vilka beslut gav bäst helhet för länet? Var skulle en dialog med grannkommunen ha ändrat placeringen? Vad skulle nätbolaget behöva bygga för att fler etableringar ska få plats?</p><div class="bact"><button class="primary" type="button" data-gact="start">Spela igen</button><button type="button" data-gact="end">Avsluta</button></div>`;
+    return;
+  }
+  const r=g.req, k=KINDS[r.kind], ref=compute(state.placed,state.mode,state.hour,state.crit), sel=state.sel;
+  let h=`<div class="greq"><small>Förfrågan ${g.round} av ${GAME_TOTAL}</small><div class="headline" style="font-size:17px;margin:2px 0">${r.host}: ${r.from} vill ${isGen(r.kind)?'ansluta':'etablera'} ${ART[r.kind].toLowerCase()} på ${r.mw} MW</div><small>${k.desc}. Det är ${isGen(r.kind)?'produktion, så det som räknas är hur mycket produktion nätet tar emot':'förbrukning, så det som räknas är hur mycket last nätet klarar'}.</small></div>${score}
+    <p class="help">Prata med grannkommunerna och välj sedan station. Ni kan godkänna den i ${r.host}, föreslå en annan kommun eller avslå. Siffran är lediga MW i stationen just nu.</p><div class="gst">`;
+  h+=Object.keys(kk).sort((a,b)=>a.localeCompare(b)).map(km=>`<div class="gk"><b>${km}${km===r.host?' (förfrågan kom hit)':''}</b>${kk[km].map(id=>{const a=val(ref,id); return `<button type="button" data-gsel="${id}" aria-pressed="${sel===id}" class="${a>=r.mw?'ok':a>0?'warn':'bad'}">${sname(id)}<small>${a} MW ledigt</small></button>`}).join('')}</div>`).join('')+`</div>`;
+  if(sel&&byId[sel]){
+    const after=v.cur, g2={};
+    for(const n of VL()){const kn=n.desc||'Utanför länet'; (g2[kn]=g2[kn]||[]).push(val(after,n.id)-val(ref,n.id))}
+    const own=(byId[sel].desc)||'Utanför länet', fit=val(ref,sel)>=r.mw;
+    const rows=Object.keys(g2).map(kn=>({kn,d:Math.min(...g2[kn])})).sort((a,b)=>a.d-b.d);
+    h+=`<div class="gres"><b>Om den placeras i ${sname(sel)} (${own}):</b> ${fit?'nätet klarar den':'nätet klarar inte hela effekten utan förstärkning'}. Ändring i lediga MW per kommun: ${rows.map(x=>`<span class="${x.d<0?'neg':'pos'}">${x.kn} ${x.d>0?'+':''}${x.d}</span>`).join(' · ')}.</div>`;
+  }
+  h+=`<div class="bact"><button class="primary" type="button" data-gact="ok" ${sel?'':'disabled'}>Godkänn här</button><button type="button" data-gact="no">Avslå</button><button type="button" data-gact="end">Avsluta spelet</button></div>`;
+  body.innerHTML=h;
+}
+$('#gamecard').addEventListener('click',e=>{
+  const s=e.target.closest('[data-gsel]'); if(s){state.sel=state.sel===s.dataset.gsel?null:s.dataset.gsel; render(); return}
+  const a=e.target.closest('[data-gact]'); if(!a) return;
+  const act=a.dataset.gact;
+  if(act==='start') gameStart(); else if(act==='end') gameEnd(); else if(act==='ok') gameDecide(true); else if(act==='no') gameDecide(false);
 });
 
 /* ---------- action bar ---------- */
@@ -1557,7 +1631,7 @@ function renderControls(v){
   $('#undo').disabled=!state.placed.length; $('#reset').disabled=!state.placed.length;
 }
 
-function render(){const v=getView();renderNR();renderPal();renderMission(v);renderControls(v);renderResult(v);renderDiagram(v);renderBuild(v);renderAction(v);renderSens(v);renderKommun(v);renderWhy(v);renderChart(v)}
+function render(){const v=getView();renderNR();renderPal();renderGame(v);renderMission(v);renderControls(v);renderResult(v);renderDiagram(v);renderBuild(v);renderAction(v);renderSens(v);renderKommun(v);renderWhy(v);renderChart(v)}
 
 /* ---------- events ---------- */
 function openHelp(id){
