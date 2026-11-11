@@ -438,9 +438,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261208"></script>
-<script src="sim.js?v=20261208"></script>
-<script src="shp.js?v=20261208"></script>
+<script src="map.js?v=20261209"></script>
+<script src="sim.js?v=20261209"></script>
+<script src="shp.js?v=20261209"></script>
 <script>
 
 const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -1099,13 +1099,13 @@ function gameNext(){
   const host=rnd(km.length>1?km.filter(k=>k!==last):km), [kind,mws]=rnd(GAME_OPTS), mw=rnd(mws);
   gameMaybeEvent(); g.req={kind,mw,host,from:rnd(GAME_SRC)}; state.kind=kind; state.mw=mw; state.flex=false; state.metric=isGen(kind)?'I':'U'; state.sel=null;
 }
-const GAME_FAB=['Nordbatt','Svea Plast','Frysbolaget','Mälar Metall','Gränby Foder','Tierps Kartong','Östhammars Textil','Enköpings Verkstad','Älvkarleby Kemi','Heby Livs'];
+const GAME_FAB=['Nordbatt','Svea Plast','Frysbolaget','Stålverkstan','Grön Foder','Tre Kronor Kartong','Nordic Textil','Kemiprodukter AB','Livsmedelsgruppen','Plåt & Form'];
 /* slumpad händelse: en fabrik går i konkurs och frigör högst 10 % av lasten i stationen */
 function gameMaybeEvent(){
   const g=state.game; g.evt=null; if(g.round<2||Math.random()>0.3) return;
   const cand=[];
   for(const id of Object.values(gameKommuner()).flat()){
-    const us=state.placed.filter(p=>p.node===id&&!gPend(p.until)&&KINDS[p.kind].type==='load'), tot=us.reduce((a,p)=>a+p.mw,0), fac=us.filter(p=>p.kind!=='kommun');
+    const us=state.placed.filter(p=>p.node===id&&!gPend(p.until)&&KINDS[p.kind].type==='load'), tot=us.reduce((a,p)=>a+p.mw,0), fac=us;   /* även en del av kommunlasten kan vara en befintlig fabrik */
     if(fac.length&&Math.floor(tot*0.1)>=1) cand.push({id,tot,fac});
   }
   if(!cand.length) return;
