@@ -280,6 +280,13 @@ def main():
     G = [p for p in G if not any(abs(p[0] - x) <= 3 and abs(p[1] - y) <= 3 for x, y in EXKL_G)]
     R += [(x, y, '') for x, y in NYA]
     R = [(p[0], p[1], '', SPANNING.get((round(p[0]), round(p[1])), 70)) for p in R]
+    # numrera regionnätsstationerna i den ordning de visas i "Er station": kommun i alfabetisk ordning, inom kommunen väst→öst
+    mj = open(os.path.join(ROOT, 'map.js'), encoding='utf-8').read()
+    mj = json.loads(mj[mj.index('const MAP=') + 10:mj.rindex('}') + 1])
+    kp = [(q['name'], MP(np.array(re.findall(r'(-?[\d.]+) (-?[\d.]+)', q['d']), float))) for q in mj['paths'] if q['in']]
+    def kommun(pt):
+        return next((n for n, pp in kp if pp.contains_point(pt[:2])), '')
+    R.sort(key=lambda pt: (kommun(pt), pt[0]))
     vf = [c for c in vf if not any(abs(c['x'] - x) <= 3 and abs(c['y'] - y) <= 3 for x, y in EXKL + EXKL_G)]; json.dump(vf, open(os.path.join(ROOT, 'vattenfall_ref.json'), 'w'), ensure_ascii=False)
     # ledningar som bara matar järnvägen (132 kV, 16,7 Hz) ska inte vara med. Lantmäteriets data skiljer dem inte från
     # regionnätet, så de pekas ut för hand som "ledningen mellan två ställen" (kartpunkter) och tas bort med den väg
