@@ -11,6 +11,7 @@ const PROFILES = {
 };
 const cyc = (h,c)=>{const d=Math.abs(h-c);return Math.min(d,24-d)};
 const KINDS = {
+  kommun:{type:'load', name:'Kommunlast', short:'Kommun', desc:'Vanlig förbrukning i en kommun', mw:30, hidden:true, profile:h=>PROFILES.blandat[h]},
   dc:   {type:'load', name:'Datacenter',    short:'DC',     desc:'Jämn dygnet runt',  mw:40, profile:h=>1},
   batt: {type:'load', name:'Batterifabrik', short:'Batteri',desc:'Mest dagtid',       mw:40, profile:h=>0.55+0.45*bump(h,13,5.5)},
   h2:   {type:'load', name:'Elektrolysör',  short:'H₂',     desc:'Jämn, kan styras',  mw:45, profile:h=>1},
