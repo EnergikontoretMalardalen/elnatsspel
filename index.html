@@ -103,6 +103,7 @@ svg .mono{font-family:var(--f-mono)}
 .stam{fill:none;stroke:#6b7078;stroke-linecap:round;pointer-events:none;opacity:.75}.stam.v400{stroke-width:2}.stam.v220{stroke-width:1.2}.stam.vr{stroke:#c0392b;stroke-width:1.2;opacity:.85}.station.rst .box{fill:var(--accent-t);stroke:var(--accent);stroke-width:1.5}
 .stam.v0{stroke-width:1;stroke-dasharray:3 3}.stam.vr.on{stroke:#2e8b57;stroke-width:2.4;opacity:.95}.stam.vr.pick{stroke:var(--accent);stroke-width:3.5;opacity:1}.vflab{font-size:10px;fill:#1d2b2c;paint-order:stroke;stroke:#fff;stroke-width:2.5px;pointer-events:none}.kedit{margin:10px 0;padding:10px 12px;border:1px solid var(--line,#d6dbd3);border-radius:8px}.owhit{fill:none;stroke:transparent;stroke-width:12;cursor:pointer;stroke-linecap:round}
 .natp{fill-rule:evenodd;pointer-events:none;stroke-width:1.3;stroke-dasharray:6 3;fill-opacity:.13}.natl{font-size:9.5px;font-style:italic;fill:var(--ink2);text-anchor:middle;pointer-events:none}
+.bgl{fill:none;stroke:#9aa0a8;stroke-width:1.1;opacity:.55;pointer-events:none;stroke-linecap:round}.bgl.v2{stroke-width:1.4}.bgl.v4{stroke-width:2;opacity:.45}.bgs{fill:#cfd3d8;stroke:#8a9099;stroke-width:1;pointer-events:none}.nrv{font-size:11px;font-weight:700;paint-order:stroke;stroke:#fff;stroke-width:3px;pointer-events:none}.nrv.ok{fill:#1f6f3d}.nrv.warn{fill:#a15c00}.nrv.bad{fill:#b3261e}.nrtab{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}.nrtab th,.nrtab td{padding:3px 8px;text-align:left;border-bottom:1px solid var(--line,#d6dbd3)}.nrtab .n{text-align:right;font-variant-numeric:tabular-nums}.nrtab .ok{color:#1f6f3d}.nrtab .warn{color:#a15c00;font-weight:600}.nrtab .bad{color:#b3261e;font-weight:700}
 .natchk{display:inline-flex;gap:6px;align-items:center;cursor:pointer}.maplegend i.nt{border-style:dashed}
 .filehelp{margin:10px 0 0;font-size:13px;color:var(--ink2)}.filehelp summary{cursor:pointer;font-weight:600;color:var(--ink)}.filehelp p,.filehelp li{margin:6px 0}
 .filehelp pre.q{white-space:pre-wrap;word-break:break-all;background:var(--bg);border:1px solid var(--rule);border-radius:6px;padding:8px;font:11.5px/1.4 var(--f-mono);user-select:all}
@@ -240,7 +241,7 @@ dialog#help[open]{display:flex;flex-direction:column}
   <header>
     <h1>Regionnätsspelet</h1>
     <p>Hur påverkar en stor etablering i en annan kommun er kommuns möjlighet att få ny förbrukning eller produktion ansluten? Pröva i ett förenklat, fiktivt regionnät över Uppsala län.</p>
-    <p class="notice"><b>Det här är ett spel.</b> Kapacitet, last, produktion och etableringar är påhittade och speglar inte det verkliga elnätet eller någon kommuns eller nätägares verksamhet. Stationer och ledningar i uppdragen är påhittade. Om ni laddar stamnät och regionnät i Blank karta ligger de på ungefärliga verkliga lägen (Lantmäteriet, OpenStreetMap och Vattenfall) och kan vara ofullständiga eller felaktiga.</p>
+    <p class="notice"><b>Det här är ett spel.</b> Kapacitet, last, produktion och etableringar är påhittade och speglar inte det verkliga elnätet eller någon kommuns eller nätägares verksamhet. Stationer och ledningar är sådana ni själva placerar. Bakgrundslagret med det befintliga nätet (Lantmäteriet) är bara ett stöd, ligger på ungefärliga lägen och kan vara ofullständigt eller felaktigt.</p>
     <button type="button" class="helpbtn" id="helpbtn" aria-haspopup="dialog">Så fungerar det</button>
   </header>
 
@@ -330,6 +331,11 @@ dialog#help[open]{display:flex;flex-direction:column}
         <div class="coordro" id="coordro">Håll muspekaren över kartan för att se koordinater.</div>
       </section>
 
+      <section class="card" id="nrcard" aria-label="Newton-Raphson" hidden>
+        <div class="cardhead"><h2>Newton-Raphson: spänning och reaktiv effekt</h2><button class="primary" type="button" data-act="nrrun" id="nrbtn">Simulera nu</button></div>
+        <div id="nrbody"></div>
+      </section>
+
       <section class="card" id="senscard">
         <h2 id="senstitle">Spelar platsen roll?</h2>
         <p class="help" id="senssub" style="margin-top:0"></p>
@@ -352,6 +358,7 @@ dialog#help[open]{display:flex;flex-direction:column}
         <div class="calcexp">
           <p>Spelet räknar ut hur ny förbrukning eller produktion fördelar sig över ledningarna. Tänk på vatten i ett rörsystem: strömmen delar upp sig på flera vägar och tar mest där det är lättast att gå.</p>
           <p><b>Bara effekten räknas.</b> Verkliga nätbolag räknar också på spänning, på energi som går förlorad som värme och på en andra sorts effekt som bara pendlar fram och tillbaka (reaktiv effekt). Det kallas AC-flöde. Spelet använder den enklare metoden DC-flöde, som bara ser på hur många MW som går i varje ledning. Då syns tydligt vilka ledningar en ny anslutning belastar och vilken som blir full först.</p>
+          <p><b>Simulera nu</b> räknar AC-flöde med Newton-Raphson på det nät ni byggt: spänning i varje station, aktiv och reaktiv effekt på ledningarna och förluster. Stamnätet och anslutningar utanför länet har 1,0 p.u., last har effektfaktor 0,95 och produktion 1,0. Ledningarnas resistans, reaktans och kapacitans är schabloner per spänningsnivå, och transformatorer och spänningsreglering är inte med. Resultatet visar var spänningen blir låg, inte vad en nätägare skulle godkänna.</p>
           <p><b>Så ska siffrorna läsas.</b> De visar var det blir trångt, inte om en anslutning är möjlig. I verkligheten kan spänningen eller den reaktiva effekten sätta gränsen före ledningens kapacitet, och förlusterna gör flödet något större, ofta några procent. Spelet kan därför visa mer ledig kapacitet än det finns. Vattenfalls kapacitetskarta bygger på en mer detaljerad modell och kan avvika, därför finns den med som jämförelse.</p>
         </div>
       </details>
@@ -417,9 +424,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261202"></script>
-<script src="sim.js?v=20261202"></script>
-<script src="shp.js?v=20261202"></script>
+<script src="map.js?v=20261203"></script>
+<script src="sim.js?v=20261203"></script>
+<script src="shp.js?v=20261203"></script>
 <script>
 
 const ART = {dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -454,13 +461,15 @@ const MISSIONS = [
       {label:'Älvkarleby har minst 40 MW ledigt för produktion', test:m=>m.mineI>=40}]}
 ];
 MISSIONS.push({title:'Bygg ert eget regionnät', short:'Blank karta', mine:null, metric:null, goal:null, ws:true,
-    text:'Kartan är tom från början. Bestäm tillsammans var stamnätet kommer in i länet, var regionnätsstationerna ligger och hur ledningarna dras. Stationerna har en förvald last (schablon) som nätägarens siffror kan ersätta, och nya verksamheter ansluts till stationerna. Ni kan också ladda stamnät och regionnät, så placeras stationer och ledningar på ungefärliga verkliga lägen och regionnätsledningar kan tas med i beräkningen när ni anger deras kapacitet. Sedan kan ni placera etableringar och se hur grannarna påverkas. Kapacitet, last och produktion är påhittade.', queue:null, goals:[]});
+    text:'Kartan är tom från början. Placera stamnätsstationer (där stamnätet kommer in), regionnätsstationer och anslutningar utanför länet, en eller flera i varje kommun, och dra ledningarna mellan dem. Stationerna har en förvald last (schablon) som ni kan ändra, och nya verksamheter ansluts till stationerna. Det befintliga nätet kan tändas som ett grått bakgrundslager under kartan som stöd för var ni placerar, men det ingår inte i beräkningen. Under kartan finns knappen Simulera nu, som räknar spänningar och reaktiv effekt i ert nät med Newton-Raphson. Kapacitet, last och produktion är påhittade.', queue:null, goals:[]});
 MISSIONS.push({title:'Befintligt nät: en stor förbrukare', short:'Befintligt nät', mine:null, metric:'U', goal:null, ws:true, scen:'heby',
     text:'Regionnätet i Uppsala län är förladdat med stationer och ledningar på ungefärliga verkliga lägen. Välj först er station, sedan en etablering (förvalt datacenter, 40 MW), och klicka på en regionnätsstation på kartan. Tabellen under kartan visar hur lediga kapaciteten ändras i de andra regionnätsstationerna, grupperade per kommun. De blåmarkerade ledningarna på kartan är de vägar den nya effekten tar genom nätet. Effekten delar sig mellan parallella vägar efter ledningarnas reaktans, och ju tjockare markering, desto större andel av effekten går den vägen. Prova andra stationer och storlekar, eller förstärk en ledning, och se vad som händer. Ledningarnas kapacitet (100 MW), stationernas last (schablon) och allt annat är påhittat tills nätägarens siffror finns.', queue:null, goals:[]});
-const TAB_ORDER=[6,5];   /* uppdragen 1–4 och Prova själv finns kvar i koden men visas inte */
+/* Det förladdade nätet (Lantmäteriet/Vattenfall) är avstängt som beräkningsunderlag: spelarna bygger nätet själva. Sätt EXISTING_NET=true för att åter visa läget "Befintligt nät" och knapparna för att ladda stamnät/regionnät. */
+const EXISTING_NET=false;
+const TAB_ORDER=EXISTING_NET?[6,5]:[5];   /* uppdragen 1–4 och Prova själv finns kvar i koden men visas inte */
 
 const $ = s=>document.querySelector(s);
-const state = {mineSet:false, mission:6, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:'', ext:[], rst:[], stamnat:null, nat:null, natvis:true, natmsg:'', ow:null, owcap:0, owkv:0, owscope:'group', kn:{}, ke:null, vf:null, vfvis:false};
+const state = {mineSet:false, mission:EXISTING_NET?6:5, qi:0, placed:[], sel:null, mine:'KNI', kind:'dc', mw:40, flex:false, hour:18, mode:'worst', crit:'n0', metric:'U', showLoads:false, chartLine:null, uid:1, tab:'stations', up:{}, add:[], nid:1, bline:null, bnodes:[], ncap:150, upunit:'pct', upval:50, gst:[], kst:{}, tool:'g', wsmsg:'', ext:[], rst:[], stamnat:null, nat:null, natvis:true, natmsg:'', ow:null, owcap:0, owkv:0, owscope:'group', kn:{}, ke:null, vf:null, vfvis:false, bg:null, bgvis:false, nr:null};
 
 const BW=108, BH=68;
 const L0 = {G:{x:MAP.G.x-50,y:MAP.G.y-17,w:100,h:34}};
@@ -691,6 +700,11 @@ function renderResult(v){
 /* ---------- diagram ---------- */
 function renderDiagram(v){
   const {cur,base}=v; let s=MAPSVG;
+  if(ws()&&state.bgvis&&state.bg){
+    s+=`<g class="bgnet" aria-hidden="true">`+state.bg.lines.map(l=>`<path class="bgl${l.v>=380?' v4':l.v>=200?' v2':''}" d="${l.d}"/>`).join('')
+      +state.bg.gst.map(p=>`<rect class="bgs" x="${p[0]-5}" y="${p[1]-5}" width="10" height="10"><title>Befintlig stamnätsstation (bakgrund)</title></rect>`).join('')
+      +state.bg.rst.map(p=>`<circle class="bgs" cx="${p[0]}" cy="${p[1]}" r="4"><title>Befintlig regionnätsstation (bakgrund)</title></circle>`).join('')+`</g>`;
+  }
   const kids={};
   for(const p of v.consumers){(kids[p.node]=kids[p.node]||[]).push(p)}
   const bld=state.tab==='build';
@@ -707,6 +721,9 @@ function renderDiagram(v){
     LINES.forEach((ln,i)=>{const w=Math.abs(pt[i]); if(w>=0.08){anyShare=true;s+=`<path class="share" d="${wirePath(ln)}" stroke-width="${(3+w*11).toFixed(1)}"/>`}});
   }
   if(bld) LINES.forEach((ln,i)=>{s+=`<path class="hit" data-wire="${i}" d="${wirePath(ln)}"><title>${cap1(ln.label)}${ln.added?'':': klicka för att förstärka'}</title></path>`});
+  if(ws()&&state.nr&&state.nr.res.ok&&nrValid()){
+    s+=`<g aria-hidden="true">`+Object.entries(state.nr.res.V).filter(([id])=>id!=='G'&&id[0]==='R'&&stObj(id)&&isLoadR(stObj(id))).map(([id,o])=>{const g=stObj(id); return `<text class="nrv ${nrStat(o.v)}" data-nrv="${id}" x="${g.x+11}" y="${g.y+20}">${o.v.toFixed(3)}</text>`}).join('')+`</g>`;
+  }
   if(ws()&&state.vfvis&&state.vf) s+=`<g aria-hidden="true">`+state.vf.map(o=>`<circle cx="${o.x}" cy="${o.y}" r="7" fill="${VFCOL[o.c]}" stroke="#1d2b2c" stroke-width="1.2"/><text class="vflab" x="${o.x+10}" y="${o.y+4}">${o.v||VFLAB[o.c]}</text>`).join('')+`</g>`;
   if(ws()&&state.nat&&state.natvis){
     const ow=natOwners();
@@ -788,8 +805,53 @@ function renderDiagram(v){
   $('#diagram').innerHTML=`<svg class="${ZOOM.k>1?'zoomed':''}" viewBox="${ZOOM.x.toFixed(1)} ${ZOOM.y.toFixed(1)} ${(MAP.w/ZOOM.k).toFixed(1)} ${(MAP.h/ZOOM.k).toFixed(1)}" role="group" aria-label="Karta över Uppsala län med ${ws()?'stationer som deltagarna placerar':'åtta kommuner och ett fiktivt regionnät'}">${s}</svg><div class="zoomctl" role="group" aria-label="Zoom"><button type="button" data-zoom="in" aria-label="Zooma in" title="Zooma in">+</button><button type="button" data-zoom="out" aria-label="Zooma ut" title="Zooma ut">−</button><button type="button" data-zoom="reset" aria-label="Återställ zoom" title="Visa hela kartan"${ZOOM.k===1?' disabled':''}>⤢</button></div>`;
   keepTextSize();
   const natLeg=(ws()&&state.nat)?`<label class="natchk"><input type="checkbox" data-natvis ${state.natvis?'checked':''}> Visa nätområden</label>`+(state.natvis?natOwners().list.map(o=>`<span><i class="nt" style="border-color:${o[1]};background:${o[1]}22"></i>${o[0]}</span>`).join(''):''):'';
+  const bgLeg=ws()?`<label class="natchk"><input type="checkbox" data-bgvis ${state.bgvis?'checked':''}> Visa befintligt nät (bakgrund, ingår inte i beräkningen)</label>`+(state.bgvis&&state.bg?`<span><i class="stl"></i>Ledningar</span><span>Källa: Lantmäteriet Topografi 50 (CC0). Läge och spänningsklass är ungefärliga.</span>`:''):'';
   const vfLeg=ws()?`<label class="natchk"><input type="checkbox" data-vfvis ${state.vfvis?'checked':''}> Visa Vattenfalls kapacitetskarta (jämförelse)</label>`+(state.vfvis&&state.vf?`<span>Ledig kapacitet för hög elkonsumtion i regionnätsstationer, MW (ungefärligt läge, närliggande stationer ihopslagna, högsta värdet gäller; värden enligt Vattenfalls karta, färg efter klass). Visar bara 70–130 kV-stationer. 50 MW betyder 50 MW eller mer (tills verkliga siffror finns). Källa: Vattenfall Eldistribution.</span>`+VFCOL.map((c,i)=>`<span><i style="background:${c};border:1px solid #1d2b2c;border-radius:50%"></i>${VFLAB[i]} MW</span>`).join(''):''):'';
-  $('#maplegend').innerHTML=natLeg+vfLeg+`<span><i class="ok"></i>20 MW ledigt eller mer</span><span><i class="warn"></i>1–19 MW</span><span><i class="bad"></i>0 MW</span>`+(anyShare?`<span><i class="acc"></i>Vägarna den nya effekten tar (tjockare = större andel)</span>`:'')+(ws()&&state.stamnat?`<span><i class="stl"></i>Stamnätets ledningar (bakgrund)</span>`+(state.stamnat.lines.some((l,i)=>l.v>0&&l.v<200&&!state.add.some(q=>q.gid===i)&&!(state.cov&&state.cov.has(i)))?`<span><i class="stl r"></i>Regionnätsledning, inte med (0 kV, 0 MW)</span><span><i class="stl g"></i>Regionnätsledning med i beräkningen</span>`:'')+(state.stamnat.src==='osm'?`<span>Data: © OpenStreetMap-bidragsgivare (ODbL). Kan vara ofullständig eller felaktig.</span>`:state.stamnat.src==='lm'?`<span>Ledningar och stationer: © Lantmäteriet, Topografi 50 (CC0). Kan vara ofullständigt eller felaktigt (stationer inomhus eller utan karterad byggnad saknas).</span>`:''):'')+(LINES.some(l=>l.up)?`<span><i class="thick"></i>Förstärkt ledning</span>`:'')+((!ws()&&LINES.some(l=>l.added))||(v.pend&&v.pend.type==='add')?`<span><i class="dash"></i>Ny ledning</span>`:'');
+  $('#maplegend').innerHTML=bgLeg+natLeg+vfLeg+`<span><i class="ok"></i>20 MW ledigt eller mer</span><span><i class="warn"></i>1–19 MW</span><span><i class="bad"></i>0 MW</span>`+(anyShare?`<span><i class="acc"></i>Vägarna den nya effekten tar (tjockare = större andel)</span>`:'')+(ws()&&state.stamnat?`<span><i class="stl"></i>Stamnätets ledningar (bakgrund)</span>`+(state.stamnat.lines.some((l,i)=>l.v>0&&l.v<200&&!state.add.some(q=>q.gid===i)&&!(state.cov&&state.cov.has(i)))?`<span><i class="stl r"></i>Regionnätsledning, inte med (0 kV, 0 MW)</span><span><i class="stl g"></i>Regionnätsledning med i beräkningen</span>`:'')+(state.stamnat.src==='osm'?`<span>Data: © OpenStreetMap-bidragsgivare (ODbL). Kan vara ofullständig eller felaktig.</span>`:state.stamnat.src==='lm'?`<span>Ledningar och stationer: © Lantmäteriet, Topografi 50 (CC0). Kan vara ofullständigt eller felaktigt (stationer inomhus eller utan karterad byggnad saknas).</span>`:''):'')+(LINES.some(l=>l.up)?`<span><i class="thick"></i>Förstärkt ledning</span>`:'')+((!ws()&&LINES.some(l=>l.added))||(v.pend&&v.pend.type==='add')?`<span><i class="dash"></i>Ny ledning</span>`:'');
+}
+
+
+/* ---------- Newton-Raphson (AC) ---------- */
+const nrKey=()=>JSON.stringify([state.add.map(a=>[a.id,a.a,a.b,a.cap,a.kv,a.km,a.extra]),state.kn,state.placed,state.mode==='worst'?-1:state.hour,state.mode,state.rst.map(g=>g.id),state.gst.map(g=>g.id),state.ext.map(g=>g.id)]);
+const nrStat=v=>v<0.90||v>1.10?'bad':(v<0.95||v>1.05)?'warn':'ok';
+function nrRun(){
+  getView();
+  const net=makeNet(cfgOf(false)), hs=state.mode==='worst'?HRS:[state.hour];
+  let best=null;
+  for(const h of hs){
+    const r=nrSolve(state.placed,h,net), vmin=r.ok?Math.min(...Object.values(r.V).map(o=>o.v)):-1;
+    if(!best||(!r.ok&&best.ok)||(r.ok===best.ok&&vmin<best.vmin)) best={r,vmin,ok:r.ok};
+    if(!r.ok&&state.mode==='worst') break;
+  }
+  state.nr={res:best.r,key:nrKey(),lines:net.lines.map(l=>({a:l.a,b:l.b,kv:l.kv,km:l.km,cap:l.cap}))};
+}
+function nrValid(){return !!state.nr&&state.nr.key===nrKey()}
+function renderNR(){
+  const card=$('#nrcard'); card.hidden=!ws(); if(!ws()) return;
+  const body=$('#nrbody'), hrTxt=state.mode==='worst'?'den värsta timmen (lägst spänning)':'kl. '+String(state.hour).padStart(2,'0')+':00';
+  const intro=`<p class="help" style="margin-top:0">Räknar fram spänning (p.u.) i varje station och aktiv och reaktiv effekt på varje ledning, med ${hrTxt}. Stamnätsstationer och anslutningar utanför länet är referens med 1,0 p.u. Last har effektfaktor 0,95 och produktion effektfaktor 1,0. Ledningsdata är schabloner per spänningsnivå (påhittade, tills nätägarens data finns).</p>`;
+  const hasNet=state.add.length>0&&state.rst.some(isLoadR);
+  $('#nrbtn').disabled=!hasNet;
+  if(!hasNet){body.innerHTML=intro+'<p class="help">Placera stationer och dra minst en ledning, så kan du simulera.</p>'; return}
+  if(!state.nr){body.innerHTML=intro; return}
+  const r=state.nr.res, stale=!nrValid();
+  let h=intro;
+  if(stale) h+='<p class="alert" role="status">Nätet har ändrats sedan senaste simuleringen. Klicka Simulera nu igen. Siffrorna nedan gäller det gamla nätet.</p>';
+  const hh=String(r.hour).padStart(2,'0')+':00';
+  if(!r.ok){
+    h+=`<p class="alert" role="status"><b>Beräkningen konvergerade inte</b> (kl. ${hh}, ${r.iter} iterationer). Det betyder oftast att nätet inte klarar lasten: för lite ledning mot för stor last ger spänningskollaps. Lägg till ledningar eller minska lasten.</p>`;
+    body.innerHTML=h; return;
+  }
+  const rows=Object.entries(r.V).filter(([id])=>id!=='G').map(([id,o])=>({id,...o})).sort((a,b)=>a.v-b.v);
+  const L=state.nr.lines;
+  const lrows=r.lines.map(o=>({...o,l:L[o.li]})).sort((a,b)=>b.loading-a.loading);
+  const vmin=rows.length?rows[0].v:1, lmax=lrows.length?lrows[0].loading:0;
+  h+=`<p class="headline" style="font-size:15px;margin:6px 0">Konvergerade på ${r.iter} iterationer (kl. ${hh}). Lägsta spänning ${vmin.toFixed(3)} p.u., högsta ledningsbelastning ${Math.round(lmax*100)} %.</p>
+    <p class="help">Last ${r.pload.toFixed(0)} MW, produktion ${r.pgen.toFixed(0)} MW. Från stamnätet och utlandet: ${r.pslack.toFixed(1)} MW och ${r.qslack.toFixed(1)} MVAr. Förluster ${r.loss.toFixed(2)} MW (${r.pload>0?(100*r.loss/r.pload).toFixed(1):'0'} % av lasten).</p>`;
+  if(r.isolated.length) h+=`<p class="alert">Utan förbindelse med stamnätet och därför inte med i beräkningen: ${r.isolated.map(sname).join(', ')}.</p>`;
+  h+=`<details open><summary>Spänning i stationerna</summary><div style="overflow-x:auto"><table class="nrtab"><thead><tr><th>Station</th><th class="n">Spänning (p.u.)</th><th class="n">Vinkel (°)</th></tr></thead><tbody>${rows.map(o=>`<tr><td>${sname(o.id)}</td><td class="n ${nrStat(o.v)}">${o.v.toFixed(3)}</td><td class="n">${o.th.toFixed(2)}</td></tr>`).join('')}</tbody></table></div><p class="help">Grönt: 0,95–1,05 p.u. Gult: utanför det intervallet. Rött: under 0,90 eller över 1,10. Gränserna är spelets egna riktvärden.</p></details>`;
+  h+=`<details><summary>Ledningar: effekt och belastning</summary><div style="overflow-x:auto"><table class="nrtab"><thead><tr><th>Ledning</th><th class="n">kV</th><th class="n">P (MW)</th><th class="n">Q (MVAr)</th><th class="n">Förlust (MW)</th><th class="n">Belastning</th></tr></thead><tbody>${lrows.map(o=>`<tr><td>${sname(o.l.a)} – ${sname(o.l.b)}</td><td class="n">${o.l.kv||'–'}</td><td class="n">${o.pf.toFixed(1)}</td><td class="n">${o.qf.toFixed(1)}</td><td class="n">${o.loss.toFixed(2)}</td><td class="n ${o.loading>1?'bad':o.loading>0.8?'warn':'ok'}">${Math.round(o.loading*100)} %</td></tr>`).join('')}</tbody></table></div><p class="help">P och Q vid ledningens första ände (riktning från första till andra stationen). Belastningen är skenbar effekt (MVA) i procent av ledningens kapacitet i MW, vilket förenklar.</p></details>`;
+  body.innerHTML=h;
 }
 
 /* ---------- action bar ---------- */
@@ -861,9 +923,9 @@ function osmQuery(){
 }
 function stationsHtml(){
   const nl=state.rst.filter(isLoadR).length, none=!state.gst.length&&!nl;
-  const T=[['g','Stamnätsstation'],['r','Regionnätsstation'],['l','Station på ledning']];
-  const hint={g:'Klicka var som helst på kartan för att placera en stamnätsstation (högst '+(state.stamnat?30:4)+'). Där kommer stamnätet in i länet.',
-    r:'Klicka på kartan för att placera en regionnätsstation. Den får en förvald last på '+SCHABLON+' MW som du kan ändra under Last och produktion. Nya verksamheter ansluts till regionnätsstationer.',
+  const T=[['g','Stamnätsstation'],['r','Regionnätsstation'],...(EXISTING_NET?[['l','Station på ledning']]:[])];
+  const hint={g:'Klicka var som helst på kartan, även utanför länet, för att placera en stamnätsstation (högst '+(state.stamnat?30:12)+'). Där kommer stamnätet in i länet. Stamnätsstationer har 1,0 p.u. spänning i Newton-Raphson.',
+    r:'Klicka på kartan för att placera en regionnätsstation, en eller flera i varje kommun och gärna också utanför länet. Den får en förvald last på '+SCHABLON+' MW som du kan ändra under Last och produktion. Nya verksamheter ansluts till regionnätsstationer.',
     l:'Klicka på en ledning i bakgrunden för att bygga en egen station där. På en stamnätsledning (220 kV och uppåt) blir det en stamnätsstation, annars en regionnätsstation med last. Ledningen delas där när den aktiveras. Kräver att ledningar är laddade.'}[state.tool];
   let h=`<div class="bhead"><strong>Placera stationer</strong><span class="val">${state.gst.length} stamnät · ${nl} region</span></div>
     <div class="seg" role="group" aria-label="Typ av station" style="max-width:640px">${T.map(([k,l])=>`<button type="button" data-tool="${k}" aria-pressed="${state.tool===k}">${l}</button>`).join('')}</div>
@@ -871,7 +933,7 @@ function stationsHtml(){
   if(state.wsmsg) h+=`<small class="wsmsg" role="status">${state.wsmsg}</small>`;
   if(state.stamnatmsg) h+=`<small role="status">${state.stamnatmsg}</small>`;
   if(state.natmsg) h+=`<small role="status">${state.natmsg}</small>`;
-  h+=`<details class="filehelp"><summary>Så laddar du stamnät, regionnät och nätområden</summary>
+  if(EXISTING_NET) h+=`<details class="filehelp"><summary>Så laddar du stamnät, regionnät och nätområden</summary>
     <p><b>Ladda stamnät/regionnät</b> läser in underlaget som följer med spelet för Uppsala län. Det behövs ingen fil och inget konto. Stationer och ledningar hamnar på ungefärliga verkliga lägen, men kapacitet, last och produktion är påhittade. Underlaget består av:</p>
     <ul>
       <li><b>Ledningar:</b> Lantmäteriets Topografi 50 Nedladdning vektor (lagret Ledningslinje: region 25–200 kV och stam över 200 kV, öppna data, CC0). Spänningen anges bara som klass, så kV och MW anger ni själva när ni tar med en regionnätsledning i beräkningen.</li>
@@ -893,7 +955,7 @@ function stationsHtml(){
       <div class="row" style="gap:14px;flex-wrap:wrap;margin-top:6px"><label for="kn-base">Högsta last (MW)</label><input type="number" id="kn-base" min="0" max="2000" step="1" value="${val('base')}" style="width:80px"><label for="kn-vind">Vindkraft (MW)</label><input type="number" id="kn-vind" min="0" max="2000" step="1" value="${val('vind')}" style="width:80px"><label for="kn-sol">Solkraft (MW)</label><input type="number" id="kn-sol" min="0" max="2000" step="1" value="${val('sol')}" style="width:80px"></div>
       <div class="bact"><button class="primary" type="button" data-act="knon">Använd</button>${o?'<button type="button" data-act="knreset">Återställ förval</button>':''}</div></div>`;
   }
-  h+=`<div class="bact"><button class="primary" type="button" data-act="tolines" ${state.gst.length&&nl?'':'disabled'}>Klart, dra ledningar</button><button type="button" data-act="loadstam">Ladda stamnät/regionnät</button><button type="button" data-act="ownfile">Egen fil…</button><button type="button" data-act="loadnat">Ladda nätområden</button><button type="button" data-act="clearmap" ${none?'disabled':''}>Rensa kartan</button></div>`;
+  h+=`<div class="bact"><button class="primary" type="button" data-act="tolines" ${state.gst.length&&nl?'':'disabled'}>Klart, dra ledningar</button>${EXISTING_NET?'<button type="button" data-act="loadstam">Ladda stamnät/regionnät</button><button type="button" data-act="ownfile">Egen fil…</button><button type="button" data-act="loadnat">Ladda nätområden</button>':''}<button type="button" data-act="clearmap" ${none?'disabled':''}>Rensa kartan</button></div>`;
   return h;
 }
 const NATCOL=['#c2410c','#1d4ed8','#15803d','#a21caf','#a16207','#0e7490','#be123c'];
@@ -925,7 +987,8 @@ async function readLayer(files,build,apply,what){
   render();
 }
 $('#nfile').addEventListener('change',e=>{const f=[...e.target.files]; e.target.value=''; readLayer(f,sets=>{const d=SHP.nat(sets); if(!d.areas.length) throw new Error('inga nätområden'); return d},applyNat,'natmsg')});
-$('#maplegend').addEventListener('change',e=>{if(e.target.matches('[data-vfvis]')){state.vfvis=e.target.checked; if(state.vfvis&&!state.vf){fetch('vattenfall_ref.json').then(r=>r.json()).then(d=>{state.vf=d;render()}).catch(()=>{state.vfvis=false;render()})} render(); return}
+$('#maplegend').addEventListener('change',e=>{
+  if(e.target.matches('[data-bgvis]')){state.bgvis=e.target.checked; if(state.bgvis&&!state.bg){fetch('lm_uppsala.json').then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{state.bg={lines:d.lines.map(l=>({v:+l.v||0,d:String(l.d).replace(/[^0-9ML. \-]/g,'')})).filter(l=>l.v>0),gst:(d.stations||[]).map(p=>[Math.round(p[0]),Math.round(p[1])]),rst:(d.rstations||[]).map(p=>[Math.round(p[0]),Math.round(p[1])])};render()}).catch(()=>{state.bgvis=false;render()})} render(); return}if(e.target.matches('[data-vfvis]')){state.vfvis=e.target.checked; if(state.vfvis&&!state.vf){fetch('vattenfall_ref.json').then(r=>r.json()).then(d=>{state.vf=d;render()}).catch(()=>{state.vfvis=false;render()})} render(); return}
   if(e.target.matches('[data-natvis]')){state.natvis=e.target.checked;render()}});
 function segsOf(lines){
   const out=[];
@@ -1181,7 +1244,7 @@ function renderSens(v){
 function renderKommun(v){
   const card=$('#kommuncard'); if(!ws()||!state.placed.length||!VL().length){card.hidden=true;return}
   const ref=compute([],state.mode,state.hour,state.crit,makeNet(cfgOf(false))), g={};
-  for(const n of VL()){const k=n.desc||'Utanför kommun'; (g[k]=g[k]||[]).push({id:n.id,now:val(v.cur,n.id),d:val(v.cur,n.id)-val(ref,n.id)})}
+  for(const n of VL()){const k=n.desc||'Utanför länet'; (g[k]=g[k]||[]).push({id:n.id,now:val(v.cur,n.id),d:val(v.cur,n.id)-val(ref,n.id)})}
   const hostK=new Set(state.placed.map(p=>byId[p.node]&&byId[p.node].desc));
   const rows=Object.keys(g).map(k=>({k,st:g[k],now:Math.min(...g[k].map(x=>x.now)),d:Math.min(...g[k].map(x=>x.d))})).sort((a,b)=>a.d-b.d||a.k.localeCompare(b.k));
   const word=MET[state.metric].word, max=Math.max(10,...rows.map(r=>Math.abs(r.d)));
@@ -1224,7 +1287,7 @@ function renderChart(v){
 /* ---------- mission bar + controls ---------- */
 function renderMission(v){
   const mi=state.mission, M=MISSIONS[mi];
-  $('#missionseg').innerHTML=TAB_ORDER.map(i=>`<button type="button" data-mission="${i}" aria-pressed="${i===mi}">${MISSIONS[i].short}</button>`).join('');
+  $('#missionseg').hidden=TAB_ORDER.length<2; $('#missionseg').innerHTML=TAB_ORDER.map(i=>`<button type="button" data-mission="${i}" aria-pressed="${i===mi}">${MISSIONS[i].short}</button>`).join('');
   let mb=`<div class="mtitle">${M.title}</div><p class="mtext">${M.text}</p>`;
   if(M.goals.length){
     const m=v.committed;
@@ -1240,7 +1303,7 @@ function renderMission(v){
 function renderControls(v){
   const M=MISSIONS[state.mission], locked=!!M.queue, c=v.c;
   const mb=n=>`<button type="button" data-mine="${n.id}" aria-label="${n.name}" aria-pressed="${n.id===state.mine&&mineOn()}" ${locked?'disabled':''}>${(n.sh||n.name).replace('Kommun ','')}</button>`;
-  if(ws()){const grp={}; VL().forEach(n=>{(grp[n.desc||'Utanför kommun']=grp[n.desc||'Utanför kommun']||[]).push(n)}); $('#mineseg').innerHTML=Object.keys(grp).sort().map(k=>`<span class="mgrp" style="font-size:12px;color:var(--mute,#555);margin:0 4px 0 8px">${k}</span>`+grp[k].map(mb).join('')).join('')}
+  if(ws()){const grp={}; VL().forEach(n=>{(grp[n.desc||'Utanför länet']=grp[n.desc||'Utanför länet']||[]).push(n)}); $('#mineseg').innerHTML=Object.keys(grp).sort().map(k=>`<span class="mgrp" style="font-size:12px;color:var(--mute,#555);margin:0 4px 0 8px">${k}</span>`+grp[k].map(mb).join('')).join('')}
   else $('#mineseg').innerHTML=VL().map(mb).join('');
   {$('#minetitle').textContent=ws()?'Er station':'Er kommun'; const w=ws()?'stationen':'kommunen'; $('#minehelp').textContent=(locked?'Bestämd av uppdraget. ':'')+`Siffrorna utgår från den här ${w}.`}
   const box=$('#kindbox');
@@ -1271,7 +1334,7 @@ function renderControls(v){
   $('#undo').disabled=!state.placed.length; $('#reset').disabled=!state.placed.length;
 }
 
-function render(){const v=getView();renderMission(v);renderControls(v);renderResult(v);renderDiagram(v);renderBuild(v);renderAction(v);renderSens(v);renderKommun(v);renderWhy(v);renderChart(v)}
+function render(){const v=getView();renderNR();renderMission(v);renderControls(v);renderResult(v);renderDiagram(v);renderBuild(v);renderAction(v);renderSens(v);renderKommun(v);renderWhy(v);renderChart(v)}
 
 /* ---------- events ---------- */
 function openHelp(id){
@@ -1298,10 +1361,11 @@ let dragInfo=null, justDragged=false;
 
 function keepTextSize(){ /* stationsboxar, MW-rutor och namn behåller sin storlek på skärmen när kartan zoomas in */
   const svg=$('#diagram svg'); if(!svg)return; const k=ZOOM.k;
-  if(k<=1){svg.querySelectorAll('g.leaf[transform],g.chip[transform],g.station[transform],text.klabel[transform],[data-port][transform]').forEach(e=>e.removeAttribute('transform'));return}
+  if(k<=1){svg.querySelectorAll('g.leaf[transform],g.chip[transform],g.station[transform],text.klabel[transform],[data-port][transform],text.nrv[transform]').forEach(e=>e.removeAttribute('transform'));return}
   const sc=(el,x,y)=>el.setAttribute('transform',`translate(${x} ${y}) scale(${(1/k).toFixed(4)}) translate(${-x} ${-y})`);
   svg.querySelectorAll('g.leaf').forEach(g=>{const c=g.querySelector('circle.dot'); if(c)sc(g,+c.getAttribute('cx'),+c.getAttribute('cy'))});
   svg.querySelectorAll('g.chip').forEach(g=>{const r=g.querySelector('rect.cb'); if(r)sc(g,+r.getAttribute('x')+(+r.getAttribute('width'))/2,+r.getAttribute('y')+(+r.getAttribute('height'))/2)});
+  svg.querySelectorAll('text.nrv').forEach(t=>sc(t,+t.getAttribute('x'),+t.getAttribute('y')));
   svg.querySelectorAll('text.klabel').forEach(t=>sc(t,+t.getAttribute('x'),+t.getAttribute('y')));
   svg.querySelectorAll('g.station').forEach(g=>{const id=g.dataset.station; if(id&&L[id]){const q=ctr(id); sc(g,q.x,q.y)}});
   svg.querySelectorAll('[data-port]').forEach(c=>{const id=c.dataset.port; if(id&&L[id]){const q=ctr(id); sc(c,q.x,q.y)}});
@@ -1555,6 +1619,7 @@ $('#missionseg').addEventListener('click',e=>{
   const aq=m.queue&&m.queue.find(q=>q.adjust); if(aq) state.mw=aq.mw;
   resetAll(); wsClear(); if(m.ws) state.ncap=150; if(m.scen) startScenario(); state.tab=m.scen?'place':m.ws?'stations':(m.queue&&m.queue.length===0)?'build':'place'; render();
 });
+$('#nrcard').addEventListener('click',e=>{if(e.target.closest('[data-act="nrrun"]')){nrRun();render()}});
 $('#mineseg').addEventListener('click',e=>{const b=e.target.closest('[data-mine]');if(!b||b.disabled)return;state.mine=b.dataset.mine;state.mineSet=true;render()});
 $('#kindbox').addEventListener('click',e=>{
   const b=e.target.closest('[data-kind]'); if(!b)return;
