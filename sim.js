@@ -188,4 +188,95 @@ function metrics(res){
 function ptdfOf(nodeId,outIdx=-1,net){
   net=net||NET; const s=net.scen.find(x=>x.out===outIdx); return s?s.PT[IDX[nodeId]]:net.lines.map(()=>0);
 }
+
+/* ---------- Newton-Raphson (AC-lastflöde) ----------
+   Stamnätet och anslutningar utanför länet är en gemensam referensnod med 1,0 p.u. spänning.
+   Last har effektfaktor 0,95 (induktiv), produktion effektfaktor 1,0. Ledningsdata är schabloner per spänningsnivå. */
+const NR = {SB:100, pfLoad:0.95, pfGen:1.0, vslack:1.0, tol:1e-8, maxit:30,
+  /* Ω/km, Ω/km, µS/km: påhittade schablonvärden för luftledning, inte nätägarens data */
+  Z:{70:{r:0.20,x:0.40,b:2.8},130:{r:0.10,x:0.40,b:2.9},220:{r:0.05,x:0.40,b:3.0},400:{r:0.03,x:0.33,b:3.4}}};
+function nrZ(kv){const ks=Object.keys(NR.Z).map(Number); const k=ks.reduce((a,b)=>Math.abs(b-kv)<Math.abs(a-kv)?b:a); return {kv:k,...NR.Z[k]}}
+function nrSolveLin(A,b){
+  const n=b.length; for(let i=0;i<n;i++){
+    let p=i; for(let r=i+1;r<n;r++) if(Math.abs(A[r][i])>Math.abs(A[p][i])) p=r;
+    if(Math.abs(A[p][i])<1e-14) return null;
+    [A[i],A[p]]=[A[p],A[i]]; [b[i],b[p]]=[b[p],b[i]];
+    for(let r=i+1;r<n;r++){const f=A[r][i]/A[i][i]; if(f===0) continue; for(let c=i;c<n;c++) A[r][c]-=f*A[i][c]; b[r]-=f*b[i]}
+  }
+  const x=Array(n).fill(0); for(let i=n-1;i>=0;i--){let s=b[i]; for(let c=i+1;c<n;c++) s-=A[i][c]*x[c]; x[i]=s/A[i][i]} return x;
+}
+function nrSolve(placed,hour,net){
+  net=net||NET; const lines=net.lines, act=reach(-1,lines);
+  const ids=['G',...NODES.slice(1).map(n=>n.id).filter(id=>act.has(id))];   /* nod 0 = referensnod */
+  const ix=Object.fromEntries(ids.map((id,i)=>[id,i])), N=ids.length;
+  const isolated=NODES.slice(1).filter(n=>n.base!=null&&net.present.has(n.id)&&!act.has(n.id)).map(n=>n.id);
+  const tanL=Math.tan(Math.acos(NR.pfLoad)), tanG=Math.tan(Math.acos(NR.pfGen));
+  const P=Array(N).fill(0), Q=Array(N).fill(0); let pload=0,pgen=0;
+  for(let i=1;i<N;i++){
+    const n0=byId[ids[i]]; if(n0.base==null||!net.present.has(n0.id)) continue;
+    const n=net.cfg&&net.cfg.nodes&&net.cfg.nodes[n0.id]?{...n0,...net.cfg.nodes[n0.id]}:n0;
+    /* last och produktion var för sig, så att de får olika effektfaktor */
+    let load=n.base*PROFILES[n.kind][hour], gen=0;
+    for(const g of n.gen) gen+=g.mw*KINDS[g.kind].profile(hour);
+    for(const p of placed) if(p.node===n0.id){const v=p.mw*KINDS[p.kind].profile(hour)*(p.flex?FLEXF(hour):1); if(isGen(p.kind)) gen+=v; else load+=v}
+    P[i]=(gen-load)/NR.SB; Q[i]=(gen*tanG-load*tanL)/NR.SB; pload+=load; pgen+=gen;
+  }
+  /* nodadmittansmatris */
+  const G=Array.from({length:N},()=>Array(N).fill(0)), B=Array.from({length:N},()=>Array(N).fill(0));
+  const br=lines.map((l,li)=>{
+    const a=ix[E(l.a)], c=ix[E(l.b)]; if(a===undefined||c===undefined||a===c) return null;
+    const z=nrZ(l.kv>0?l.kv:130), Zb=z.kv*z.kv/NR.SB, km=l.km||10;
+    const r=z.r*km/Zb, x=z.x*km/Zb, bc=z.b*1e-6*km*Zb, d=r*r+x*x, gs=r/d, bs=-x/d;
+    G[a][a]+=gs; G[c][c]+=gs; G[a][c]-=gs; G[c][a]-=gs;
+    B[a][a]+=bs+bc/2; B[c][c]+=bs+bc/2; B[a][c]-=bs; B[c][a]-=bs;
+    return {li,a,c,gs,bs,bc};
+  });
+  const V=Array(N).fill(NR.vslack), T=Array(N).fill(0), m=N-1;
+  const calc=()=>{const p=Array(N).fill(0), q=Array(N).fill(0);
+    for(let i=0;i<N;i++) for(let k=0;k<N;k++){const th=T[i]-T[k], c=Math.cos(th), s=Math.sin(th); p[i]+=V[i]*V[k]*(G[i][k]*c+B[i][k]*s); q[i]+=V[i]*V[k]*(G[i][k]*s-B[i][k]*c)}
+    return {p,q}};
+  let iter=0, ok=m===0, mis=0;
+  while(m>0){
+    const {p,q}=calc(), f=[]; for(let i=1;i<N;i++) f.push(P[i]-p[i]); for(let i=1;i<N;i++) f.push(Q[i]-q[i]);
+    mis=Math.max(...f.map(Math.abs));
+    if(!isFinite(mis)) break;
+    if(mis<NR.tol){ok=true;break}
+    if(iter>=NR.maxit) break;
+    const J=Array.from({length:2*m},()=>Array(2*m).fill(0));
+    for(let i=1;i<N;i++) for(let k=1;k<N;k++){
+      const th=T[i]-T[k], c=Math.cos(th), s=Math.sin(th);
+      if(i===k){
+        J[i-1][k-1]=-q[i]-B[i][i]*V[i]*V[i];            /* dP/dθ */
+        J[i-1][m+k-1]=p[i]/V[i]+G[i][i]*V[i];            /* dP/dV */
+        J[m+i-1][k-1]=p[i]-G[i][i]*V[i]*V[i];            /* dQ/dθ */
+        J[m+i-1][m+k-1]=q[i]/V[i]-B[i][i]*V[i];          /* dQ/dV */
+      }else{
+        const gc=G[i][k]*c+B[i][k]*s, gs=G[i][k]*s-B[i][k]*c;
+        J[i-1][k-1]=V[i]*V[k]*gs; J[i-1][m+k-1]=V[i]*gc;
+        J[m+i-1][k-1]=-V[i]*V[k]*gc; J[m+i-1][m+k-1]=V[i]*gs;
+      }
+    }
+    const dx=nrSolveLin(J,f); if(!dx) break;
+    for(let i=1;i<N;i++){T[i]+=dx[i-1]; V[i]+=dx[m+i-1]}
+    if(V.some(v=>!(v>0.2&&v<2))) break;
+    iter++;
+  }
+  const res={ok,iter,mis,ids,isolated,hour,pload,pgen,V:{},lines:[],loss:0};
+  ids.forEach((id,i)=>{res.V[id]={v:V[i],th:T[i]*180/Math.PI}});
+  if(!ok) return res;
+  const vc=i=>[V[i]*Math.cos(T[i]),V[i]*Math.sin(T[i])];
+  br.forEach(b=>{
+    if(!b) return;
+    const y=[b.gs,b.bs], sh=[0,b.bc/2], Va=vc(b.a), Vc=vc(b.c);
+    const cm=(u,v)=>[u[0]*v[0]-u[1]*v[1],u[0]*v[1]+u[1]*v[0]];
+    const dv=[Va[0]-Vc[0],Va[1]-Vc[1]];
+    const Iac=cm(dv,y), Ia=[Iac[0]+cm(Va,sh)[0],Iac[1]+cm(Va,sh)[1]], Ic=[-Iac[0]+cm(Vc,sh)[0],-Iac[1]+cm(Vc,sh)[1]];
+    const Sa=cm(Va,[Ia[0],-Ia[1]]), Sc=cm(Vc,[Ic[0],-Ic[1]]);
+    const l=lines[b.li], s=Math.max(Math.hypot(Sa[0],Sa[1]),Math.hypot(Sc[0],Sc[1]))*NR.SB;
+    res.lines.push({li:b.li,pf:Sa[0]*NR.SB,qf:Sa[1]*NR.SB,pt:Sc[0]*NR.SB,qt:Sc[1]*NR.SB,s,cap:l.cap,loading:s/l.cap,loss:(Sa[0]+Sc[0])*NR.SB});
+    res.loss+=(Sa[0]+Sc[0])*NR.SB;
+  });
+  const {p,q}=calc(); res.pslack=p[0]*NR.SB; res.qslack=q[0]*NR.SB;
+  return res;
+}
 //#SIM-END
