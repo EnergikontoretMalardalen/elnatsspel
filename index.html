@@ -112,7 +112,7 @@ svg .mono{font-family:var(--f-mono)}
 body.pal #tabseg,body.pal #buildbox,body.pal #actionbar,body.pal #etabcard,body.pal #placedcard{display:none!important}
 g.unit{cursor:grab}g.unit.sel circle.uc,g.unit.sel polygon.uc{stroke:#2955d9;stroke-width:3}g.unit text{font-size:10px;font-weight:700;paint-order:stroke;stroke:#fff;stroke-width:3px;fill:#1d2b2c;pointer-events:none}g.unit .stub{stroke:#555;stroke-width:1.4}
 #diagram svg .selring{fill:none;stroke:#2955d9;stroke-width:3;stroke-dasharray:4 3;pointer-events:none}
-.wire.gpend{stroke:#8a9099!important;opacity:.2;stroke-dasharray:none}.gpendr{fill:none;stroke:#8a9099;stroke-width:10;opacity:.2;stroke-linecap:round;pointer-events:none}g.unit.gpend{opacity:.2}g.unit.gpend .uc{fill:#8a9099;stroke:#555}
+.wire.gpend{stroke:#8a9099!important;opacity:.2;stroke-dasharray:none}.gpendr{fill:none;stroke:#8a9099;stroke-width:10;opacity:.2;stroke-linecap:round;pointer-events:none}g.unit.gpend{opacity:.2}g.unit.gpend .uc{stroke:#555}g.unit.gpend .gl *{fill:#8a9099!important;stroke:#555!important}
 .gscore{display:flex;gap:4px 16px;flex-wrap:wrap;font-size:13px;margin:6px 0}.gst{display:flex;flex-direction:column;gap:6px;margin:6px 0}.gk{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}.gk>b{min-width:150px;font-size:13px}.gk button{display:flex;flex-direction:column;align-items:center;padding:3px 10px;border:1.5px solid var(--line,#c9cfc6);border-radius:8px;background:#fff;cursor:pointer;font-size:12px}.gk button small{font-size:11px;color:var(--ink2)}.gk button.ok{border-color:#2e8b57}.gk button.warn{border-color:#c98a1b}.gk button.bad{border-color:#b3261e}.gk button[aria-pressed="true"]{background:#dbe7ff;box-shadow:0 0 0 2px #2955d9}.gres{margin:8px 0;font-size:13px}.gres .neg{color:#b3261e;font-weight:600}.gres .pos{color:#1f6f3d}
 .bgl{fill:none;stroke:#9aa0a8;stroke-width:1.1;opacity:.55;pointer-events:none;stroke-linecap:round}.bgl.v2{stroke-width:1.4}.bgl.v4{stroke-width:2;opacity:.45}.bgs{fill:#cfd3d8;stroke:#8a9099;stroke-width:1;pointer-events:none}.nrv{font-size:11px;font-weight:700;paint-order:stroke;stroke:#fff;stroke-width:3px;pointer-events:none}.nrv.ok{fill:#1f6f3d}.nrv.warn{fill:#a15c00}.nrv.bad{fill:#b3261e}.nrtab{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}.nrtab th,.nrtab td{padding:3px 8px;text-align:left;border-bottom:1px solid var(--line,#d6dbd3)}.nrtab .n{text-align:right;font-variant-numeric:tabular-nums}.nrtab .ok{color:#1f6f3d}.nrtab .warn{color:#a15c00;font-weight:600}.nrtab .bad{color:#b3261e;font-weight:700}
 .natchk{display:inline-flex;gap:6px;align-items:center;cursor:pointer}.maplegend i.nt{border-style:dashed}
@@ -443,9 +443,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261211"></script>
-<script src="sim.js?v=20261211"></script>
-<script src="shp.js?v=20261211"></script>
+<script src="map.js?v=20261213"></script>
+<script src="sim.js?v=20261213"></script>
+<script src="shp.js?v=20261213"></script>
 <script>
 
 const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -893,6 +893,22 @@ const PALSYM={
   load:'<polygon points="15,22 5,5 25,5" fill="#e0892f" stroke="#7a4310" stroke-width="1.8" stroke-linejoin="round"/>',
   gen:'<circle cx="15" cy="13" r="9" fill="#5aaa6b" stroke="#1f6f3d" stroke-width="1.8"/><path d="M8 13 q3.5 -6 7 0 t7 0" stroke="#fff" stroke-width="2" fill="none"/>'
 };
+/* symboler per typ av last och produktion (24 × 24, orange = last, grön = produktion) */
+const GLYPH_COL={load:['#f4bd7b','#7a4310'],gen:['#97d6a3','#1f6f3d']};
+function glyph(kind){
+  const gen=KINDS[kind].type==='gen', [f,st]=GLYPH_COL[gen?'gen':'load'], A=`fill="${f}" stroke="${st}" stroke-width="1.5" stroke-linejoin="round"`, W='fill="#fff"';
+  const g={
+    kommun:`<path d="M3.5 12 L12 4.5 L20.5 12 V20 H3.5 Z" ${A}/><rect x="10" y="14" width="4" height="6" ${W}/><rect x="15.5" y="6" width="2.5" height="4" ${A}/>`,
+    dc:`<rect x="4" y="3.5" width="16" height="5" rx="1" ${A}/><rect x="4" y="9.5" width="16" height="5" rx="1" ${A}/><rect x="4" y="15.5" width="16" height="5" rx="1" ${A}/><circle cx="7.5" cy="6" r="1" ${W}/><circle cx="7.5" cy="12" r="1" ${W}/><circle cx="7.5" cy="18" r="1" ${W}/>`,
+    batt:`<rect x="2.5" y="7.5" width="16" height="10" rx="1.8" ${A}/><rect x="18.5" y="10.5" width="3" height="4" rx="1" ${A}/><path d="M11.5 9 L8.5 13 H11 L10 16.5 L14 12 H11.5 Z" ${W}/>`,
+    h2:`<path d="M12 2.5 C12 2.5 5 10.5 5 15 a7 7 0 0 0 14 0 C19 10.5 12 2.5 12 2.5 Z" ${A}/><text x="12" y="17.6" text-anchor="middle" font-size="7.5" font-weight="700" fill="#fff" stroke="none" style="paint-order:normal">H₂</text>`,
+    ladd:`<rect x="5" y="3.5" width="10" height="17" rx="2" ${A}/><rect x="7" y="6" width="6" height="4" rx=".6" ${W}/><path d="M10.5 11.5 L8.6 15 H10.3 L9.6 18 L12.6 14 H10.9 Z" ${W}/><path d="M15 9 C19 9 18.5 15.5 21.5 15.5" fill="none" stroke="${st}" stroke-width="1.6" stroke-linecap="round"/>`,
+    vind:`<path d="M12 12 V21.5" stroke="${st}" stroke-width="2" stroke-linecap="round"/><path d="M12 12 L12 3 M12 12 L19.8 16.5 M12 12 L4.2 16.5" stroke="${st}" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="12" r="2" ${A}/>`,
+    sol:`<circle cx="12" cy="12" r="4.5" ${A}/><path d="M12 2.5 V5.5 M12 18.5 V21.5 M2.5 12 H5.5 M18.5 12 H21.5 M5.3 5.3 L7.4 7.4 M16.6 16.6 L18.7 18.7 M5.3 18.7 L7.4 16.6 M16.6 7.4 L18.7 5.3" stroke="${st}" stroke-width="1.8" stroke-linecap="round"/>`
+  };
+  return g[kind]||g.dc;
+}
+const palGlyph=k=>`<g transform="translate(1.2 -0.8) scale(1.1)">${glyph(k)}</g>`;
 function palPick(key){
   pal.from=null; pal.msg='';
   if(key.startsWith('unit:')){const k=key.slice(5); pal.tool='unit'; pal.unit=k; pal.mw=KINDS[k].mw; pal.flex=false}
@@ -913,8 +929,8 @@ function renderPal(){
   $('#pal').innerHTML=
     grp('Station',[btn('g','Stamnät',PALSYM.g,T==='g'),btn('r','Region',PALSYM.r,T==='r'),btn('x','Utanför länet',PALSYM.x,T==='x')])
    +grp('Ledning',[btn('line','Ledning',PALSYM.line,T==='line')])
-   +grp('Last',PAL_LOADS.map(k=>btn('unit:'+k,KINDS[k].name,PALSYM.load,T==='unit'&&U===k)))
-   +grp('Produktion',PAL_GENS.map(k=>btn('unit:'+k,KINDS[k].name,PALSYM.gen,T==='unit'&&U===k)))
+   +grp('Last',PAL_LOADS.map(k=>btn('unit:'+k,KINDS[k].name,palGlyph(k),T==='unit'&&U===k)))
+   +grp('Produktion',PAL_GENS.map(k=>btn('unit:'+k,KINDS[k].name,palGlyph(k),T==='unit'&&U===k)))
    +grp('Verktyg',[btn('move','Flytta/ändra',PALSYM.move,T==='move'),btn('del','Ta bort',PALSYM.del,T==='del')]);
   const num=(id,l,v,mn,mx)=>`<label for="${id}">${l}</label><input type="number" id="${id}" min="${mn}" max="${mx}" step="1" value="${v}">`;
   let h='';
@@ -951,7 +967,7 @@ function palUnitsSvg(){
     if(!L[id]) continue; const c=ctr(id), R=id[0]==='R'?22:34, R0=id[0]==='R'?9:15;
     by[id].forEach((p,i)=>{
       const a=ANG[i%8]*Math.PI/180, rr=R+Math.floor(i/8)*16, x=c.x+rr*Math.cos(a), y=c.y+rr*Math.sin(a), gen=isGen(p.kind), isel=sel&&sel.t==='u'&&sel.id===p.id;
-      const sym=gen?`<circle class="uc" r="7" fill="#5aaa6b" stroke="#1f6f3d" stroke-width="1.5"/><path d="M-4.5 0 q2.2 -4 4.5 0 t4.5 0" stroke="#fff" stroke-width="1.5" fill="none"/>`:`<polygon class="uc" points="0,7 -7,-6 7,-6" fill="#e0892f" stroke="#7a4310" stroke-width="1.5" stroke-linejoin="round"/>`;
+      const sym=`<circle class="uc" r="8.5" fill="#fff" stroke="${gen?'#1f6f3d':'#7a4310'}" stroke-width="1.6"/><g class="gl" transform="scale(.58) translate(-12 -12)">${glyph(p.kind)}</g>`;
       s+=`<g class="unit ${gen?'gen':'load'}${isel?' sel':''}${gPend(p.until)?' gpend':''}" data-unit="${p.id}" data-at="${id}" tabindex="0"><line class="stub" x1="${(c.x+R0*Math.cos(a)).toFixed(1)}" y1="${(c.y+R0*Math.sin(a)).toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/><g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${sym}</g><text x="${x.toFixed(1)}" y="${(y+18).toFixed(1)}" text-anchor="middle">${p.mw}</text><title>${KINDS[p.kind].name} ${p.mw} MW${p.flex?' (flexibel)':''}, ansluten till ${gname(id)}${gPend(p.until)?'. Under byggnad, klar '+(2026+p.until):''}</title></g>`;
     });
   }
