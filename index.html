@@ -434,7 +434,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>När nätet är byggt startar <b>Starta förfrågningarna</b>. Spelet går 12 år, ett år per steg, och varje år slumpas ett av tre utfall: ingenting händer, en ny förfrågan till en kommun eller att en fabrik går i konkurs och frigör några MW.</p>
     <ul>
       <li><b>Förfrågan:</b> till exempel ett datacenter på 60 MW i Heby. Prata med grannkommunerna, välj station (i kommunen som fick förfrågan eller i en annan) och klicka <i>Godkänn här</i>, eller <i>Avslå</i>. Raden under visar hur lediga MW ändras i varje kommun.</li>
-      <li><b>Överbelastning:</b> om nätet inte klarar etableringen kan ni <i>förstärka elnätet</i> (3 år), <i>bygga en ny ledning</i> (8 år) eller gå tillbaka och välja en annan station. Lediga MW räknas om efter etableringen och åtgärden.</li>
+      <li><b>Överbelastning:</b> om nätet inte klarar etableringen kan ni <i>förstärka elnätet</i> (3 år), <i>bygga en ny ledning</i> (8 år) eller gå tillbaka och välja en annan station. Etableringen reserverar sin effekt direkt, men förstärkningen eller den nya ledningen räknas med först när den är klar. Under väntetiden har därför alla kommuner mindre ledigt, och först därefter syns eventuell överskottskapacitet.</li>
       <li><b>Sammanfattning:</b> efter år 12 visas alla beslut, händelser och väntetid, med frågor att diskutera.</li>
     </ul>
 
@@ -452,9 +452,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Siffran för ledig kapacitet och ledningsbelastningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. <i>Simulera nu</i> räknar i stället AC-flöde med Newton-Raphson. Förfrågningar, konkurser och namn slumpas, och väntetiderna 3 och 8 år är påhittade. Kostnader, tillstånd och markintrång ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261216"></script>
-<script src="sim.js?v=20261216"></script>
-<script src="shp.js?v=20261216"></script>
+<script src="map.js?v=20261217"></script>
+<script src="sim.js?v=20261217"></script>
+<script src="shp.js?v=20261217"></script>
 <script>
 
 const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -627,7 +627,12 @@ function upRange(l){return state.upunit==='pct'?{min:10,max:200,step:10}:{min:5,
 function upInfo(l,ex){return `Klarar idag ${l.cap} MW. Efter förstärkning: ${l.cap+ex} MW (+${ex} MW, +${Math.round(ex/l.cap*100)} %).`}
 function nMeasures(){return ws()?0:Object.keys(state.up).length+state.add.length}
 function wsNodes(){const o={}; for(const g of state.rst) if(isLoadR(g)||state.kn[g.id]) o[g.id]=state.kn[g.id]||{base:SCHABLON,gen:[]}; return o}
-function wsCfg(){return {up:{},add:state.add.map(a=>({...a})),base:'none',ks:state.rst.filter(isLoadR).map(g=>g.id),pos:posOf(),nodes:wsNodes()}}
+/* ledningar som är med i beräkningen: i spelet räknas en ny ledning eller förstärkning först från och med färdigåret (state.fut = räkna som om allt vore klart) */
+function gAdd(){
+  if(!(state.game&&!state.fut)) return state.add.map(a=>({...a}));
+  return state.add.filter(a=>!gPend(a.until)).map(a=>a.rf&&gPend(a.rf.until)?{...a,cap:a.rf.from}:{...a});
+}
+function wsCfg(){return {up:{},add:gAdd(),base:'none',ks:state.rst.filter(isLoadR).map(g=>g.id),pos:posOf(),nodes:wsNodes()}}
 const ORIGN = ()=>ws()?makeNet(wsCfg()):ORIG;
 function bLine(){const i=state.bline; if(i==null)return null; return ws()?(makeNet(wsCfg()).lines[i]||null):(ORIG.lines[i]||null)}
 function pendingMeasure(){
@@ -747,6 +752,7 @@ function renderDiagram(v){
     s+=`<path class="wire ${cls}${ex}${ga&&gPend(ga.until)?' gpend':''}" d="${wirePath(ln)}"/>`;
     if(ga&&ga.rf&&gPend(ga.rf.until)) s+=`<path class="gpendr" d="${wirePath(ln)}"><title>Förstärkning under byggnad, klar ${2026+ga.rf.until}</title></path>`;
   });
+  if(ws()&&state.game) state.add.filter(a=>gPend(a.until)).forEach(a=>{s+=`<path class="wire gpend" d="${wirePath(a)}"><title>Ny ledning under byggnad, klar ${2026+a.until}</title></path>`});
   const lastC=v.consumers[v.consumers.length-1];
   let anyShare=false;
   if(lastC){
@@ -846,7 +852,7 @@ function renderDiagram(v){
 
 
 /* ---------- Newton-Raphson (AC) ---------- */
-const nrKey=()=>JSON.stringify([state.add.map(a=>[a.id,a.a,a.b,a.cap,a.kv,a.km,a.extra]),state.kn,state.placed,state.mode==='worst'?-1:state.hour,state.mode,state.rst.map(g=>g.id),state.gst.map(g=>g.id),state.ext.map(g=>g.id)]);
+const nrKey=()=>JSON.stringify([state.game?state.game.round:0,state.add.map(a=>[a.id,a.a,a.b,a.cap,a.kv,a.km,a.extra]),state.kn,state.placed,state.mode==='worst'?-1:state.hour,state.mode,state.rst.map(g=>g.id),state.gst.map(g=>g.id),state.ext.map(g=>g.id)]);
 const nrStat=v=>v<0.90||v>1.10?'bad':(v<0.95||v>1.05)?'warn':'ok';
 function nrRun(){
   getView();
@@ -1194,10 +1200,12 @@ function gameDecide(ok,measure){
     const node=state.sel, ref0=gameRef(), fit=val(ref0,node)>=r.mw;
     if(!fit&&!measure){g.pend={node}; render(); return}
     rec.fit=fit; rec.node=node; rec.kommun=(byId[node]&&byId[node].desc)||'Utanför länet';
+    state.fut=true;
     if(!fit&&measure==='up'){const res=gameReinforce(node,r.mw,g.round+GAME_YEARS.up); rec.measure='up'; rec.until=g.round+GAME_YEARS.up; rec.years=GAME_YEARS.up; rec.changes=res.changes; rec.solved=res.ok}
     else if(!fit&&measure==='line'){const nl=gameNewLine(node,r.mw,g.round+GAME_YEARS.line); rec.measure='line'; rec.until=g.round+GAME_YEARS.line; rec.years=GAME_YEARS.line; rec.newLine=nl; rec.solved=!!nl&&val(gameRef(),node)>=r.mw}
     const byK={}, bf=gameRef(), af=compute([...state.placed,{kind:r.kind,mw:r.mw,flex:false,node,id:0}],state.mode,state.hour,state.crit,gameNet());
     for(const n of VL()){const k=n.desc||'Utanför länet'; byK[k]=Math.min(byK[k]??0,val(af,n.id)-val(bf,n.id))}
+    state.fut=false;
     rec.hit=Object.keys(byK).filter(k=>k!==rec.kommun&&byK[k]<=-10);
     state.placed.push({id:state.uid++,kind:r.kind,mw:r.mw,flex:false,node,until:rec.years?g.round+rec.years:0});
     rec.left=gameAfter();
