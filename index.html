@@ -395,44 +395,51 @@ dialog#help[open]{display:flex;flex-direction:column}
   <div class="hhead"><h2 id="helptitle">Så fungerar det</h2><button type="button" id="helpclose">Stäng</button></div>
   <div class="hbody">
     <h3 id="h-mal">Vad spelet visar</h3>
-    <p>Kartan visar Uppsala län med en station per kommun och stamnätsstationen i mitten. Från början har varje kommun en egen ledning till stamnätet och ingen ledning till grannarna, alltså en stjärna. Bygger ni ledningar mellan kommuner delar effekten på flera vägar, och då kan en ny förbrukare eller producent i en kommun ändra hur mycket som kan anslutas i en <em>annan</em> kommun. Spelet gör det synligt. Kommunnamnen är bara kartunderlag: stationer, ledningar och siffror är påhittade.</p>
+    <p>Ni bygger ett eget, påhittat regionnät över Uppsala län och spelar sedan 12 år där länets kommuner får förfrågningar om stora etableringar. Delar effekten sig på flera vägar kan en ny fabrik eller vindpark i en kommun ändra hur mycket som kan anslutas i en <em>annan</em> kommun. Spelet gör det synligt, så att kommunerna kan prata med varandra innan de beslutar. Kommunnamnen är bara kartunderlag: stationer, ledningar och siffror är påhittade.</p>
 
     <h3 id="h-siffror">Vad siffrorna betyder</h3>
     <ul>
-      <li><b>MW ledigt</b> i varje kommunruta: den största jämna extra last (eller produktion) som kan anslutas i kommunen innan någon ledning blir överbelastad. Välj med knapparna <i>Förbrukning</i> eller <i>Produktion</i> i resultatkortet.</li>
-      <li><b>Färger:</b> <span class="sw ok"></span>20 MW eller mer, <span class="sw warn"></span>1–19 MW, <span class="sw bad"></span>0 MW.</li>
-      <li><b>Röd eller grön siffra</b> bredvid: förändring jämfört med nuläget, utan era åtgärder eller etableringar.</li>
-      <li><b>Taggen "Er"</b> markerar er kommun. Resultatkortet räknar utifrån den.</li>
-      <li><b>MW-rutor på ledningar</b> (till exempel 86/110): flöde i värsta fall / ledningens kapacitet. Pilen visar riktningen. Grön är lugnt, gul över 80 %, röd överbelastad.</li>
-      <li><b>Blå linjer</b> visar vägarna den nya effekten tar. Tjockare linje betyder större andel.</li>
-      <li><b>Staplarna</b> i resultatkortet: <i>Nuläge</i> (dagens nät), <i>Utan åtgärder</i> (med etablering men utan ny eller förstärkt ledning) och <i>Med åtgärder</i>. Den streckade linjen är uppdragets mål.</li>
+      <li><b>MW ledigt</b> vid varje station: den största jämna extra last (eller produktion) som kan anslutas där innan någon ledning blir överbelastad. Välj med knapparna <i>Förbrukning</i> eller <i>Produktion</i> i resultatkortet.</li>
+      <li><b>Färger:</b> <span class="sw ok"></span>20 MW eller mer, <span class="sw warn"></span>1–19 MW, <span class="sw bad"></span>0 MW. En station som inte når stamnätet visas som <i>Ej ansluten</i> med 0 MW.</li>
+      <li><b>Röd eller grön siffra</b> bredvid: förändring jämfört med utan era laster och produktioner.</li>
+      <li><b>MW-rutor på ledningar</b> (till exempel 86/110): flöde i värsta fall / ledningens kapacitet. Grön är lugnt, gul över 80 %, röd överbelastad.</li>
+      <li><b>Blå linjer</b> visar vägarna den senast tillkomna effekten tar. Tjockare linje betyder större andel.</li>
+      <li><b>Små symboler vid en station</b> är last (orange) eller produktion (grön), med effekten i MW under. <b>Grå och svaga</b> symboler och ledningar är under byggnad och blir färdiga efter 3 eller 8 år.</li>
     </ul>
 
-    <h3 id="h-placera">Placera en etablering</h3>
+    <h3 id="h-placera">Placera last och produktion</h3>
     <ol>
-      <li>Välj etablering och effekt (i uppdrag är den given).</li>
-      <li>Klicka på en kommun i schemat (i Befintligt nät och Blank karta: på en regionnätsstation på kartan), eller på en rad i listan "Spelar platsen roll?". Den streckade ramen är en förhandsvisning.</li>
-      <li>Klicka <b>Anslut</b> överst i schemakortet för att låsa den. <i>Ångra senaste</i> tar bort den, Esc avbryter förhandsvisningen.</li>
+      <li>Välj en symbol under <i>Last</i> (kommunlast, datacenter, batterifabrik, elektrolysör, laddhubb) eller <i>Produktion</i> (vindpark, solpark) i spelbrickan till höger om kartan.</li>
+      <li>Ställ in effekten (MW). <i>Flexibel last</i> sänker lasten till 25 % klockan 16–20, när nätet är som mest belastat.</li>
+      <li>Klicka på en regionnätsstation. Varje last eller produktion hör till en station, men flera kan höra till samma station. Dra symbolen till en annan station för att flytta den, eller välj <i>Ta bort</i>.</li>
     </ol>
-    <p><i>Flexibel last</i> sänker lasten till 25 % klockan 16–20, när nätet är som mest belastat.</p>
 
     <h3 id="h-bygg">Bygg ut nätet</h3>
-    <p>Välj <b>Bygg ut nätet</b> ovanför schemat. Där finns grå punkter på kommunernas stationer.</p>
     <ul>
-      <li><b>Förstärk en ledning:</b> klicka på ledningen eller dess MW-ruta och sedan <i>Förstärk ledningen</i>. Välj hur mycket kapaciteten ska öka, i procent av ledningens kapacitet eller i MW. Ledningen ritas tjockare.</li>
-      <li><b>Dra en ny ledning:</b> dra från en grå punkt på en kommun till en annan, eller klicka på två. Välj kapacitet (40–100 MW) och klicka <i>Dra ny ledning</i>. Den ritas streckad och går runt andra stationer. Ju längre ledning, desto högre reaktans, och det ger sämre samspel för samma kapacitet. Mellan två punkter som redan har en ledning går det inte att dra en ny, förstärk den i stället.</li>
-      <li><b>Förhandsvisning:</b> innan du bygger visas hur ledig kapacitet ändras i alla kommuner. En åtgärd kan hjälpa en kommun och samtidigt minska kapaciteten i en annan.</li>
-      <li><b>Ta bort</b> en åtgärd med knappen i listan. Vissa uppdrag tillåter bara ett visst antal åtgärder.</li>
+      <li><b>Förstärk en ledning:</b> välj <i>Flytta/ändra</i>, klicka på ledningen och ändra kV eller MW.</li>
+      <li><b>Ny ledning:</b> välj <i>Ledning</i>, ställ in spänning och kapacitet och dra från en station till en annan (eller klicka på två). Ju längre ledning, desto högre reaktans. Mellan två stationer som redan har en ledning går det inte att dra en ny.</li>
+      <li><b>Under spelet</b> kan nätet också byggas ut när en etablering inte ryms: förstärkning tar 3 år och en ny ledning 8 år. Det som är under byggnad visas grått och svagt tills det är klart.</li>
     </ul>
 
-    <h3 id="h-workshop">Blank karta: bygg ert eget nät</h3>
-    <p>Spelet startar i <b>Blank karta</b>, där ni bestämmer själva hur regionnätet ska se ut. Använd den till exempel tillsammans med en verklig karta på projektorn.</p>
+    <h3 id="h-workshop">Spelbrickan: bygg ert eget nät</h3>
+    <p>Kartan är tom från början. Spelbrickan innehåller alla symboler: klicka på en symbol, ställ in parametrarna och klicka eller dra ut den på kartan.</p>
     <ol>
-      <li><b>Stationer:</b> välj <i>Stamnätsstation</i> och klicka där stamnätet ska komma in (högst fyra). Välj sedan <i>Regionnätsstation</i> och klicka där stationen ska ligga. Varje regionnätsstation har en förvald last (schablon) som kan ändras under <i>Last och produktion</i>, och nya verksamheter ansluts till regionnätsstationer. <i>Station på ledning</i> bygger en ny regionnätsstation på en ledning i bakgrunden. Flytta en station genom att dra den (under Stationer). Under Ledningar drar du från en station till en annan för att bygga en ledning; <i>Ta bort</i> i listan tar bort den.</li>
-      <li><b>Ledningar:</b> dra från en grå punkt på en station till en annan. Välj kapacitet (60–300 MW). Klicka på en ledning för att förstärka den. En regionnätsstation som inte nås av någon ledning visas som <i>Ej ansluten</i> och har 0 MW. Stamnätsstationer kopplas inte ihop med varandra. <b>Ladda stamnät:</b> knappen läser in en fil (<code>stamnat.json</code>, gjord från Svenska kraftnäts stationer och ledningar med <code>tools/stamnat_till_json.py</code>). Då placeras stamnätsstationerna där de verkligen ligger och stamnätets ledningar visas som bakgrund. Filen läses bara i din webbläsare. Båda filerna väljs i en filväljare och läses bara i webbläsaren; se <i>Så laddar du stamnät och nätområden</i> under Stationer för var underlaget hämtas. <b>Regionnät och stationer på ledning:</b> under Stationer finns verktygen <i>Stamnätsstation</i>, <i>Kommunstation</i>, <i>Regionnätsstation</i> (en knutpunkt utan last) och <i>Station på ledning</i>, som bygger en egen station på en bakgrundsledning. Ledningar kan dras från alla stationer. Stamnätets ledningar i bakgrunden är bara underlag. Regionnätets ledningar är röda och räknas inte (0 kV, 0 MW). I fliken Ledningar kan ni klicka på en och ange spänning (kV) och kapacitet (MW): då blir den grön och räknas med. Längden tas från kartans geometri och reaktansen räknas ur spänning och längd. <b>Kommunernas last och produktion:</b> under Stationer, välj <i>Last och produktion</i> vid en kommunstation (eller klicka på den) för att ändra de förvalda värdena. Ändarna kopplas till närmaste station, annars skapas en regionnätsstation. Regionnätet kan hämtas från OpenStreetMap, men uppgifterna är inskickade av frivilliga och kan vara ofullständiga eller felaktiga. <b>Ladda nätområden:</b> lägger ett lager över kartan med lokalnätens nätområden (nätägare och områdesnamn), gjort med <code>tools/natomraden_till_json.py</code> från nätområdesstrukturen. De följer inte kommungränserna och kan stängas av med <i>Visa nätområden</i>. <b>Grannlän:</b> dra en ledning från en regionstation och släpp den utanför länets gräns (på havet eller på grannkommunerna), så skapas en anslutning utanför länet som går att flytta. Den antas höra till ett starkt nät, på samma sätt som stamnätet.</li>
-      <li><b>Etableringar:</b> placera datacenter, vindpark med mera och se hur ledig kapacitet ändras i er egen kommun och hos grannarna. Använd <i>N-1</i> under Avancerat för att se om nätet klarar att en ledning faller bort.</li>
+      <li><b>Stationer:</b> <i>Stamnät</i> där stamnätet kommer in (högst 12), <i>Region</i> för regionnätsstationer (en eller flera i varje kommun, högst 40) och <i>Utanför länet</i> för en anslutning till ett starkt nät utanför länsgränsen (högst åtta). Stationer får placeras även utanför länet. En station har ingen last eller produktion förrän ni ansluter en.</li>
+      <li><b>Ledningar:</b> välj <i>Ledning</i>, ställ in kV och MW och dra mellan två stationer. Stamnätet och anslutningarna utanför länet kopplas inte ihop med varandra. Kopplingen mellan en station och dess last eller produktion har ingen resistans, reaktans eller kapacitans.</li>
+      <li><b>Flytta och ta bort:</b> dra en station för att flytta den, så följer ledningar och laster med. <i>Flytta/ändra</i> låter er klicka på en station, ledning eller last och ändra den. <i>Ta bort</i> tar bort det ni klickar på. Esc går tillbaka till <i>Flytta/ändra</i>.</li>
+      <li><b>Bakgrundslager:</b> under kartan går det befintliga nätet (Lantmäteriet) att tända som ett grått stöd när ni placerar stationer. Det ingår inte i beräkningarna.</li>
     </ol>
-    <p>Stationernas lägen och ledningarnas längd är bara spelets egna: längden räknas från avståndet på kartan och ger ledningens reaktans.</p>
+
+    <h3 id="h-spel">Förfrågningsspelet</h3>
+    <p>När nätet är byggt startar <b>Starta förfrågningarna</b>. Spelet går 12 år, ett år per steg, och varje år slumpas ett av tre utfall: ingenting händer, en ny förfrågan till en kommun eller att en fabrik går i konkurs och frigör några MW.</p>
+    <ul>
+      <li><b>Förfrågan:</b> till exempel ett datacenter på 60 MW i Heby. Prata med grannkommunerna, välj station (i kommunen som fick förfrågan eller i en annan) och klicka <i>Godkänn här</i>, eller <i>Avslå</i>. Raden under visar hur lediga MW ändras i varje kommun.</li>
+      <li><b>Överbelastning:</b> om nätet inte klarar etableringen kan ni <i>förstärka elnätet</i> (3 år), <i>bygga en ny ledning</i> (8 år) eller gå tillbaka och välja en annan station. Lediga MW räknas om efter etableringen och åtgärden.</li>
+      <li><b>Sammanfattning:</b> efter år 12 visas alla beslut, händelser och väntetid, med frågor att diskutera.</li>
+    </ul>
+
+    <h3 id="h-newton">Simulera nu (Newton-Raphson)</h3>
+    <p>Knappen under kartan räknar AC-flöde i det nät ni byggt: spänning (p.u.) och vinkel i varje station, aktiv och reaktiv effekt på ledningarna och förluster. Stamnätet och anslutningarna utanför länet har 1,0 p.u., last har effektfaktor 0,95 och produktion 1,0. Ledningarnas resistans, reaktans och kapacitans är schabloner per spänningsnivå (70, 130, 220 och 400 kV). Grönt är 0,95–1,05 p.u., gult utanför det och rött under 0,90 eller över 1,10. Om beräkningen inte konvergerar klarar nätet inte lasten, oftast spänningskollaps.</p>
 
     <h3 id="h-avancerat">Avancerat</h3>
     <ul>
@@ -442,12 +449,12 @@ dialog#help[open]{display:flex;flex-direction:column}
     </ul>
 
     <h3 id="h-modell">Om modellen</h3>
-    <p>Beräkningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Kostnader, ledtider och tillstånd ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
+    <p>Siffran för ledig kapacitet och ledningsbelastningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. <i>Simulera nu</i> räknar i stället AC-flöde med Newton-Raphson. Förfrågningar, konkurser och namn slumpas, och väntetiderna 3 och 8 år är påhittade. Kostnader, tillstånd och markintrång ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261214"></script>
-<script src="sim.js?v=20261214"></script>
-<script src="shp.js?v=20261214"></script>
+<script src="map.js?v=20261215"></script>
+<script src="sim.js?v=20261215"></script>
+<script src="shp.js?v=20261215"></script>
 <script>
 
 const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
