@@ -331,7 +331,7 @@ dialog#help[open]{display:flex;flex-direction:column}
       </section>
 
       <section class="card" id="gamecard" aria-label="Förfrågningar" hidden>
-        <div class="cardhead"><h2>Förfrågningar till kommunerna</h2></div>
+        <div class="cardhead"><h2>Förfrågningar till kommunerna</h2><span class="row" style="gap:6px"><button type="button" data-gact="save" title="Spara nätet och spelet som en fil">Spara spel</button><button type="button" data-gact="load" title="Öppna en sparad fil">Öppna spel</button><input type="file" id="gamefile" accept="application/json,.json" hidden></span></div>
         <div id="gamebody"></div>
       </section>
 
@@ -436,6 +436,7 @@ dialog#help[open]{display:flex;flex-direction:column}
       <li><b>Förfrågan:</b> till exempel ett datacenter på 60 MW i Heby. Prata med grannkommunerna, välj station (i kommunen som fick förfrågan eller i en annan) och klicka <i>Godkänn här</i>, eller <i>Avslå</i>. Raden under visar hur lediga MW ändras i varje kommun.</li>
       <li><b>Två samtidigt:</b> ibland kommer två förfrågningar samma år. Ni väljer vilken ni behandlar först, och den som godkänns först tar kapacitet från den andra.</li>
       <li><b>Överbelastning:</b> om nätet inte klarar etableringen kan ni <i>förstärka elnätet</i> (3 år), <i>bygga en ny ledning</i> (8 år) eller gå tillbaka och välja en annan station. Etableringen reserverar sin effekt direkt, men förstärkningen eller den nya ledningen räknas med först när den är klar. Under väntetiden har därför alla kommuner mindre ledigt, och först därefter syns eventuell överskottskapacitet.</li>
+      <li><b>Spara och öppna:</b> <i>Spara spel</i> laddar ner nätet och spelets gång som en fil. Med <i>Öppna spel</i> kan ni fortsätta vid nästa workshop eller jämföra två omgångar.</li>
       <li><b>Sammanfattning:</b> efter år 12 visas alla beslut, händelser och väntetid, med frågor att diskutera.</li>
     </ul>
 
@@ -453,9 +454,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Siffran för ledig kapacitet och ledningsbelastningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. <i>Simulera nu</i> räknar i stället AC-flöde med Newton-Raphson. Förfrågningar, konkurser och namn slumpas, och väntetiderna 3 och 8 år är påhittade. Kostnader, tillstånd och markintrång ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261218"></script>
-<script src="sim.js?v=20261218"></script>
-<script src="shp.js?v=20261218"></script>
+<script src="map.js?v=20261219"></script>
+<script src="sim.js?v=20261219"></script>
+<script src="shp.js?v=20261219"></script>
 <script>
 
 const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -1283,12 +1284,31 @@ function renderGame(v){
   h+=`<div class="bact"><button class="primary" type="button" data-gact="ok" ${sel?'':'disabled'}>Godkänn här</button><button type="button" data-gact="no">Avslå</button><button type="button" data-gact="end">Avsluta spelet</button></div>`;
   body.innerHTML=h;
 }
+/* spara och öppna: nätet (stationer, ledningar, laster) och spelets gång som en JSON-fil */
+const SAVE_KEYS=['gst','rst','ext','add','placed','nid','uid','mode','hour','crit','kn','ke'];
+function gameSave(){
+  const o={app:'regionnatsspelet',version:1,saved:new Date().toISOString(),game:state.game||null};
+  SAVE_KEYS.forEach(k=>{o[k]=state[k]});
+  const url=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'}));
+  const a=document.createElement('a'); a.href=url; a.download='regionnatsspel-'+new Date().toISOString().slice(0,10)+'.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function gameLoad(text){
+  let o; try{o=JSON.parse(text)}catch(e){o=null}
+  const isArr=Array.isArray;
+  if(!o||o.app!=='regionnatsspelet'||![o.gst,o.rst,o.ext,o.add,o.placed].every(isArr)){alert_('Filen går inte att öppna: den är inte ett sparat spel från den här sidan.'); return}
+  SAVE_KEYS.forEach(k=>{if(o[k]!==undefined) state[k]=o[k]});
+  state.game=(o.game&&typeof o.game==='object')?o.game:null;
+  state.sel=null; state.nr=null; state.bline=null; state.bnodes=[]; state.chartLine=null; state.mineSet=false; pal.sel=null; pal.tool='move';
+  render();
+}
+function alert_(m){const b=$('#gamebody'); if(b) b.insertAdjacentHTML('afterbegin',`<p class="alert" role="alert">${m}</p>`)}
+$('#gamefile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>gameLoad(String(r.result)); r.readAsText(f); e.target.value=''});
 $('#gamecard').addEventListener('click',e=>{
   const s=e.target.closest('[data-gsel]'); if(s){if(state.game)state.game.pend=null; state.sel=state.sel===s.dataset.gsel?null:s.dataset.gsel; render(); return}
   const pk=e.target.closest('[data-gpick]'); if(pk){const g=state.game; if(g&&g.reqs&&g.reqs.length>1){gameSetReq(+pk.dataset.gpick); render()} return}
   const a=e.target.closest('[data-gact]'); if(!a) return;
   const act=a.dataset.gact;
-  if(act==='start') gameStart(); else if(act==='end') gameEnd(); else if(act==='ok') gameDecide(true); else if(act==='no') gameDecide(false); else if(act==='up') gameDecide(true,'up'); else if(act==='line') gameDecide(true,'line'); else if(act==='next'){const g=state.game; g.quiet+=g.cur==='none'?1:0; g.last=null; g.round++; if(g.round<=GAME_TOTAL) gameNext(); else state.sel=null; render()} else if(act==='back'){state.game.pend=null;render()}
+  if(act==='save') gameSave(); else if(act==='load') $('#gamefile').click(); else if(act==='start') gameStart(); else if(act==='end') gameEnd(); else if(act==='ok') gameDecide(true); else if(act==='no') gameDecide(false); else if(act==='up') gameDecide(true,'up'); else if(act==='line') gameDecide(true,'line'); else if(act==='next'){const g=state.game; g.quiet+=g.cur==='none'?1:0; g.last=null; g.round++; if(g.round<=GAME_TOTAL) gameNext(); else state.sel=null; render()} else if(act==='back'){state.game.pend=null;render()}
 });
 
 /* ---------- action bar ---------- */
