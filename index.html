@@ -437,6 +437,8 @@ dialog#help[open]{display:flex;flex-direction:column}
       <li><b>Två samtidigt:</b> ibland kommer två förfrågningar samma år. Ni väljer vilken ni behandlar först, och den som godkänns först tar kapacitet från den andra.</li>
       <li><b>Överbelastning:</b> om nätet inte klarar etableringen kan ni <i>förstärka elnätet</i> (3 år), <i>bygga en ny ledning</i> (8 år) eller gå tillbaka och välja en annan station. Etableringen reserverar sin effekt direkt, men förstärkningen eller den nya ledningen räknas med först när den är klar. Under väntetiden har därför alla kommuner mindre ledigt, och först därefter syns eventuell överskottskapacitet.</li>
       <li><b>Ändrad tidplan:</b> ibland ändras tiden för ett pågående bygge med ett år, till exempel genom ett överklagat tillstånd, svåra markförhållanden, försenade leveranser eller ett nytt arbetssätt. Då visas ett meddelande, och etableringen som väntar på åtgärden blir klar samtidigt.</li>
+      <li><b>Ett projekt per år:</b> ni kan starta högst ett nytt ledningsprojekt (förstärkning eller ny ledning) per år. Flera projekt kan pågå samtidigt, om de startades olika år.</li>
+      <li><b>Längre spel:</b> efter 2040 kan ni välja <i>Fortsätt till 2050</i> för att spela vidare.</li>
       <li><b>Spara och öppna:</b> <i>Spara spel</i> laddar ner nätet och spelets gång som en fil. Med <i>Öppna spel</i> kan ni fortsätta vid nästa workshop eller jämföra två omgångar.</li>
       <li><b>Sammanfattning:</b> efter år 12 visas alla beslut, händelser och väntetid, med frågor att diskutera.</li>
     </ul>
@@ -455,9 +457,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Siffran för ledig kapacitet och ledningsbelastningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. <i>Simulera nu</i> räknar i stället AC-flöde med Newton-Raphson. Förfrågningar, konkurser och namn slumpas, och väntetiderna 3 och 8 år är påhittade. Kostnader, tillstånd och markintrång ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261220"></script>
-<script src="sim.js?v=20261220"></script>
-<script src="shp.js?v=20261220"></script>
+<script src="map.js?v=20261221"></script>
+<script src="sim.js?v=20261221"></script>
+<script src="shp.js?v=20261221"></script>
 <script>
 
 const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -1126,7 +1128,8 @@ document.addEventListener('keydown',e=>{
 
 
 /* ---------- Förfrågningsspelet: slumpade förfrågningar till länets kommuner ---------- */
-const GAME_TOTAL=14;   /* antal år (steg) */
+const GAME_TOTAL=14, GAME_MAX=24;   /* antal år (steg): 2027–2040, och efter det kan spelet förlängas till 2050 */
+const gTot=()=>(state.game&&state.game.total)||GAME_TOTAL;
 const GAME_OPTS=[['dc',[40,60,80]],['batt',[30,50,70]],['h2',[40,60]],['ladd',[15,25,35]],['vind',[40,60,90]],['sol',[20,30,50]]];
 const GAME_SRC=['Ett utländskt bolag','Ett lokalt industriföretag','En energikoncern','Ett logistikföretag','Ett nystartat teknikbolag','Ett kommunalt bolag'];
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
@@ -1230,10 +1233,11 @@ function gameDecide(ok,measure){
     if(!state.sel) return;
     const node=state.sel, ref0=gameRef(), fit=val(ref0,node)>=r.mw;
     if(!fit&&!measure){g.pend={node}; render(); return}
+    if(!fit&&g.projRound===g.round) return;   /* högst ett nytt ledningsprojekt per år */
     rec.fit=fit; rec.node=node; rec.kommun=(byId[node]&&byId[node].desc)||'Utanför länet';
     state.fut=true;
-    if(!fit&&measure==='up'){g.mid=(g.mid||0)+1; rec.mid=g.mid; const res=gameReinforce(node,r.mw,g.round+GAME_YEARS.up,rec.mid); rec.measure='up'; rec.until=g.round+GAME_YEARS.up; rec.years=GAME_YEARS.up; rec.changes=res.changes; rec.solved=res.ok}
-    else if(!fit&&measure==='line'){g.mid=(g.mid||0)+1; rec.mid=g.mid; const nl=gameNewLine(node,r.mw,g.round+GAME_YEARS.line,rec.mid); rec.measure='line'; rec.until=g.round+GAME_YEARS.line; rec.years=GAME_YEARS.line; rec.newLine=nl; rec.solved=!!nl&&val(gameRef(),node)>=r.mw}
+    if(!fit&&measure==='up'){g.projRound=g.round; g.mid=(g.mid||0)+1; rec.mid=g.mid; const res=gameReinforce(node,r.mw,g.round+GAME_YEARS.up,rec.mid); rec.measure='up'; rec.until=g.round+GAME_YEARS.up; rec.years=GAME_YEARS.up; rec.changes=res.changes; rec.solved=res.ok}
+    else if(!fit&&measure==='line'){g.projRound=g.round; g.mid=(g.mid||0)+1; rec.mid=g.mid; const nl=gameNewLine(node,r.mw,g.round+GAME_YEARS.line,rec.mid); rec.measure='line'; rec.until=g.round+GAME_YEARS.line; rec.years=GAME_YEARS.line; rec.newLine=nl; rec.solved=!!nl&&val(gameRef(),node)>=r.mw}
     const byK={}, bf=gameRef(), af=compute([...state.placed,{kind:r.kind,mw:r.mw,flex:false,node,id:0}],state.mode,state.hour,state.crit,gameNet());
     for(const n of VL()){const k=n.desc||'Utanför länet'; byK[k]=Math.min(byK[k]??0,val(af,n.id)-val(bf,n.id))}
     state.fut=false;
@@ -1269,24 +1273,24 @@ function renderGame(v){
   const g=state.game, body=$('#gamebody');
   if(!g){
     const ok=gameCanStart();
-    body.innerHTML=`<p class="help" style="margin-top:0">Bygg först ett nät med spelbrickan (stamnät, regionnätsstationer i flera kommuner och ledningar). Sedan går ${GAME_TOTAL} år, ett steg i taget. Varje år händer något slumpmässigt: ingenting, en ny förfrågan om en etablering eller att en fabrik går i konkurs. Ni är kommunernas tjänstepersoner: bestäm tillsammans var varje etablering ska ligga, och prata med grannkommunerna innan ni bestämmer, eftersom en etablering kan ta kapacitet från andra.</p><div class="bact"><button class="primary" type="button" data-gact="start" ${ok?'':'disabled'}>Starta förfrågningarna</button></div>${ok?'':'<p class="help">Placera minst en regionnätsstation och en ledning först.</p>'}`;
+    body.innerHTML=`<p class="help" style="margin-top:0">Bygg först ett nät med spelbrickan (stamnät, regionnätsstationer i flera kommuner och ledningar). Sedan går ${gTot()} år, ett steg i taget. Varje år händer något slumpmässigt: ingenting, en ny förfrågan om en etablering eller att en fabrik går i konkurs. Ni är kommunernas tjänstepersoner: bestäm tillsammans var varje etablering ska ligga, och prata med grannkommunerna innan ni bestämmer, eftersom en etablering kan ta kapacitet från andra.</p><div class="bact"><button class="primary" type="button" data-gact="start" ${ok?'':'disabled'}>Starta förfrågningarna</button></div>${ok?'':'<p class="help">Placera minst en regionnätsstation och en ledning först.</p>'}`;
     return;
   }
   const kk=gameKommuner(), nlog=g.log.length;
   const okN=g.log.filter(x=>x.ok), noFit=okN.filter(x=>!x.fit).length, hits=okN.filter(x=>x.hit&&x.hit.length).length;
   const score=`<div class="gscore"><span><b>${okN.length}</b> godkända (${okN.reduce((a,x)=>a+x.mw,0)} MW)</span><span><b>${g.log.length-okN.length}</b> avslagna</span><span><b>${hits}</b> tog kapacitet från en annan kommun</span><span><b>${noFit}</b> kräver förstärkning</span><span><b>${g.log.reduce((a,x)=>a+(x.years||0),0)}</b> års väntetid för nätbygge</span>${g.quiet?`<span><b>${g.quiet}</b> år utan händelser</span>`:''}</div>`;
-  if(g.round>GAME_TOTAL){
+  if(g.round>gTot()){
     const hist=g.log.map(x=>`<li>År ${2026+x.round}: ${KINDS[x.kind].name} ${x.mw} MW i ${x.host}.${x.comp?' (en av två förfrågningar samma år)':''} ${x.ok?`Godkänd i ${x.kommun}${x.kommun!==x.host?' (flyttad från '+x.host+')':''}.${x.fit?'':(x.measure==='up'?` Förstärkte nätet (${x.years} år).`:x.measure==='line'?` Byggde ny ledning (${x.years} år).`:' Nätet klarade den inte utan förstärkning.')}${x.hit&&x.hit.length?' Tog kapacitet från '+x.hit.join(', ')+'.':''}`:'Avslagen.'}</li>`).join('');
-    body.innerHTML=`<p class="headline" style="font-size:16px;margin:0 0 6px">${GAME_TOTAL} år har gått, till och med ${2026+GAME_TOTAL}.</p>${gameLastHtml(g.last)}${score}<ul class="placed" style="margin-top:8px">${hist}</ul>${(g.events&&g.events.length)?`<p class="help"><b>Händelser:</b> ${g.events.map(x=>`år ${2026+x.round}: ${x.text}`).join(' ')}</p>`:''}<p class="help">Diskutera: Vilka beslut gav bäst helhet för länet? Var skulle en dialog med grannkommunen ha ändrat placeringen? Hur prioriterade ni när två förfrågningar kom samma år? Vad skulle nätbolaget behöva bygga för att fler etableringar ska få plats?</p><div class="bact"><button class="primary" type="button" data-gact="start">Spela igen</button><button type="button" data-gact="end">Avsluta</button></div>`;
+    body.innerHTML=`<p class="headline" style="font-size:16px;margin:0 0 6px">${gTot()} år har gått, till och med ${2026+gTot()}.</p>${gameLastHtml(g.last)}${score}<ul class="placed" style="margin-top:8px">${hist}</ul>${(g.events&&g.events.length)?`<p class="help"><b>Händelser:</b> ${g.events.map(x=>`år ${2026+x.round}: ${x.text}`).join(' ')}</p>`:''}<p class="help">Diskutera: Vilka beslut gav bäst helhet för länet? Var skulle en dialog med grannkommunen ha ändrat placeringen? Hur prioriterade ni när två förfrågningar kom samma år? Vad skulle nätbolaget behöva bygga för att fler etableringar ska få plats?</p><div class="bact">${gTot()<GAME_MAX?`<button class="primary" type="button" data-gact="more">Fortsätt till ${2026+GAME_MAX}</button>`:''}<button${gTot()<GAME_MAX?'':' class="primary"'} type="button" data-gact="start">Spela igen</button><button type="button" data-gact="end">Avsluta</button></div>`;
     return;
   }
   if(g.cur!=='req'){
-    const bk=g.cur==='bk', af=g.cur==='after', nxt=g.round<GAME_TOTAL?`Gå till ${2027+g.round}`:'Visa sammanfattning';
-    body.innerHTML=gameLastHtml(g.last)+dlyHtml(g)+`<div class="greq"><small>År ${2026+g.round} · steg ${g.round} av ${GAME_TOTAL}</small><div class="headline" style="font-size:17px;margin:2px 0">${af?'Året är behandlat':bk?'En fabrik har gått i konkurs':'Inget har hänt det här året'}</div></div>${af?'<p class="help">Diskutera klart, titta på kartan och gå vidare när ni är redo.</p>':''}${bk&&g.evt?`<div class="alert" role="status"><b>Händelse:</b> ${g.evt.text}</div>`:'<p class="help">Ingen ny förfrågan och inga förändringar i nätet.</p>'}${score}${gamePendHtml()}<div class="bact"><button class="primary" type="button" data-gact="next">${nxt}</button><button type="button" data-gact="end">Avsluta spelet</button></div>`;
+    const bk=g.cur==='bk', af=g.cur==='after', nxt=g.round<gTot()?`Gå till ${2027+g.round}`:'Visa sammanfattning';
+    body.innerHTML=gameLastHtml(g.last)+dlyHtml(g)+`<div class="greq"><small>År ${2026+g.round} · steg ${g.round} av ${gTot()}</small><div class="headline" style="font-size:17px;margin:2px 0">${af?'Året är behandlat':bk?'En fabrik har gått i konkurs':'Inget har hänt det här året'}</div></div>${af?'<p class="help">Diskutera klart, titta på kartan och gå vidare när ni är redo.</p>':''}${bk&&g.evt?`<div class="alert" role="status"><b>Händelse:</b> ${g.evt.text}</div>`:'<p class="help">Ingen ny förfrågan och inga förändringar i nätet.</p>'}${score}${gamePendHtml()}<div class="bact"><button class="primary" type="button" data-gact="next">${nxt}</button><button type="button" data-gact="end">Avsluta spelet</button></div>`;
     return;
   }
   const r=g.req, k=KINDS[r.kind], ref=gameRef(), sel=state.sel;
-  let h=gameLastHtml(g.last)+dlyHtml(g)+(g.evt?`<div class="alert" role="status"><b>Händelse:</b> ${g.evt.text}</div>`:'')+`<div class="greq"><small>År ${2026+g.round} · steg ${g.round} av ${GAME_TOTAL} · ny förfrågan${(g.reqs||[]).length>1?' (1 av 2)':g.reqs&&g.reqs.length===1&&r.comp?' (2 av 2)':''}</small><div class="headline" style="font-size:17px;margin:2px 0">${r.host}: ${r.from} vill ${isGen(r.kind)?'ansluta':'etablera'} ${ART[r.kind].toLowerCase()} på ${r.mw} MW</div><small>${k.desc}. Det är ${isGen(r.kind)?'produktion, så det som räknas är hur mycket produktion nätet tar emot':'förbrukning, så det som räknas är hur mycket last nätet klarar'}.</small></div>${score}
+  let h=gameLastHtml(g.last)+dlyHtml(g)+(g.evt?`<div class="alert" role="status"><b>Händelse:</b> ${g.evt.text}</div>`:'')+`<div class="greq"><small>År ${2026+g.round} · steg ${g.round} av ${gTot()} · ny förfrågan${(g.reqs||[]).length>1?' (1 av 2)':g.reqs&&g.reqs.length===1&&r.comp?' (2 av 2)':''}</small><div class="headline" style="font-size:17px;margin:2px 0">${r.host}: ${r.from} vill ${isGen(r.kind)?'ansluta':'etablera'} ${ART[r.kind].toLowerCase()} på ${r.mw} MW</div><small>${k.desc}. Det är ${isGen(r.kind)?'produktion, så det som räknas är hur mycket produktion nätet tar emot':'förbrukning, så det som räknas är hur mycket last nätet klarar'}.</small></div>${score}
     ${gamePendHtml()}${(g.reqs||[]).length>1?`<div class="alert" role="status"><b>Två förfrågningar kom samma år.</b> Kapaciteten kanske inte räcker till båda, så den ni godkänner först tar plats från den andra. Prata med varandra och välj vilken ni behandlar först:</div><div class="bact">${g.reqs.map((q,i)=>`<button type="button" data-gpick="${i}" aria-pressed="${g.req===q}" class="${g.req===q?'primary':''}">${q.host}: ${KINDS[q.kind].name.toLowerCase()} ${q.mw} MW</button>`).join('')}</div>`:r.comp?`<p class="help">Den andra förfrågningen samma år. Kapaciteten räknas efter ert förra beslut.</p>`:''}<p class="help">Prata med grannkommunerna och välj sedan station. Ni kan godkänna den i ${r.host}, föreslå en annan kommun eller avslå. Siffran är lediga MW i stationen just nu.</p><div class="gst">`;
   h+=Object.keys(kk).sort((a,b)=>a.localeCompare(b)).map(km=>`<div class="gk"><b>${km}${km===r.host?' (förfrågan kom hit)':''}</b>${kk[km].map(id=>{const a=val(ref,id); return `<button type="button" data-gsel="${id}" aria-pressed="${sel===id}" class="${a>=r.mw?'ok':a>0?'warn':'bad'}">${sname(id)}<small>${a} MW ledigt</small></button>`}).join('')}</div>`).join('')+`</div>`;
   if(sel&&byId[sel]){
@@ -1299,7 +1303,7 @@ function renderGame(v){
   if(g.pend){
     const pb=gameBind(g.pend.node), iso=NET.iso0.includes(g.pend.node);
     h+=`<div class="alert" role="status"><b>Elnätet blir överbelastat.</b> ${iso?`${sname(g.pend.node)} har ingen förbindelse med stamnätet.`:`Om ${r.mw} MW ansluts i ${sname(g.pend.node)} räcker inte ${pb?'ledningen '+sname(pb.a)+' – '+sname(pb.b):'nätet'} (ledigt ${val(ref,g.pend.node)} MW). `}Förstärk elnätet (${GAME_YEARS.up} år att bygga), bygg en ny ledning (${GAME_YEARS.line} år) eller välj en annan station.</div>
-      <div class="bact">${iso?'':`<button class="primary" type="button" data-gact="up">Förstärk elnätet (${GAME_YEARS.up} år)</button>`}<button class="primary" type="button" data-gact="line">Bygg ny ledning (${GAME_YEARS.line} år)</button><button type="button" data-gact="back">Tillbaka</button></div>`;
+      <div class="bact">${g.projRound===g.round?'':`${iso?'':`<button class="primary" type="button" data-gact="up">Förstärk elnätet (${GAME_YEARS.up} år)</button>`}<button class="primary" type="button" data-gact="line">Bygg ny ledning (${GAME_YEARS.line} år)</button>`}<button type="button" data-gact="back">Tillbaka</button></div>${g.projRound===g.round?'<p class="help">Ni har redan startat ett ledningsprojekt i år. Det går att starta högst ett nytt ledningsprojekt per år (flera kan pågå samtidigt, om de startades olika år). Välj en annan station eller avslå förfrågan.</p>':''}`;
     body.innerHTML=h; return;
   }
   h+=`<div class="bact"><button class="primary" type="button" data-gact="ok" ${sel?'':'disabled'}>Godkänn här</button><button type="button" data-gact="no">Avslå</button><button type="button" data-gact="end">Avsluta spelet</button></div>`;
@@ -1329,7 +1333,7 @@ $('#gamecard').addEventListener('click',e=>{
   const pk=e.target.closest('[data-gpick]'); if(pk){const g=state.game; if(g&&g.reqs&&g.reqs.length>1){gameSetReq(+pk.dataset.gpick); render()} return}
   const a=e.target.closest('[data-gact]'); if(!a) return;
   const act=a.dataset.gact;
-  if(act==='save') gameSave(); else if(act==='load') $('#gamefile').click(); else if(act==='start') gameStart(); else if(act==='end') gameEnd(); else if(act==='ok') gameDecide(true); else if(act==='no') gameDecide(false); else if(act==='up') gameDecide(true,'up'); else if(act==='line') gameDecide(true,'line'); else if(act==='next'){const g=state.game; g.quiet+=g.cur==='none'?1:0; if(g.cur!=='after') g.last=null; g.round++; g.dly=[]; if(g.round<=GAME_TOTAL){gameDelays(); gameNext()} else state.sel=null; render()} else if(act==='back'){state.game.pend=null;render()}
+  if(act==='save') gameSave(); else if(act==='load') $('#gamefile').click(); else if(act==='start') gameStart(); else if(act==='end') gameEnd(); else if(act==='ok') gameDecide(true); else if(act==='no') gameDecide(false); else if(act==='up') gameDecide(true,'up'); else if(act==='line') gameDecide(true,'line'); else if(act==='more'){const g=state.game; g.total=GAME_MAX; g.last=null; gameDelays(); gameNext(); render()} else if(act==='next'){const g=state.game; g.quiet+=g.cur==='none'?1:0; if(g.cur!=='after') g.last=null; g.round++; g.dly=[]; if(g.round<=gTot()){gameDelays(); gameNext()} else state.sel=null; render()} else if(act==='back'){state.game.pend=null;render()}
 });
 
 /* ---------- action bar ---------- */
