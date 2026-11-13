@@ -84,6 +84,7 @@ svg .mono{font-family:var(--f-mono)}
 .tag.new rect{fill:var(--accent-t);stroke:var(--accent);stroke-width:1.5} .tag.new text{fill:var(--ink)!important}
 .wire{fill:none;stroke-width:3.2;stroke-linejoin:round}
 .startnet{margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pendl text{font-size:10.5px;font-weight:700;fill:#44505f;paint-order:stroke;stroke:#fff;stroke-width:3.5px;stroke-linejoin:round;pointer-events:none}
 .farr polygon{fill:#1b2a41;stroke:#fff;stroke-width:1.4;paint-order:stroke;pointer-events:none}
 .netl{font-size:10px;font-weight:700;fill:#44505f;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round;pointer-events:none}.netl.nl{fill:#7a4310}.netl.ng{fill:#1f6f3d}
 .wire.ok{stroke:var(--ok)} .wire.warn{stroke:var(--warn)} .wire.bad{stroke:var(--bad)}
@@ -382,14 +383,14 @@ dialog#help[open]{display:flex;flex-direction:column}
           <p><b>Bara effekten räknas.</b> Verkliga nätbolag räknar också på spänning, på energi som går förlorad som värme och på en andra sorts effekt som bara pendlar fram och tillbaka (reaktiv effekt). Det kallas AC-flöde. Spelet använder den enklare metoden DC-flöde, som bara ser på hur många MW som går i varje ledning. Då syns tydligt vilka ledningar en ny anslutning belastar och vilken som blir full först.</p>
           <p><b>Simulera nu</b> räknar AC-flöde med Newton-Raphson på det nät ni byggt: spänning i varje station, aktiv och reaktiv effekt på ledningarna och förluster. Stamnätet och anslutningar utanför länet har 1,0 p.u., last har effektfaktor 0,95 och produktion 1,0. Ledningarnas resistans, reaktans och kapacitans är schabloner per spänningsnivå, och transformatorer och spänningsreglering är inte med. Resultatet visar var spänningen blir låg, inte vad en nätägare skulle godkänna.</p>
           <p><b>Så går spelet till.</b> Ni bygger först ett eget nät med spelbrickan: stationer, ledningar och laster eller produktion som hör till en station. Stationer har ingen last eller produktion förrän något är anslutet, och kopplingen mellan station och last har ingen resistans, reaktans eller kapacitans. Sedan går spelet ett år i taget, 2027–2040. Varje år händer något slumpmässigt: ingenting, en ny förfrågan om en etablering till en kommun, eller att en fabrik går i konkurs och frigör några MW. Ni väljer station för varje förfrågan och ser hur lediga MW ändras i alla kommuner, eftersom en etablering kan ta kapacitet från grannkommunerna.</p>
-          <p><b>Överbelastning och väntetid.</b> Om en etablering inte ryms kan ni förstärka elnätet (3 år) eller bygga en ny ledning (8 år), eller välja en annan station. Etableringen och åtgärden visas grå och svagt på kartan tills de är klara, men kapaciteten räknas redan som reserverad. Väntetiderna är påhittade för spelet, och kostnader, tillstånd och markintrång ingår inte.</p>
+          <p><b>Överbelastning och väntetid.</b> Om en etablering inte ryms kan ni spänningshöja en 70 kV-ledning till 130 kV (80 % mer överföring, 5 år) eller bygga en ny ledning (8 år), eller välja en annan station. Etableringen och åtgärden visas grå och svagt på kartan tills de är klara, men kapaciteten räknas redan som reserverad. Väntetiderna är påhittade för spelet, och kostnader, tillstånd och markintrång ingår inte.</p>
           <p><b>Så ska siffrorna läsas.</b> De visar var det blir trångt, inte om en anslutning är möjlig. I verkligheten kan spänningen eller den reaktiva effekten sätta gränsen före ledningens kapacitet, och förlusterna gör flödet något större, ofta några procent. Spelet kan därför visa mer ledig kapacitet än det finns. Vattenfalls kapacitetskarta bygger på en mer detaljerad modell och kan avvika, därför finns den med som jämförelse.</p>
         </div>
       </details>
     </main>
   </div>
 
-  <p class="foot">Ledig kapacitet är den största jämna extra last (eller produktion) som kan anslutas i en kommun utan att någon ledning överbelastas, räknat på värsta timmen. Med N-1 prövas att en ledning åt gången är ur drift. Den siffran räknas som ett DC-lastflöde: effekten delar sig mellan parallella vägar efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Knappen Simulera nu räknar i stället AC-flöde med Newton-Raphson (stamnätet 1,0 p.u., last med effektfaktor 0,95, produktion 1,0) på schablonvärden för ledningarna per spänningsnivå. Nätet bygger spelarna själva av stationer, ledningar, laster (kommunlast, datacenter, batterifabrik, elektrolysör, laddhubb) och produktion (vind, sol). Förfrågningar, konkurser och fabriksnamn slumpas, och väntetiderna för förstärkning (3 år) och ny ledning (8 år) är påhittade. Kostnader och tillstånd ingår inte. Det befintliga nätet från Lantmäteriet kan visas som ett bakgrundslager men ingår inte i beräkningarna. Kommunnamn används bara som kartunderlag: stationerna, nätet och alla siffror är påhittade och beskriver inget verkligt nät. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät. Karta: förenklade kommungränser från Valmyndigheten via Opendatasoft (okfse/sweden-geojson). Bakgrundslagret: Lantmäteriet Topografi 50 (CC0).</p>
+  <p class="foot">Ledig kapacitet är den största jämna extra last (eller produktion) som kan anslutas i en kommun utan att någon ledning överbelastas, räknat på värsta timmen. Med N-1 prövas att en ledning åt gången är ur drift. Den siffran räknas som ett DC-lastflöde: effekten delar sig mellan parallella vägar efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. Knappen Simulera nu räknar i stället AC-flöde med Newton-Raphson (stamnätet 1,0 p.u., last med effektfaktor 0,95, produktion 1,0) på schablonvärden för ledningarna per spänningsnivå. Nätet bygger spelarna själva av stationer, ledningar, laster (kommunlast, datacenter, batterifabrik, elektrolysör, laddhubb) och produktion (vind, sol). Förfrågningar, konkurser och fabriksnamn slumpas, och väntetiderna för spänningshöjning (5 år) och ny ledning (8 år) är påhittade. Kostnader och tillstånd ingår inte. Det befintliga nätet från Lantmäteriet kan visas som ett bakgrundslager men ingår inte i beräkningarna. Kommunnamn används bara som kartunderlag: stationerna, nätet och alla siffror är påhittade och beskriver inget verkligt nät. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät. Karta: förenklade kommungränser från Valmyndigheten via Opendatasoft (okfse/sweden-geojson). Bakgrundslagret: Lantmäteriet Topografi 50 (CC0).</p>
 </div>
 
 <input type="file" id="stfile" accept=".zip,.shp,.dbf,.json,.geojson,application/json" multiple hidden>
@@ -421,7 +422,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     <ul>
       <li><b>Förstärk en ledning:</b> välj <i>Flytta/ändra</i>, klicka på ledningen och ändra kV eller MW.</li>
       <li><b>Ny ledning:</b> välj <i>Ledning</i>, ställ in spänning och kapacitet och dra från en station till en annan (eller klicka på två). Ju längre ledning, desto högre reaktans. Mellan två stationer som redan har en ledning går det inte att dra en ny.</li>
-      <li><b>Under spelet</b> kan nätet också byggas ut när en etablering inte ryms: förstärkning tar 3 år och en ny ledning 8 år. Det som är under byggnad visas grått och svagt tills det är klart.</li>
+      <li><b>Under spelet</b> kan nätet också byggas ut när en etablering inte ryms: spänningshöjning tar 5 år och en ny ledning 8 år. Det som är under byggnad visas grått och svagt, med texten <i>Antal år till färdigställande</i> ovanför ledningen, tills det är klart.</li>
     </ul>
 
     <h3 id="h-workshop">Spelbrickan: bygg ert eget nät</h3>
@@ -438,9 +439,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <ul>
       <li><b>Förfrågan:</b> till exempel ett datacenter på 60 MW i Heby. Prata med grannkommunerna, välj station (i kommunen som fick förfrågan eller i en annan) och klicka <i>Godkänn här</i>, eller <i>Avslå</i>. Raden under visar hur lediga MW ändras i varje kommun.</li>
       <li><b>Två samtidigt:</b> ibland kommer två förfrågningar samma år. Ni väljer vilken ni behandlar först, och den som godkänns först tar kapacitet från den andra.</li>
-      <li><b>Överbelastning:</b> om nätet inte klarar etableringen kan ni <i>förstärka elnätet</i> (3 år), <i>bygga en ny ledning</i> (8 år) eller gå tillbaka och välja en annan station. Etableringen reserverar sin effekt direkt, men förstärkningen eller den nya ledningen räknas med först när den är klar. Under väntetiden har därför alla kommuner mindre ledigt, och först därefter syns eventuell överskottskapacitet.</li>
+      <li><b>Överbelastning:</b> om nätet inte klarar etableringen kan ni <i>spänningshöja ledningen</i> (bara 70 kV till 130 kV, 80 % mer överföring, 5 år), <i>bygga en ny ledning</i> (8 år) eller gå tillbaka och välja en annan station. Etableringen reserverar sin effekt direkt, men spänningshöjningen eller den nya ledningen räknas med först när den är klar. Under väntetiden har därför alla kommuner mindre ledigt, och först därefter syns eventuell överskottskapacitet.</li>
       <li><b>Ändrad tidplan:</b> ibland ändras tiden för ett pågående bygge med ett år, till exempel genom ett överklagat tillstånd, svåra markförhållanden, försenade leveranser eller ett nytt arbetssätt. Då visas ett meddelande, och etableringen som väntar på åtgärden blir klar samtidigt.</li>
-      <li><b>Ett projekt per år:</b> ni kan starta högst ett nytt ledningsprojekt (förstärkning eller ny ledning) per år. Flera projekt kan pågå samtidigt, om de startades olika år.</li>
+      <li><b>Ett projekt per år:</b> ni kan starta högst ett nytt ledningsprojekt (spänningshöjning eller ny ledning) per år. Flera projekt kan pågå samtidigt, om de startades olika år.</li>
       <li><b>Längre spel:</b> efter 2040 kan ni välja <i>Fortsätt till 2050</i> för att spela vidare.</li>
       <li><b>Spara och öppna:</b> <i>Spara spel</i> laddar ner nätet och spelets gång som en fil. Med <i>Öppna spel</i> kan ni fortsätta vid nästa workshop eller jämföra två omgångar.</li>
       <li><b>Sammanfattning:</b> efter år 12 visas alla beslut, händelser och väntetid, med frågor att diskutera.</li>
@@ -460,9 +461,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Siffran för ledig kapacitet och ledningsbelastningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. <i>Simulera nu</i> räknar i stället AC-flöde med Newton-Raphson. Förfrågningar, konkurser och namn slumpas, och väntetiderna 3 och 8 år är påhittade. Kostnader, tillstånd och markintrång ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261225"></script>
-<script src="sim.js?v=20261225"></script>
-<script src="shp.js?v=20261225"></script>
+<script src="map.js?v=20261227"></script>
+<script src="sim.js?v=20261227"></script>
+<script src="shp.js?v=20261227"></script>
 <script>
 
 const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -574,6 +575,17 @@ function netHour(){
 }
 function netOf(id,h){let n=0; state.placed.forEach(p=>{if(p.node!==id) return; const v=p.mw*KINDS[p.kind].profile(h)*(p.flex?FLEXF(h):1); n+=isGen(p.kind)?-v:v}); return n}
 /* riktningspilar på ledningarna: flödets riktning i värsta fall */
+/* text ovanför ledningar som ännu inte är klara: antal år kvar */
+function pendLabelsSvg(){
+  if(!(ws()&&state.game)) return '';
+  let s='<g class="pendl" aria-hidden="true">';
+  state.add.forEach(a=>{
+    const until=gPend(a.until)?a.until:(a.rf&&gPend(a.rf.until)?a.rf.until:0); if(!until) return;
+    const n=until-state.game.round, m=routeOf(a).mid;
+    s+=`<text x="${m.x.toFixed(1)}" y="${(m.y-12).toFixed(1)}" text-anchor="middle">Antal år till färdigställande: ${n}</text>`;
+  });
+  return s+'</g>';
+}
 function flowArrowsSvg(cur){
   let s='<g class="farr" aria-hidden="true">';
   LINES.forEach((ln,i)=>{
@@ -655,10 +667,10 @@ function upRange(l){return state.upunit==='pct'?{min:10,max:200,step:10}:{min:5,
 function upInfo(l,ex){return `Klarar idag ${l.cap} MW. Efter förstärkning: ${l.cap+ex} MW (+${ex} MW, +${Math.round(ex/l.cap*100)} %).`}
 function nMeasures(){return ws()?0:Object.keys(state.up).length+state.add.length}
 function wsNodes(){const o={}; for(const g of state.rst) if(isLoadR(g)||state.kn[g.id]) o[g.id]=state.kn[g.id]||{base:SCHABLON,gen:[]}; return o}
-/* ledningar som är med i beräkningen: i spelet räknas en ny ledning eller förstärkning först från och med färdigåret (state.fut = räkna som om allt vore klart) */
+/* ledningar som är med i beräkningen: i spelet räknas en ny ledning eller spänningshöjning först från och med färdigåret (state.fut = räkna som om allt vore klart) */
 function gAdd(){
   if(!(state.game&&!state.fut)) return state.add.map(a=>({...a}));
-  return state.add.filter(a=>!gPend(a.until)).map(a=>a.rf&&gPend(a.rf.until)?{...a,cap:a.rf.from}:{...a});
+  return state.add.filter(a=>!gPend(a.until)).map(a=>a.rf&&gPend(a.rf.until)?{...a,cap:a.rf.from,kv:a.rf.kv0||a.kv}:{...a});
 }
 function wsCfg(){return {up:{},add:gAdd(),base:'none',ks:state.rst.filter(isLoadR).map(g=>g.id),pos:posOf(),nodes:wsNodes()}}
 const ORIGN = ()=>ws()?makeNet(wsCfg()):ORIG;
@@ -778,7 +790,7 @@ function renderDiagram(v){
     if(bld&&state.bline===i) s+=`<path class="pickl" d="${wirePath(ln)}"/>`;
     const ga=ws()&&state.game?state.add.find(a=>a.id===ln.id):null;
     s+=`<path class="wire ${cls}${ex}${ga&&gPend(ga.until)?' gpend':''}" d="${wirePath(ln)}"/>`;
-    if(ga&&ga.rf&&gPend(ga.rf.until)) s+=`<path class="gpendr" d="${wirePath(ln)}"><title>Förstärkning under byggnad, klar ${2026+ga.rf.until}</title></path>`;
+    if(ga&&ga.rf&&gPend(ga.rf.until)) s+=`<path class="gpendr" d="${wirePath(ln)}"><title>Spänningshöjning under byggnad, klar ${2026+ga.rf.until}</title></path>`;
   });
   if(PALON()) s+=flowArrowsSvg(cur);
   if(ws()&&state.game) state.add.filter(a=>gPend(a.until)).forEach(a=>{s+=`<path class="wire gpend" d="${wirePath(a)}"><title>Ny ledning under byggnad, klar ${2026+a.until}</title></path>`});
@@ -869,6 +881,7 @@ function renderDiagram(v){
         s+=`<circle class="port" data-port="${id}" cx="${px}" cy="${py}" r="6.5"><title>Dra till en annan station för att dra en ny ledning</title></circle>`;
     }
   }
+  s+=pendLabelsSvg();
   if(PALON()) s+=palUnitsSvg();
   zoomClamp();
   $('#diagram').innerHTML=`<svg class="${ZOOM.k>1?'zoomed':''}" viewBox="${ZOOM.x.toFixed(1)} ${ZOOM.y.toFixed(1)} ${(MAP.w/ZOOM.k).toFixed(1)} ${(MAP.h/ZOOM.k).toFixed(1)}" role="group" aria-label="Karta över Uppsala län med ${ws()?'stationer som deltagarna placerar':'åtta kommuner och ett fiktivt regionnät'}">${s}</svg><div class="zoomctl" role="group" aria-label="Zoom"><button type="button" data-zoom="in" aria-label="Zooma in" title="Zooma in">+</button><button type="button" data-zoom="out" aria-label="Zooma ut" title="Zooma ut">−</button><button type="button" data-zoom="reset" aria-label="Återställ zoom" title="Visa hela kartan"${ZOOM.k===1?' disabled':''}>⤢</button></div>`;
@@ -1219,8 +1232,8 @@ function gameBankrupt(){
 }
 /* slumpade ändringar i tidplanen för pågående byggen: ±1 år, högst en gång per åtgärd */
 const GAME_DLY={
-  late:{line:['Tillståndet för den nya ledningen överklagades, byggnationen dröjer ytterligare ett år.','Svåra markförhållanden gör att ledningen tar ett år extra att bygga.'],up:['Tidplanen för när ledningen kan vara förstärkt förskjuts ett år på grund av försenade leveranser.','Svåra markförhållanden gör att förstärkningen tar ett år extra.']},
-  early:{line:['Ett nytt arbetssätt för byggnationen gör att ledningen blir klar ett år tidigare än beräknat.'],up:['Ett nytt arbetssätt för byggnation gör att förstärkningen blir klar ett år tidigare än beräknat.']}
+  late:{line:['Tillståndet för den nya ledningen överklagades, byggnationen dröjer ytterligare ett år.','Svåra markförhållanden gör att ledningen tar ett år extra att bygga.'],up:['Tidplanen för när ledningen kan vara spänningshöjd förskjuts ett år på grund av försenade leveranser.','Svåra markförhållanden gör att spänningshöjningen tar ett år extra.']},
+  early:{line:['Ett nytt arbetssätt för byggnationen gör att ledningen blir klar ett år tidigare än beräknat.'],up:['Ett nytt arbetssätt för byggnation gör att spänningshöjningen blir klar ett år tidigare än beräknat.']}
 };
 function gameDelays(){
   const g=state.game; g.dly=[]; g.touched=g.touched||[];
@@ -1240,17 +1253,20 @@ function gameDelays(){
 function gameStart(){state.add.forEach(a=>{delete a.until;delete a.rf}); state.placed.forEach(p=>{delete p.until}); state.game={round:1,log:[],req:null,last:null,pend:null,evt:null,events:[],cur:null,quiet:0}; gameNext(); render()}
 function gameEnd(){state.game=null; state.sel=null; render()}
 const gPend=u=>!!(state.game&&u&&state.game.round<u);   /* åtgärd som ännu inte är byggd: visas grå och 20 % */
-const GAME_YEARS={up:3,line:8};   /* tidsåtgång i år: förstärkning respektive ny ledning (förstärkningens 3 år är en gissning) */
+const GAME_YEARS={up:5,line:8}, UPV={from:70,to:130,k:1.8};   /* tidsåtgång i år: förstärkning respektive ny ledning (förstärkningens 3 år är en gissning) */
 const gameNet=()=>makeNet(cfgOf(false));
 const gameRef=()=>compute(state.placed,state.mode,state.hour,state.crit,gameNet());
 function gameBind(node){const r=gameRef(), b=(state.metric==='I'?r.bindI:r.bindU)[node], net=gameNet(); return b&&b.line!=null&&net.lines[b.line]?net.lines[b.line]:null}
+/* spänningshöjning: bara 70 kV-ledningar kan höjas till 130 kV, vilket ökar överföringen med 80 % */
+function gameCanUpgrade(node){const l=gameBind(node), a=l&&state.add.find(x=>x.id===l.id); return !!(a&&a.kv===UPV.from&&!(a.rf&&gPend(a.rf.until)))}
 function gameReinforce(node,mw,until,mid){
   const ch={}; let ok=false;
   for(let it=0;it<20;it++){
     if(val(gameRef(),node)>=mw){ok=true;break}
-    const l=gameBind(node), a=l&&state.add.find(x=>x.id===l.id); if(!a) break;
-    const inc=Math.max(10,Math.ceil(a.cap*0.5/10)*10);
-    (ch[a.id]=ch[a.id]||{a:a.a,b:a.b,from:a.cap}).to=a.cap+inc; a.cap+=inc; a.rf={until,mid,from:(a.rf&&gPend(a.rf.until))?a.rf.from:ch[a.id].from};
+    const l=gameBind(node), a=l&&state.add.find(x=>x.id===l.id); if(!a||a.kv!==UPV.from||(a.rf&&gPend(a.rf.until))) break;
+    const to=Math.round(a.cap*UPV.k);
+    ch[a.id]={a:a.a,b:a.b,from:a.cap,to,kvFrom:a.kv,kvTo:UPV.to};
+    a.rf={until,mid,from:a.cap,kv0:a.kv}; a.cap=to; a.kv=UPV.to;
   }
   return {ok,changes:Object.values(ch)};
 }
@@ -1299,7 +1315,7 @@ function gameLastHtml(rec){
   if(!rec||!rec.ok) return rec?`<p class="gres">Förra beslutet: avslog ${KINDS[rec.kind].name.toLowerCase()} ${rec.mw} MW i ${rec.host}.</p>`:'';
   const nm=id=>sname(id), ln=c=>`${nm(c.a)}–${nm(c.b)}`;
   let t=`Förra beslutet: godkände ${KINDS[rec.kind].name.toLowerCase()} ${rec.mw} MW i ${nm(rec.node)}.`;
-  if(rec.measure==='up') t+=` Elnätet var överbelastat, så ni förstärkte ${rec.changes.length?rec.changes.map(c=>`${ln(c)} från ${c.from} till ${c.to} MW`).join(', '):'nätet'} (${rec.years} år att bygga, klart ${2026+rec.until}).${rec.solved?'':' Det räckte inte helt, nätet är fortfarande begränsat.'}`;
+  if(rec.measure==='up') t+=` Elnätet var överbelastat, så ni spänningshöjde ${rec.changes.length?rec.changes.map(c=>`${ln(c)} från ${c.kvFrom} till ${c.kvTo} kV (${c.from} till ${c.to} MW)`).join(', '):'inget, eftersom den begränsande ledningen inte går att spänningshöja'} (${rec.years} år att bygga, klart ${2026+rec.until}).${rec.solved?'':' Det räckte inte helt, nätet är fortfarande begränsat.'}`;
   else if(rec.measure==='line') t+=` Elnätet var överbelastat, så ni byggde en ny ledning ${rec.newLine?ln(rec.newLine)+' ('+rec.newLine.cap+' MW, 130 kV)':''} (${rec.years} år att bygga, klart ${2026+rec.until}).${rec.solved?'':' Det räckte inte helt, nätet är fortfarande begränsat.'}`;
   if(rec.measure) t+=' Etableringen och åtgärden visas grå och svagt på kartan tills de är klara.';
   t+=' Lediga MW efter etableringen'+(rec.measure?' och den förstärkta nätet':'')+': '+Object.keys(rec.left).sort().map(k=>`${k} ${rec.left[k]}`).join(' · ')+'.';
@@ -1308,7 +1324,7 @@ function gameLastHtml(rec){
 function gamePendHtml(){
   const it=[];
   state.placed.filter(p=>gPend(p.until)).forEach(p=>it.push(`${KINDS[p.kind].name.toLowerCase()} ${p.mw} MW i ${sname(p.node)}, klar ${2026+p.until}`));
-  state.add.forEach(a=>{ if(gPend(a.until)) it.push(`ny ledning ${sname(a.a)} – ${sname(a.b)}, klar ${2026+a.until}`); if(a.rf&&gPend(a.rf.until)) it.push(`förstärkning ${sname(a.a)} – ${sname(a.b)} till ${a.cap} MW, klar ${2026+a.rf.until}`)});
+  state.add.forEach(a=>{ if(gPend(a.until)) it.push(`ny ledning ${sname(a.a)} – ${sname(a.b)}, klar ${2026+a.until}`); if(a.rf&&gPend(a.rf.until)) it.push(`spänningshöjning ${sname(a.a)} – ${sname(a.b)} till ${a.kv} kV och ${a.cap} MW, klar ${2026+a.rf.until}`)});
   return it.length?`<p class="help"><b>Under byggnad</b> (grått och svagt på kartan): ${it.join('; ')}.</p>`:'';
 }
 function dlyHtml(g){return (g.dly&&g.dly.length)?g.dly.map(t=>`<div class="alert" role="status"><b>Tidplanen ändras:</b> ${t}</div>`).join(''):''}
@@ -1322,9 +1338,9 @@ function renderGame(v){
   }
   const kk=gameKommuner(), nlog=g.log.length;
   const okN=g.log.filter(x=>x.ok), noFit=okN.filter(x=>!x.fit).length, hits=okN.filter(x=>x.hit&&x.hit.length).length;
-  const score=`<div class="gscore"><span><b>${okN.length}</b> godkända (${okN.reduce((a,x)=>a+x.mw,0)} MW)</span><span><b>${g.log.length-okN.length}</b> avslagna</span><span><b>${hits}</b> tog kapacitet från en annan kommun</span><span><b>${noFit}</b> kräver förstärkning</span><span><b>${g.log.reduce((a,x)=>a+(x.years||0),0)}</b> års väntetid för nätbygge</span>${g.quiet?`<span><b>${g.quiet}</b> år utan händelser</span>`:''}</div>`;
+  const score=`<div class="gscore"><span><b>${okN.length}</b> godkända (${okN.reduce((a,x)=>a+x.mw,0)} MW)</span><span><b>${g.log.length-okN.length}</b> avslagna</span><span><b>${hits}</b> tog kapacitet från en annan kommun</span><span><b>${noFit}</b> kräver spänningshöjning eller ny ledning</span><span><b>${g.log.reduce((a,x)=>a+(x.years||0),0)}</b> års väntetid för nätbygge</span>${g.quiet?`<span><b>${g.quiet}</b> år utan händelser</span>`:''}</div>`;
   if(g.round>gTot()){
-    const hist=g.log.map(x=>`<li>År ${2026+x.round}: ${KINDS[x.kind].name} ${x.mw} MW i ${x.host}.${x.comp?' (en av två förfrågningar samma år)':''} ${x.ok?`Godkänd i ${x.kommun}${x.kommun!==x.host?' (flyttad från '+x.host+')':''}.${x.fit?'':(x.measure==='up'?` Förstärkte nätet (${x.years} år).`:x.measure==='line'?` Byggde ny ledning (${x.years} år).`:' Nätet klarade den inte utan förstärkning.')}${x.hit&&x.hit.length?' Tog kapacitet från '+x.hit.join(', ')+'.':''}`:'Avslagen.'}</li>`).join('');
+    const hist=g.log.map(x=>`<li>År ${2026+x.round}: ${KINDS[x.kind].name} ${x.mw} MW i ${x.host}.${x.comp?' (en av två förfrågningar samma år)':''} ${x.ok?`Godkänd i ${x.kommun}${x.kommun!==x.host?' (flyttad från '+x.host+')':''}.${x.fit?'':(x.measure==='up'?` Spänningshöjde ledning (${x.years} år).`:x.measure==='line'?` Byggde ny ledning (${x.years} år).`:' Nätet klarade den inte utan åtgärd.')}${x.hit&&x.hit.length?' Tog kapacitet från '+x.hit.join(', ')+'.':''}`:'Avslagen.'}</li>`).join('');
     body.innerHTML=`<p class="headline" style="font-size:16px;margin:0 0 6px">${gTot()} år har gått, till och med ${2026+gTot()}.</p>${gameLastHtml(g.last)}${score}<ul class="placed" style="margin-top:8px">${hist}</ul>${(g.events&&g.events.length)?`<p class="help"><b>Händelser:</b> ${g.events.map(x=>`år ${2026+x.round}: ${x.text}`).join(' ')}</p>`:''}<p class="help">Diskutera: Vilka beslut gav bäst helhet för länet? Var skulle en dialog med grannkommunen ha ändrat placeringen? Hur prioriterade ni när två förfrågningar kom samma år? Vad skulle nätbolaget behöva bygga för att fler etableringar ska få plats?</p><div class="bact">${gTot()<GAME_MAX?`<button class="primary" type="button" data-gact="more">Fortsätt till ${2026+GAME_MAX}</button>`:''}<button${gTot()<GAME_MAX?'':' class="primary"'} type="button" data-gact="start">Spela igen</button><button type="button" data-gact="end">Avsluta</button></div>`;
     return;
   }
@@ -1342,12 +1358,12 @@ function renderGame(v){
     for(const n of VL()){const kn=n.desc||'Utanför länet'; (g2[kn]=g2[kn]||[]).push(val(after,n.id)-val(ref,n.id))}
     const own=(byId[sel].desc)||'Utanför länet', fit=val(ref,sel)>=r.mw;
     const rows=Object.keys(g2).map(kn=>({kn,d:Math.min(...g2[kn])})).sort((a,b)=>a.d-b.d);
-    h+=`<div class="gres"><b>Om den placeras i ${sname(sel)} (${own}):</b> ${fit?'nätet klarar den':'nätet klarar inte hela effekten utan förstärkning'}. Ändring i lediga MW per kommun: ${rows.map(x=>`<span class="${x.d<0?'neg':'pos'}">${x.kn} ${x.d>0?'+':''}${x.d}</span>`).join(' · ')}.</div>`;
+    h+=`<div class="gres"><b>Om den placeras i ${sname(sel)} (${own}):</b> ${fit?'nätet klarar den':'nätet klarar inte hela effekten utan åtgärd'}. Ändring i lediga MW per kommun: ${rows.map(x=>`<span class="${x.d<0?'neg':'pos'}">${x.kn} ${x.d>0?'+':''}${x.d}</span>`).join(' · ')}.</div>`;
   }
   if(g.pend){
     const pb=gameBind(g.pend.node), iso=NET.iso0.includes(g.pend.node);
-    h+=`<div class="alert" role="status"><b>Elnätet blir överbelastat.</b> ${iso?`${sname(g.pend.node)} har ingen förbindelse med stamnätet.`:`Om ${r.mw} MW ansluts i ${sname(g.pend.node)} räcker inte ${pb?'ledningen '+sname(pb.a)+' – '+sname(pb.b):'nätet'} (ledigt ${val(ref,g.pend.node)} MW). `}Förstärk elnätet (${GAME_YEARS.up} år att bygga), bygg en ny ledning (${GAME_YEARS.line} år) eller välj en annan station.</div>
-      <div class="bact">${g.projRound===g.round?'':`${iso?'':`<button class="primary" type="button" data-gact="up">Förstärk elnätet (${GAME_YEARS.up} år)</button>`}<button class="primary" type="button" data-gact="line">Bygg ny ledning (${GAME_YEARS.line} år)</button>`}<button type="button" data-gact="back">Tillbaka</button></div>${g.projRound===g.round?'<p class="help">Ni har redan startat ett ledningsprojekt i år. Det går att starta högst ett nytt ledningsprojekt per år (flera kan pågå samtidigt, om de startades olika år). Välj en annan station eller avslå förfrågan.</p>':''}`;
+    h+=`<div class="alert" role="status"><b>Elnätet blir överbelastat.</b> ${iso?`${sname(g.pend.node)} har ingen förbindelse med stamnätet.`:`Om ${r.mw} MW ansluts i ${sname(g.pend.node)} räcker inte ${pb?'ledningen '+sname(pb.a)+' – '+sname(pb.b):'nätet'} (ledigt ${val(ref,g.pend.node)} MW). `}${gameCanUpgrade(g.pend.node)?`Spänningshöj ledningen från ${UPV.from} till ${UPV.to} kV (ökar överföringen med 80 %, ${GAME_YEARS.up} år att bygga), bygg`:`${iso?'':pb&&pb.kv>=130?'Den begränsande ledningen är redan '+pb.kv+' kV och kan inte spänningshöjas. ':''}Bygg`} en ny ledning (${GAME_YEARS.line} år) eller välj en annan station.</div>
+      <div class="bact">${g.projRound===g.round?'':`${iso||!gameCanUpgrade(g.pend.node)?'':`<button class="primary" type="button" data-gact="up">Spänningshöj ledning (${GAME_YEARS.up} år)</button>`}<button class="primary" type="button" data-gact="line">Bygg ny ledning (${GAME_YEARS.line} år)</button>`}<button type="button" data-gact="back">Tillbaka</button></div>${g.projRound===g.round?'<p class="help">Ni har redan startat ett ledningsprojekt i år. Det går att starta högst ett nytt ledningsprojekt per år (flera kan pågå samtidigt, om de startades olika år). Välj en annan station eller avslå förfrågan.</p>':''}`;
     body.innerHTML=h; return;
   }
   h+=`<div class="bact"><button class="primary" type="button" data-gact="ok" ${sel?'':'disabled'}>Godkänn här</button><button type="button" data-gact="no">Avslå</button><button type="button" data-gact="end">Avsluta spelet</button></div>`;
