@@ -83,6 +83,8 @@ svg .mono{font-family:var(--f-mono)}
 .tag rect{fill:var(--accent)} .tag text{fill:var(--on-accent)!important;font-weight:600}
 .tag.new rect{fill:var(--accent-t);stroke:var(--accent);stroke-width:1.5} .tag.new text{fill:var(--ink)!important}
 .wire{fill:none;stroke-width:3.2;stroke-linejoin:round}
+.farr polygon{fill:#1b2a41;stroke:#fff;stroke-width:1.4;paint-order:stroke;pointer-events:none}
+.netl{font-size:10px;font-weight:700;fill:#44505f;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round;pointer-events:none}.netl.nl{fill:#7a4310}.netl.ng{fill:#1f6f3d}
 .wire.ok{stroke:var(--ok)} .wire.warn{stroke:var(--warn)} .wire.bad{stroke:var(--bad)}
 .share{fill:none;stroke:var(--accent);stroke-linecap:round;opacity:.55;pointer-events:none}
 .wire.up{stroke-width:6.5} .wire.new{stroke-dasharray:10 6} .wire.pend{opacity:.65}
@@ -457,9 +459,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Siffran för ledig kapacitet och ledningsbelastningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. <i>Simulera nu</i> räknar i stället AC-flöde med Newton-Raphson. Förfrågningar, konkurser och namn slumpas, och väntetiderna 3 och 8 år är påhittade. Kostnader, tillstånd och markintrång ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261222"></script>
-<script src="sim.js?v=20261222"></script>
-<script src="shp.js?v=20261222"></script>
+<script src="map.js?v=20261223"></script>
+<script src="sim.js?v=20261223"></script>
+<script src="shp.js?v=20261223"></script>
 <script>
 
 const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -562,6 +564,26 @@ const f0 = v=>Math.round(v);
 const cap1 = s=>s.charAt(0).toUpperCase()+s.slice(1);
 const sg = n=>(n>0?'+':n<0?'−':'±')+Math.abs(n);
 const ARROWS=['→','↗','↑','↖','←','↙','↓','↘'];
+/* nettoeffekt per station (last minus produktion) vid timmen med högst nettolast, eller vald timme */
+function netHour(){
+  if(state.mode!=='worst') return state.hour;
+  let best=18,bv=-1e9;
+  for(const h of HRS){let n=0; state.placed.forEach(p=>{const v=p.mw*KINDS[p.kind].profile(h)*(p.flex?FLEXF(h):1); n+=isGen(p.kind)?-v:v}); if(n>bv){bv=n;best=h}}
+  return best;
+}
+function netOf(id,h){let n=0; state.placed.forEach(p=>{if(p.node!==id) return; const v=p.mw*KINDS[p.kind].profile(h)*(p.flex?FLEXF(h):1); n+=isGen(p.kind)?-v:v}); return n}
+/* riktningspilar på ledningarna: flödets riktning i värsta fall */
+function flowArrowsSvg(cur){
+  let s='<g class="farr" aria-hidden="true">';
+  LINES.forEach((ln,i)=>{
+    const r=cur.lines[i]; if(!r||Math.abs(r.signed)<1) return;
+    const rt=routeOf(ln), t=0.5, q=rt.at(t-0.04), q2=rt.at(t+0.04), m=rt.at(t); let dx=q2.x-q.x, dy=q2.y-q.y;
+    if(r.signed<0){dx=-dx;dy=-dy}
+    const ang=Math.atan2(dy,dx)*180/Math.PI;
+    s+=`<polygon points="-6,-5 6,0 -6,5" transform="translate(${m.x.toFixed(1)} ${m.y.toFixed(1)}) rotate(${ang.toFixed(0)})"><title>${cap1(ln.label)}: ${f0(Math.abs(r.signed))} MW från ${gname(r.signed>=0?ln.a:ln.b)} mot ${gname(r.signed>=0?ln.b:ln.a)}</title></polygon>`;
+  });
+  return s+'</g>';
+}
 function arrowFor(i,signed){
   if(Math.abs(signed)<0.5) return '·';
   const ln=LINES[i]; const a=ctr(ln.a),b=ctr(ln.b); let dx=b.x-a.x,dy=b.y-a.y;
@@ -757,6 +779,7 @@ function renderDiagram(v){
     s+=`<path class="wire ${cls}${ex}${ga&&gPend(ga.until)?' gpend':''}" d="${wirePath(ln)}"/>`;
     if(ga&&ga.rf&&gPend(ga.rf.until)) s+=`<path class="gpendr" d="${wirePath(ln)}"><title>Förstärkning under byggnad, klar ${2026+ga.rf.until}</title></path>`;
   });
+  if(PALON()) s+=flowArrowsSvg(cur);
   if(ws()&&state.game) state.add.filter(a=>gPend(a.until)).forEach(a=>{s+=`<path class="wire gpend" d="${wirePath(a)}"><title>Ny ledning under byggnad, klar ${2026+a.until}</title></path>`});
   const lastC=v.consumers[v.consumers.length-1];
   let anyShare=false;
@@ -852,7 +875,7 @@ function renderDiagram(v){
   const natLeg=(ws()&&state.nat)?`<label class="natchk"><input type="checkbox" data-natvis ${state.natvis?'checked':''}> Visa nätområden</label>`+(state.natvis?natOwners().list.map(o=>`<span><i class="nt" style="border-color:${o[1]};background:${o[1]}22"></i>${o[0]}</span>`).join(''):''):'';
   const bgLeg=ws()?`<label class="natchk"><input type="checkbox" data-bgvis="R" ${state.bgR?'checked':''}> Visa befintligt regionnät med stationer</label> <label class="natchk"><input type="checkbox" data-bgvis="S" ${state.bgS?'checked':''}> Visa befintligt stamnät med stationer</label> <span class="help">(bakgrund, ingår inte i beräkningen)</span>`+((state.bgR||state.bgS)&&state.bg?`<span><i class="stl"></i>Ledningar</span><span>Källa: Lantmäteriet Topografi 50 (CC0). Läge och spänningsklass är ungefärliga.</span>`:''):'';
   const vfLeg=ws()?`<label class="natchk"><input type="checkbox" data-vfvis ${state.vfvis?'checked':''}> Visa Vattenfalls kapacitetskarta (jämförelse)</label>`+(state.vfvis&&state.vf?`<span>Ledig kapacitet för hög elkonsumtion i regionnätsstationer, MW (ungefärligt läge, närliggande stationer ihopslagna, högsta värdet gäller; värden enligt Vattenfalls karta, färg efter klass). Visar bara 70–130 kV-stationer. 50 MW betyder 50 MW eller mer (tills verkliga siffror finns). Källa: Vattenfall Eldistribution.</span>`+VFCOL.map((c,i)=>`<span><i style="background:${c};border:1px solid #1d2b2c;border-radius:50%"></i>${VFLAB[i]} MW</span>`).join(''):''):'';
-  $('#maplegend').innerHTML=bgLeg+natLeg+vfLeg+`<span><i class="ok"></i>20 MW ledigt eller mer</span><span><i class="warn"></i>1–19 MW</span><span><i class="bad"></i>0 MW</span>`+(anyShare?`<span><i class="acc"></i>Vägarna den nya effekten tar (tjockare = större andel)</span>`:'')+(ws()&&state.stamnat?`<span><i class="stl"></i>Stamnätets ledningar (bakgrund)</span>`+(state.stamnat.lines.some((l,i)=>l.v>0&&l.v<200&&!state.add.some(q=>q.gid===i)&&!(state.cov&&state.cov.has(i)))?`<span><i class="stl r"></i>Regionnätsledning, inte med (0 kV, 0 MW)</span><span><i class="stl g"></i>Regionnätsledning med i beräkningen</span>`:'')+(state.stamnat.src==='osm'?`<span>Data: © OpenStreetMap-bidragsgivare (ODbL). Kan vara ofullständig eller felaktig.</span>`:state.stamnat.src==='lm'?`<span>Ledningar och stationer: © Lantmäteriet, Topografi 50 (CC0). Kan vara ofullständigt eller felaktigt (stationer inomhus eller utan karterad byggnad saknas).</span>`:''):'')+(LINES.some(l=>l.up)?`<span><i class="thick"></i>Förstärkt ledning</span>`:'')+((!ws()&&LINES.some(l=>l.added))||(v.pend&&v.pend.type==='add')?`<span><i class="dash"></i>Ny ledning</span>`:'');
+  $('#maplegend').innerHTML=bgLeg+natLeg+vfLeg+(PALON()?`<span><i class="arw"></i>Pil: flödets riktning i värsta fall</span><span>Netto: last minus produktion vid kl ${netHour()} (plus är last, minus är produktion)</span>`:'')+`<span><i class="ok"></i>20 MW ledigt eller mer</span><span><i class="warn"></i>1–19 MW</span><span><i class="bad"></i>0 MW</span>`+(anyShare?`<span><i class="acc"></i>Vägarna den nya effekten tar (tjockare = större andel)</span>`:'')+(ws()&&state.stamnat?`<span><i class="stl"></i>Stamnätets ledningar (bakgrund)</span>`+(state.stamnat.lines.some((l,i)=>l.v>0&&l.v<200&&!state.add.some(q=>q.gid===i)&&!(state.cov&&state.cov.has(i)))?`<span><i class="stl r"></i>Regionnätsledning, inte med (0 kV, 0 MW)</span><span><i class="stl g"></i>Regionnätsledning med i beräkningen</span>`:'')+(state.stamnat.src==='osm'?`<span>Data: © OpenStreetMap-bidragsgivare (ODbL). Kan vara ofullständig eller felaktig.</span>`:state.stamnat.src==='lm'?`<span>Ledningar och stationer: © Lantmäteriet, Topografi 50 (CC0). Kan vara ofullständigt eller felaktigt (stationer inomhus eller utan karterad byggnad saknas).</span>`:''):'')+(LINES.some(l=>l.up)?`<span><i class="thick"></i>Förstärkt ledning</span>`:'')+((!ws()&&LINES.some(l=>l.added))||(v.pend&&v.pend.type==='add')?`<span><i class="dash"></i>Ny ledning</span>`:'');
 }
 
 
@@ -1003,6 +1026,8 @@ function palUnitsSvg(){
   const ANG=[90,30,150,-30,210,-90,0,180], sel=palSelOk();
   for(const id in by){
     if(!L[id]) continue; const c=ctr(id), R=id[0]==='R'?22:34, R0=id[0]==='R'?9:15;
+    const nh=netHour(), nt=netOf(id,nh);
+    if(by[id].length>=2||by[id].some(p=>isGen(p.kind))) s+=`<text class="netl ${nt>0.5?'nl':nt<-0.5?'ng':''}" x="${(c.x-(id[0]==='R'?12:30)).toFixed(1)}" y="${(c.y+4).toFixed(1)}" text-anchor="end"><title>Netto vid kl ${nh}: last minus produktion</title>${Math.abs(nt)<0.5?'netto 0':nt>0?'netto +'+Math.round(nt):'netto −'+Math.round(-nt)}</text>`;
     by[id].forEach((p,i)=>{
       const a=ANG[i%8]*Math.PI/180, rr=R+Math.floor(i/8)*16, x=c.x+rr*Math.cos(a), y=c.y+rr*Math.sin(a), gen=isGen(p.kind), isel=sel&&sel.t==='u'&&sel.id===p.id;
       const sym=`<circle class="uc" r="8.5" fill="#fff" stroke="${gen?'#1f6f3d':'#7a4310'}" stroke-width="1.6"/><g class="gl" transform="scale(.58) translate(-12 -12)">${glyph(p.kind)}</g>`;
