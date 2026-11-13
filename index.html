@@ -84,6 +84,7 @@ svg .mono{font-family:var(--f-mono)}
 .tag.new rect{fill:var(--accent-t);stroke:var(--accent);stroke-width:1.5} .tag.new text{fill:var(--ink)!important}
 .wire{fill:none;stroke-width:3.2;stroke-linejoin:round}
 .startnet{margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pendl text{font-size:10.5px;font-weight:700;fill:#44505f;paint-order:stroke;stroke:#fff;stroke-width:3.5px;stroke-linejoin:round;pointer-events:none}
 .farr polygon{fill:#1b2a41;stroke:#fff;stroke-width:1.4;paint-order:stroke;pointer-events:none}
 .netl{font-size:10px;font-weight:700;fill:#44505f;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round;pointer-events:none}.netl.nl{fill:#7a4310}.netl.ng{fill:#1f6f3d}
 .wire.ok{stroke:var(--ok)} .wire.warn{stroke:var(--warn)} .wire.bad{stroke:var(--bad)}
@@ -421,7 +422,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     <ul>
       <li><b>Förstärk en ledning:</b> välj <i>Flytta/ändra</i>, klicka på ledningen och ändra kV eller MW.</li>
       <li><b>Ny ledning:</b> välj <i>Ledning</i>, ställ in spänning och kapacitet och dra från en station till en annan (eller klicka på två). Ju längre ledning, desto högre reaktans. Mellan två stationer som redan har en ledning går det inte att dra en ny.</li>
-      <li><b>Under spelet</b> kan nätet också byggas ut när en etablering inte ryms: förstärkning tar 3 år och en ny ledning 8 år. Det som är under byggnad visas grått och svagt tills det är klart.</li>
+      <li><b>Under spelet</b> kan nätet också byggas ut när en etablering inte ryms: förstärkning tar 3 år och en ny ledning 8 år. Det som är under byggnad visas grått och svagt, med texten <i>Antal år till färdigställande</i> ovanför ledningen, tills det är klart.</li>
     </ul>
 
     <h3 id="h-workshop">Spelbrickan: bygg ert eget nät</h3>
@@ -460,9 +461,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Siffran för ledig kapacitet och ledningsbelastningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. <i>Simulera nu</i> räknar i stället AC-flöde med Newton-Raphson. Förfrågningar, konkurser och namn slumpas, och väntetiderna 3 och 8 år är påhittade. Kostnader, tillstånd och markintrång ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261225"></script>
-<script src="sim.js?v=20261225"></script>
-<script src="shp.js?v=20261225"></script>
+<script src="map.js?v=20261226"></script>
+<script src="sim.js?v=20261226"></script>
+<script src="shp.js?v=20261226"></script>
 <script>
 
 const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -574,6 +575,17 @@ function netHour(){
 }
 function netOf(id,h){let n=0; state.placed.forEach(p=>{if(p.node!==id) return; const v=p.mw*KINDS[p.kind].profile(h)*(p.flex?FLEXF(h):1); n+=isGen(p.kind)?-v:v}); return n}
 /* riktningspilar på ledningarna: flödets riktning i värsta fall */
+/* text ovanför ledningar som ännu inte är klara: antal år kvar */
+function pendLabelsSvg(){
+  if(!(ws()&&state.game)) return '';
+  let s='<g class="pendl" aria-hidden="true">';
+  state.add.forEach(a=>{
+    const until=gPend(a.until)?a.until:(a.rf&&gPend(a.rf.until)?a.rf.until:0); if(!until) return;
+    const n=until-state.game.round, m=routeOf(a).mid;
+    s+=`<text x="${m.x.toFixed(1)}" y="${(m.y-12).toFixed(1)}" text-anchor="middle">Antal år till färdigställande: ${n}</text>`;
+  });
+  return s+'</g>';
+}
 function flowArrowsSvg(cur){
   let s='<g class="farr" aria-hidden="true">';
   LINES.forEach((ln,i)=>{
@@ -869,6 +881,7 @@ function renderDiagram(v){
         s+=`<circle class="port" data-port="${id}" cx="${px}" cy="${py}" r="6.5"><title>Dra till en annan station för att dra en ny ledning</title></circle>`;
     }
   }
+  s+=pendLabelsSvg();
   if(PALON()) s+=palUnitsSvg();
   zoomClamp();
   $('#diagram').innerHTML=`<svg class="${ZOOM.k>1?'zoomed':''}" viewBox="${ZOOM.x.toFixed(1)} ${ZOOM.y.toFixed(1)} ${(MAP.w/ZOOM.k).toFixed(1)} ${(MAP.h/ZOOM.k).toFixed(1)}" role="group" aria-label="Karta över Uppsala län med ${ws()?'stationer som deltagarna placerar':'åtta kommuner och ett fiktivt regionnät'}">${s}</svg><div class="zoomctl" role="group" aria-label="Zoom"><button type="button" data-zoom="in" aria-label="Zooma in" title="Zooma in">+</button><button type="button" data-zoom="out" aria-label="Zooma ut" title="Zooma ut">−</button><button type="button" data-zoom="reset" aria-label="Återställ zoom" title="Visa hela kartan"${ZOOM.k===1?' disabled':''}>⤢</button></div>`;
