@@ -83,6 +83,7 @@ svg .mono{font-family:var(--f-mono)}
 .tag rect{fill:var(--accent)} .tag text{fill:var(--on-accent)!important;font-weight:600}
 .tag.new rect{fill:var(--accent-t);stroke:var(--accent);stroke-width:1.5} .tag.new text{fill:var(--ink)!important}
 .wire{fill:none;stroke-width:3.2;stroke-linejoin:round}
+.startnet{margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .farr polygon{fill:#1b2a41;stroke:#fff;stroke-width:1.4;paint-order:stroke;pointer-events:none}
 .netl{font-size:10px;font-weight:700;fill:#44505f;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round;pointer-events:none}.netl.nl{fill:#7a4310}.netl.ng{fill:#1f6f3d}
 .wire.ok{stroke:var(--ok)} .wire.warn{stroke:var(--warn)} .wire.bad{stroke:var(--bad)}
@@ -424,7 +425,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     </ul>
 
     <h3 id="h-workshop">Spelbrickan: bygg ert eget nät</h3>
-    <p>Kartan är tom från början. För att komma igång snabbt finns tre färdiga, maskade startnät (litet, mellanstort och stort) under <i>Startnät</i> i spelbrickan, med stationer, ledningar och kommunlaster. Ledningarna är belastade till 50–90 % av sin kapacitet vid start, och ni kan ändra allt efteråt. Att byta nät ersätter det ni har, så spara spelet först om ni vill behålla det. Spelbrickan innehåller alla symboler: klicka på en symbol, ställ in parametrarna och klicka eller dra ut den på kartan.</p>
+    <p>Kartan är tom från början. För att komma igång snabbt finns tre färdiga, maskade startnät (litet, mellanstort och stort) under <i>Börja från</i> i rutan överst på sidan, med stationer, ledningar och kommunlaster. Ledningarna är belastade till 50–90 % av sin kapacitet vid start, och ni kan ändra allt efteråt. Att byta nät ersätter det ni har, så spara spelet först om ni vill behålla det. Spelbrickan innehåller alla symboler: klicka på en symbol, ställ in parametrarna och klicka eller dra ut den på kartan.</p>
     <ol>
       <li><b>Stationer:</b> <i>Stamnät</i> där stamnätet kommer in (högst 12), <i>Region</i> för regionnätsstationer (en eller flera i varje kommun, högst 40) och <i>Utanför länet</i> för en anslutning till ett starkt nät utanför länsgränsen (högst åtta). Stationer får placeras även utanför länet. En station har ingen last eller produktion förrän ni ansluter en.</li>
       <li><b>Ledningar:</b> välj <i>Ledning</i>, ställ in kV och MW och dra mellan två stationer. Stamnätet och anslutningarna utanför länet kopplas inte ihop med varandra. Kopplingen mellan en station och dess last eller produktion har ingen resistans, reaktans eller kapacitans.</li>
@@ -459,9 +460,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Siffran för ledig kapacitet och ledningsbelastningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. <i>Simulera nu</i> räknar i stället AC-flöde med Newton-Raphson. Förfrågningar, konkurser och namn slumpas, och väntetiderna 3 och 8 år är påhittade. Kostnader, tillstånd och markintrång ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261223"></script>
-<script src="sim.js?v=20261223"></script>
-<script src="shp.js?v=20261223"></script>
+<script src="map.js?v=20261224"></script>
+<script src="sim.js?v=20261224"></script>
+<script src="shp.js?v=20261224"></script>
 <script>
 
 const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
@@ -496,7 +497,7 @@ const MISSIONS = [
       {label:'Älvkarleby har minst 40 MW ledigt för produktion', test:m=>m.mineI>=40}]}
 ];
 MISSIONS.push({title:'Bygg ert eget regionnät', short:'Blank karta', mine:null, metric:null, goal:null, ws:true,
-    text:'Kartan är tom från början, men under Startnät i spelbrickan finns tre färdiga, maskade nät (litet, mellanstort och stort) att börja från. Där är ledningarnas belastning 50–90 % vid start. Annars: välj en symbol i spelbrickan, ställ in parametrarna (effekt, spänning, kapacitet) och klicka eller dra ut den på kartan. Placera stamnätsstationer (där stamnätet kommer in), regionnätsstationer och anslutningar utanför länet, en eller flera i varje kommun, och dra ledningar mellan dem. Stationerna har ingen last eller produktion förrän ni ansluter en kommunlast, en verksamhet (datacenter med mera) eller en produktion, och varje last eller produktion hör till en station. Allt går att flytta och ta bort. Det befintliga nätet kan tändas som ett grått bakgrundslager under kartan som stöd, men det ingår inte i beräkningen. Knappen Simulera nu under kartan räknar spänningar och reaktiv effekt med Newton-Raphson. Kapacitet, last och produktion är påhittade.', queue:null, goals:[]});
+    text:'Kartan är tom från början, men med knapparna Börja från nedan kan ni starta från ett av tre färdiga, maskade nät (litet, mellanstort eller stort). Där är ledningarnas belastning 50–90 % vid start. Annars: välj en symbol i spelbrickan, ställ in parametrarna (effekt, spänning, kapacitet) och klicka eller dra ut den på kartan. Placera stamnätsstationer (där stamnätet kommer in), regionnätsstationer och anslutningar utanför länet, en eller flera i varje kommun, och dra ledningar mellan dem. Stationerna har ingen last eller produktion förrän ni ansluter en kommunlast, en verksamhet (datacenter med mera) eller en produktion, och varje last eller produktion hör till en station. Allt går att flytta och ta bort. Det befintliga nätet kan tändas som ett grått bakgrundslager under kartan som stöd, men det ingår inte i beräkningen. Knappen Simulera nu under kartan räknar spänningar och reaktiv effekt med Newton-Raphson. Kapacitet, last och produktion är påhittade.', queue:null, goals:[]});
 MISSIONS.push({title:'Befintligt nät: en stor förbrukare', short:'Befintligt nät', mine:null, metric:'U', goal:null, ws:true, scen:'heby',
     text:'Regionnätet i Uppsala län är förladdat med stationer och ledningar på ungefärliga verkliga lägen. Välj först er station, sedan en etablering (förvalt datacenter, 40 MW), och klicka på en regionnätsstation på kartan. Tabellen under kartan visar hur lediga kapaciteten ändras i de andra regionnätsstationerna, grupperade per kommun. De blåmarkerade ledningarna på kartan är de vägar den nya effekten tar genom nätet. Effekten delar sig mellan parallella vägar efter ledningarnas reaktans, och ju tjockare markering, desto större andel av effekten går den vägen. Prova andra stationer och storlekar, eller förstärk en ledning, och se vad som händer. Ledningarnas kapacitet (100 MW), stationernas last (schablon) och allt annat är påhittat tills nätägarens siffror finns.', queue:null, goals:[]});
 /* Det förladdade nätet (Lantmäteriet/Vattenfall) är avstängt som beräkningsunderlag: spelarna bygger nätet själva. Sätt EXISTING_NET=true för att åter visa läget "Befintligt nät" och knapparna för att ladda stamnät/regionnät. */
@@ -987,8 +988,7 @@ function renderPal(){
   const grp=(t,items)=>`<div class="palgrp"><b>${t}</b><div class="palbtns">${items.join('')}</div></div>`;
   const T=pal.tool, U=pal.unit;
   $('#pal').innerHTML=
-    grp('Startnät',[`<button type="button" class="palb" data-pal="scen:blank" aria-pressed="${pal.confirmScen==='scen:blank'}" title="Börja med en tom karta"><span>Blank karta</span></button>`,...SCENARIOS.map((sc,i)=>`<button type="button" class="palb" data-pal="scen:${i}" aria-pressed="${pal.confirmScen==='scen:'+i}" title="${sc.name}: ${sc.g.length} stamnätsstationer, ${sc.ext.length} anslutningar utanför länet, ${sc.rst.length} regionnätsstationer, ${sc.add.length} ledningar"><span>${sc.name}</span></button>`)])
-   +grp('Station',[btn('g','Stamnät',PALSYM.g,T==='g'),btn('r','Region',PALSYM.r,T==='r'),btn('x','Utanför länet',PALSYM.x,T==='x')])
+    grp('Station',[btn('g','Stamnät',PALSYM.g,T==='g'),btn('r','Region',PALSYM.r,T==='r'),btn('x','Utanför länet',PALSYM.x,T==='x')])
    +grp('Ledning',[btn('line','Ledning',PALSYM.line,T==='line')])
    +grp('Last',PAL_LOADS.map(k=>btn('unit:'+k,KINDS[k].name,palGlyph(k),T==='unit'&&U===k)))
    +grp('Produktion',PAL_GENS.map(k=>btn('unit:'+k,KINDS[k].name,palGlyph(k),T==='unit'&&U===k)))
@@ -1143,6 +1143,7 @@ function palUp(e,cancel){
 }
 window.addEventListener('pointerup',e=>palUp(e,false));
 window.addEventListener('pointercancel',e=>palUp(e,true));
+$('#missionbody').addEventListener('click',e=>{const b=e.target.closest('[data-scen]'); if(b){palScenario('scen:'+b.dataset.scen); render()}});
 $('#palbox').addEventListener('click',e=>{
   const b=e.target.closest('[data-pal]'); if(b){palPick(b.dataset.pal); render(); return}
   const ps=e.target.closest('[data-pset]'); if(ps){const [k,v]=ps.dataset.pset.split(':'); pal[k]=+v; render(); return}
@@ -1823,6 +1824,10 @@ function renderMission(v){
       const all=M.goals.every(g=>g.test(m));
       mb+=`<p class="verdict ${all?'yes':'no'}">${all?'Uppdraget är klart. Prova gärna en annan lösning och jämför.':'Inte i mål än. Prova en annan placering eller en annan åtgärd i nätet.'}</p>`;
     }
+  }
+  if(PALON()){
+    mb+=`<div class="startnet"><b>Börja från:</b> <span class="seg" role="group" aria-label="Startnät"><button type="button" data-scen="blank" aria-pressed="${pal.confirmScen==='scen:blank'}" title="Börja med en tom karta">Blank karta</button>${SCENARIOS.map((sc,i)=>`<button type="button" data-scen="${i}" aria-pressed="${pal.confirmScen==='scen:'+i}" title="${sc.name}: ${sc.g.length} stamnätsstationer, ${sc.ext.length} anslutningar utanför länet, ${sc.rst.length} regionnätsstationer, ${sc.add.length} ledningar">${sc.name}</button>`).join('')}</span></div>`;
+    if(pal.confirmScen&&pal.msg) mb+=`<p class="alert" role="status">${pal.msg}</p>`;
   }
   $('#missionbody').innerHTML=mb;
 }
