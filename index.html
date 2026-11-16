@@ -413,7 +413,7 @@ dialog#help[open]{display:flex;flex-direction:column}
 
     <h3 id="h-placera">Placera last och produktion</h3>
     <ol>
-      <li>Välj en symbol under <i>Last</i> (kommunlast, datacenter, batterifabrik, elektrolysör, laddhubb) eller <i>Produktion</i> (vindpark, solpark) i spelbrickan till höger om kartan.</li>
+      <li>Välj en symbol under <i>Last</i> (kommunlast, datacenter, batterifabrik, elektrolysör, laddhubb) eller <i>Produktion</i> (vindpark, solpark, kraftvärme) i spelbrickan till höger om kartan.</li>
       <li>Ställ in effekten (MW). <i>Flexibel last</i> sänker lasten till 25 % klockan 16–20, när nätet är som mest belastat.</li>
       <li>Klicka på en regionnätsstation. Varje last eller produktion hör till en station, men flera kan höra till samma station. Dra symbolen till en annan station för att flytta den, eller välj <i>Ta bort</i>.</li>
     </ol>
@@ -461,12 +461,12 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Siffran för ledig kapacitet och ledningsbelastningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. <i>Simulera nu</i> räknar i stället AC-flöde med Newton-Raphson. Förfrågningar, konkurser och namn slumpas, och väntetiderna 3 och 8 år är påhittade. Kostnader, tillstånd och markintrång ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261227"></script>
-<script src="sim.js?v=20261227"></script>
-<script src="shp.js?v=20261227"></script>
+<script src="map.js?v=20261229"></script>
+<script src="sim.js?v=20261229"></script>
+<script src="shp.js?v=20261229"></script>
 <script>
 
-const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark'};
+const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark',kv:'Ett kraftvärmeverk'};
 const MET = {U:{key:'availU',bind:'bindU',word:'förbrukning'},I:{key:'availI',bind:'bindI',word:'produktion'}};
 const MISSIONS = [
   {title:'Prova själv', short:'Prova själv', mine:null, metric:null, goal:null,
@@ -938,7 +938,7 @@ function renderNR(){
 
 
 /* ---------- Spelbricka: symboler, parametrar, placera, flytta, ta bort ---------- */
-const PAL_LOADS=['kommun','dc','batt','h2','ladd'], PAL_GENS=['vind','sol'];
+const PAL_LOADS=['kommun','dc','batt','h2','ladd'], PAL_GENS=['vind','sol','kv'];
 const pal={confirmScen:null,tool:'g',unit:'kommun',mw:30,kv:70,cap:100,flex:false,from:null,msg:'',sel:null};
 const PALSYM={
   move:'<path d="M8 3 L8 21 L12.5 16.5 L16 24 L19 22.5 L15.5 15.5 L22 15.5 Z" fill="#fff" stroke="#1d2b2c" stroke-width="1.8" stroke-linejoin="round"/>',
@@ -961,6 +961,7 @@ function glyph(kind){
     h2:`<path d="M12 2.5 C12 2.5 5 10.5 5 15 a7 7 0 0 0 14 0 C19 10.5 12 2.5 12 2.5 Z" ${A}/><text x="12" y="17.6" text-anchor="middle" font-size="7.5" font-weight="700" fill="#fff" stroke="none" style="paint-order:normal">H₂</text>`,
     ladd:`<rect x="5" y="3.5" width="10" height="17" rx="2" ${A}/><rect x="7" y="6" width="6" height="4" rx=".6" ${W}/><path d="M10.5 11.5 L8.6 15 H10.3 L9.6 18 L12.6 14 H10.9 Z" ${W}/><path d="M15 9 C19 9 18.5 15.5 21.5 15.5" fill="none" stroke="${st}" stroke-width="1.6" stroke-linecap="round"/>`,
     vind:`<path d="M12 12 V21.5" stroke="${st}" stroke-width="2" stroke-linecap="round"/><path d="M12 12 L12 3 M12 12 L19.8 16.5 M12 12 L4.2 16.5" stroke="${st}" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="12" r="2" ${A}/>`,
+    kv:`<path d="M3.5 20.5 V12.5 L9 9.5 V12.5 L14 9.5 V20.5 Z" ${A}/><rect x="15.5" y="6" width="4" height="14.5" ${A}/><path d="M17.5 4.5 C15.5 3 18.5 2 17.5 0.8" fill="none" stroke="${st}" stroke-width="1.4" stroke-linecap="round"/><rect x="5.5" y="14.5" width="2" height="2.5" ${W}/><rect x="9.5" y="14.5" width="2" height="2.5" ${W}/>`,
     sol:`<circle cx="12" cy="12" r="4.5" ${A}/><path d="M12 2.5 V5.5 M12 18.5 V21.5 M2.5 12 H5.5 M18.5 12 H21.5 M5.3 5.3 L7.4 7.4 M16.6 16.6 L18.7 18.7 M5.3 18.7 L7.4 16.6 M16.6 7.4 L18.7 5.3" stroke="${st}" stroke-width="1.8" stroke-linecap="round"/>`
   };
   return g[kind]||g.dc;

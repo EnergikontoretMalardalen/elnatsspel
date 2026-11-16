@@ -17,7 +17,8 @@ const KINDS = {
   h2:   {type:'load', name:'Elektrolysör',  short:'H₂',     desc:'Jämn, kan styras',  mw:45, profile:h=>1},
   ladd: {type:'load', name:'Laddhubb',      short:'Ladd',   desc:'Mest nattetid',     mw:25, profile:h=>0.35+0.65*Math.exp(-Math.pow(cyc(h,2)/3.5,2))},
   vind: {type:'gen',  name:'Vindpark',      short:'Vind',   desc:'Mest natt och kväll',mw:50, profile:h=>0.50+0.38*bump(h,2,6)+0.12*bump(h,22,3)},
-  sol:  {type:'gen',  name:'Solpark',       short:'Sol',    desc:'Dagtid, sommar',    mw:30, profile:h=>0.95*bump(h,12.5,3.3)}
+  sol:  {type:'gen',  name:'Solpark',       short:'Sol',    desc:'Dagtid, sommar',    mw:30, profile:h=>0.95*bump(h,12.5,3.3)},
+  kv:   {type:'gen',  name:'Kraftvärme',    short:'KVV',    desc:'Jämn produktion dygnet runt', mw:40, profile:h=>1}
 };
 const isGen = k=>KINDS[k].type==='gen';
 const inFlex = h=>h>=16&&h<=20;
