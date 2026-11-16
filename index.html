@@ -461,9 +461,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Siffran för ledig kapacitet och ledningsbelastningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. <i>Simulera nu</i> räknar i stället AC-flöde med Newton-Raphson. Förfrågningar, konkurser och namn slumpas, och väntetiderna 3 och 8 år är påhittade. Kostnader, tillstånd och markintrång ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261228"></script>
-<script src="sim.js?v=20261228"></script>
-<script src="shp.js?v=20261228"></script>
+<script src="map.js?v=20261229"></script>
+<script src="sim.js?v=20261229"></script>
+<script src="shp.js?v=20261229"></script>
 <script>
 
 const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark',kv:'Ett kraftvärmeverk'};
@@ -1188,7 +1188,7 @@ document.addEventListener('keydown',e=>{
 /* ---------- Förfrågningsspelet: slumpade förfrågningar till länets kommuner ---------- */
 const GAME_TOTAL=14, GAME_MAX=24;   /* antal år (steg): 2027–2040, och efter det kan spelet förlängas till 2050 */
 const gTot=()=>(state.game&&state.game.total)||GAME_TOTAL;
-const GAME_OPTS=[['dc',[40,60,80]],['batt',[30,50,70]],['h2',[40,60]],['ladd',[15,25,35]],['vind',[40,60,90]],['sol',[20,30,50]],['kv',[20,40,60]]];
+const GAME_OPTS=[['dc',[40,60,80]],['batt',[30,50,70]],['h2',[40,60]],['ladd',[15,25,35]],['vind',[40,60,90]],['sol',[20,30,50]]];
 const GAME_SRC=['Ett utländskt bolag','Ett lokalt industriföretag','En energikoncern','Ett logistikföretag','Ett nystartat teknikbolag','Ett kommunalt bolag'];
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 function gameKommuner(){const m={}; for(const n of VL()) if(n.id[0]==='R'&&stObj(n.id)&&isLoadR(stObj(n.id))){const k=n.desc||'Utanför länet'; (m[k]=m[k]||[]).push(n.id)} return m}
