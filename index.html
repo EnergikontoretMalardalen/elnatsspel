@@ -435,7 +435,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     </ol>
 
     <h3 id="h-spel">Förfrågningsspelet</h3>
-    <p>När nätet är byggt startar <b>Starta förfrågningarna</b>. Spelet går från 2027 till 2040, ett år per steg. Ni väljer själva när ni går vidare till nästa år. Varje år slumpas ett av tre utfall: ingenting händer, en ny förfrågan till en kommun eller att en fabrik går i konkurs och frigör några MW.</p>
+    <p>När nätet är byggt startar <b>Starta förfrågningarna</b>. Spelet går från 2027 till 2040, ett år per steg. Ni väljer själva när ni går vidare till nästa år. Varje år slumpas ett av tre utfall: ingenting händer, en ny förfrågan till en kommun eller att en fabrik går i konkurs och frigör några MW. Ibland vill ett datacenter i stället köpa effekt genom att lägga ned en fabrik (högst 20 % av kommunlasten i stationen) och ta över dess abonnemang. Då väljs ingen station, och ni avgör bara om nätet klarar bytet, eftersom datacentret har jämn last dygnet runt.</p>
     <ul>
       <li><b>Förfrågan:</b> till exempel ett datacenter på 60 MW i Heby. Prata med grannkommunerna, välj station (i kommunen som fick förfrågan eller i en annan) och klicka <i>Godkänn här</i>, eller <i>Avslå</i>. Raden under visar hur lediga MW ändras i varje kommun.</li>
       <li><b>Två samtidigt:</b> ibland kommer två förfrågningar samma år. Ni väljer vilken ni behandlar först, och den som godkänns först tar kapacitet från den andra.</li>
@@ -461,9 +461,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Siffran för ledig kapacitet och ledningsbelastningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. <i>Simulera nu</i> räknar i stället AC-flöde med Newton-Raphson. Förfrågningar, konkurser och namn slumpas, och väntetiderna 3 och 8 år är påhittade. Kostnader, tillstånd och markintrång ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20261231"></script>
-<script src="sim.js?v=20261231"></script>
-<script src="shp.js?v=20261231"></script>
+<script src="map.js?v=20270102"></script>
+<script src="sim.js?v=20270102"></script>
+<script src="shp.js?v=20270102"></script>
 <script>
 
 const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark',kv:'Ett kraftvärmeverk'};
@@ -1194,7 +1194,25 @@ const rnd=a=>a[Math.floor(Math.random()*a.length)];
 function gameKommuner(){const m={}; for(const n of VL()) if(n.id[0]==='R'&&stObj(n.id)&&isLoadR(stObj(n.id))){const k=n.desc||'Utanför länet'; (m[k]=m[k]||[]).push(n.id)} return m}
 function gameCanStart(){return Object.keys(gameKommuner()).length>0&&state.add.length>0}
 const GAME_COMP=0.3;   /* sannolikhet för två förfrågningar samma år */
-function gameSetReq(i){const g=state.game, r=g.reqs[i]; g.req=r; g.pend=null; state.sel=null; state.kind=r.kind; state.mw=r.mw; state.flex=false; state.metric=isGen(r.kind)?'I':'U'}
+const GAME_SWAP=0.2;   /* sannolikhet att en förfrågan är ett datacenter som tar över en fabriks abonnemang */
+/* datacenter som köper N MW genom att lägga ned en fabrik (en del av kommunlasten, högst 20 %) och ta över dess abonnemang i samma station */
+function gameSwapReq(host){
+  const cand=[];
+  for(const id of (gameKommuner()[host]||[])) for(const u of state.placed) if(u.node===id&&u.kind==='kommun'&&!gPend(u.until)&&Math.floor(u.mw*0.2)>=2) cand.push({id,u});
+  if(!cand.length) return null;
+  const c=rnd(cand), mx=Math.floor(c.u.mw*0.2), mn=Math.max(2,Math.ceil(c.u.mw*0.05)), mw=mn+Math.floor(Math.random()*(mx-mn+1));
+  return {kind:'dc',mw,host,from:'Ett datacenter',swap:{node:c.id,unit:c.u.id,fab:rnd(GAME_FAB)}};
+}
+/* belastningen efter bytet: fabriken minskar och datacentret tillkommer i samma station */
+function gameSwapPlaced(r){
+  const out=state.placed.map(p=>p.id===r.swap.unit?{...p,mw:p.mw-r.mw}:p);
+  out.push({id:0,kind:'dc',mw:r.mw,flex:false,node:r.swap.node}); return out;
+}
+function gameSwapFits(r){
+  const net=gameNet(), over=pl=>{const x=compute(pl,state.mode,state.hour,state.crit,net); return new Set(x.lines.map((l,i)=>l.flow>l.cap+0.05?i:-1).filter(i=>i>=0))};
+  const b=over(state.placed); for(const i of over(gameSwapPlaced(r))) if(!b.has(i)) return false; return true;
+}
+function gameSetReq(i){const g=state.game, r=g.reqs[i]; g.req=r; g.pend=null; state.sel=null;   /* vid byte styrs stationen av fabriken */ state.kind=r.kind; state.mw=r.mw; state.flex=false; state.metric=isGen(r.kind)?'I':'U'}
 function gameNext(){
   const g=state.game, km=Object.keys(gameKommuner()); if(!km.length) return;
   g.req=null; g.evt=null; state.sel=null;
@@ -1204,7 +1222,8 @@ function gameNext(){
   if(type==='req'){
     const last=g.log.length?g.log[g.log.length-1].host:null;
     const host=rnd(km.length>1?km.filter(k=>k!==last):km), [kind,mws]=rnd(GAME_OPTS), mw=rnd(mws);
-    g.reqs=[{kind,mw,host,from:rnd(GAME_SRC)}];
+    const sw=Math.random()<GAME_SWAP?gameSwapReq(host):null;
+    g.reqs=[sw||{kind,mw,host,from:rnd(GAME_SRC)}];
     /* ibland kommer en andra förfrågan samma år (från ett steg 2): då konkurrerar de om samma kapacitet */
     if(g.round>=2&&km.length>1&&Math.random()<GAME_COMP){
       const [k2,m2]=rnd(GAME_OPTS); g.reqs.push({kind:k2,mw:rnd(m2),host:rnd(km.filter(k=>k!==host)),from:rnd(GAME_SRC)});
@@ -1289,8 +1308,14 @@ function gameAfter(){
 }
 function gameDecide(ok,measure){
   const g=state.game; if(!g||!g.req) return;
-  const r=g.req, rec={round:g.round,kind:r.kind,mw:r.mw,host:r.host,ok,years:0,comp:!!r.comp};
-  if(ok){
+  const r=g.req, rec={round:g.round,kind:r.kind,mw:r.mw,host:r.host,ok,years:0,comp:!!r.comp,fab:r.swap?r.swap.fab:null};
+  if(ok&&r.swap){
+    if(!gameSwapFits(r)) return;
+    const node=r.swap.node; rec.swap=r.swap.fab; rec.fit=true; rec.node=node; rec.kommun=(byId[node]&&byId[node].desc)||'Utanför länet'; rec.hit=[];
+    const u=state.placed.find(p=>p.id===r.swap.unit); if(u){u.mw-=r.mw; if(u.mw<=0) state.placed=state.placed.filter(p=>p!==u)}
+    state.placed.push({id:state.uid++,kind:'dc',mw:r.mw,flex:false,node,until:0});
+    rec.left=gameAfter();
+  } else if(ok){
     if(!state.sel) return;
     const node=state.sel, ref0=gameRef(), fit=val(ref0,node)>=r.mw;
     if(!fit&&!measure){g.pend={node}; render(); return}
@@ -1313,9 +1338,9 @@ function gameDecide(ok,measure){
   render();
 }
 function gameLastHtml(rec){
-  if(!rec||!rec.ok) return rec?`<p class="gres">Förra beslutet: avslog ${KINDS[rec.kind].name.toLowerCase()} ${rec.mw} MW i ${rec.host}.</p>`:'';
+  if(!rec||!rec.ok) return rec?`<p class="gres">Förra beslutet: avslog ${KINDS[rec.kind].name.toLowerCase()} ${rec.mw} MW i ${rec.host}${rec.fab?' (som skulle ersätta fabrik '+rec.fab+')':''}.</p>`:'';
   const nm=id=>sname(id), ln=c=>`${nm(c.a)}–${nm(c.b)}`;
-  let t=`Förra beslutet: godkände ${KINDS[rec.kind].name.toLowerCase()} ${rec.mw} MW i ${nm(rec.node)}.`;
+  let t=`Förra beslutet: godkände ${KINDS[rec.kind].name.toLowerCase()} ${rec.mw} MW i ${nm(rec.node)}${rec.swap?', som ersatte fabrik '+rec.swap+' (nedlagd)':''}.`;
   if(rec.measure==='up') t+=` Elnätet var överbelastat, så ni spänningshöjde ${rec.changes.length?rec.changes.map(c=>`${ln(c)} från ${c.kvFrom} till ${c.kvTo} kV (${c.from} till ${c.to} MW)`).join(', '):'inget, eftersom den begränsande ledningen inte går att spänningshöja'} (${rec.years} år att bygga, klart ${2026+rec.until}).${rec.solved?'':' Det räckte inte helt, nätet är fortfarande begränsat.'}`;
   else if(rec.measure==='line') t+=` Elnätet var överbelastat, så ni byggde en ny ledning ${rec.newLine?ln(rec.newLine)+' ('+rec.newLine.cap+' MW, 130 kV)':''} (${rec.years} år att bygga, klart ${2026+rec.until}).${rec.solved?'':' Det räckte inte helt, nätet är fortfarande begränsat.'}`;
   if(rec.measure) t+=' Etableringen och åtgärden visas grå och svagt på kartan tills de är klara.';
@@ -1341,7 +1366,7 @@ function renderGame(v){
   const okN=g.log.filter(x=>x.ok), noFit=okN.filter(x=>!x.fit).length, hits=okN.filter(x=>x.hit&&x.hit.length).length;
   const score=`<div class="gscore"><span><b>${okN.length}</b> godkända (${okN.reduce((a,x)=>a+x.mw,0)} MW)</span><span><b>${g.log.length-okN.length}</b> avslagna</span><span><b>${hits}</b> tog kapacitet från en annan kommun</span><span><b>${noFit}</b> kräver spänningshöjning eller ny ledning</span><span><b>${g.log.reduce((a,x)=>a+(x.years||0),0)}</b> års väntetid för nätbygge</span>${g.quiet?`<span><b>${g.quiet}</b> år utan händelser</span>`:''}</div>`;
   if(g.round>gTot()){
-    const hist=g.log.map(x=>`<li>År ${2026+x.round}: ${KINDS[x.kind].name} ${x.mw} MW i ${x.host}.${x.comp?' (en av två förfrågningar samma år)':''} ${x.ok?`Godkänd i ${x.kommun}${x.kommun!==x.host?' (flyttad från '+x.host+')':''}.${x.fit?'':(x.measure==='up'?` Spänningshöjde ledning (${x.years} år).`:x.measure==='line'?` Byggde ny ledning (${x.years} år).`:' Nätet klarade den inte utan åtgärd.')}${x.hit&&x.hit.length?' Tog kapacitet från '+x.hit.join(', ')+'.':''}`:'Avslagen.'}</li>`).join('');
+    const hist=g.log.map(x=>`<li>År ${2026+x.round}: ${KINDS[x.kind].name} ${x.mw} MW i ${x.host}${x.fab?' (tar över fabrik '+x.fab+'s abonnemang)':''}.${x.comp?' (en av två förfrågningar samma år)':''} ${x.ok?`Godkänd i ${x.kommun}${x.kommun!==x.host?' (flyttad från '+x.host+')':''}.${x.fit?'':(x.measure==='up'?` Spänningshöjde ledning (${x.years} år).`:x.measure==='line'?` Byggde ny ledning (${x.years} år).`:' Nätet klarade den inte utan åtgärd.')}${x.hit&&x.hit.length?' Tog kapacitet från '+x.hit.join(', ')+'.':''}`:'Avslagen.'}</li>`).join('');
     body.innerHTML=`<p class="headline" style="font-size:16px;margin:0 0 6px">${gTot()} år har gått, till och med ${2026+gTot()}.</p>${gameLastHtml(g.last)}${score}<ul class="placed" style="margin-top:8px">${hist}</ul>${(g.events&&g.events.length)?`<p class="help"><b>Händelser:</b> ${g.events.map(x=>`år ${2026+x.round}: ${x.text}`).join(' ')}</p>`:''}<p class="help">Diskutera: Vilka beslut gav bäst helhet för länet? Var skulle en dialog med grannkommunen ha ändrat placeringen? Hur prioriterade ni när två förfrågningar kom samma år? Vad skulle nätbolaget behöva bygga för att fler etableringar ska få plats?</p><div class="bact">${gTot()<GAME_MAX?`<button class="primary" type="button" data-gact="more">Fortsätt till ${2026+GAME_MAX}</button>`:''}<button${gTot()<GAME_MAX?'':' class="primary"'} type="button" data-gact="start">Spela igen</button><button type="button" data-gact="end">Avsluta</button></div>`;
     return;
   }
@@ -1351,9 +1376,17 @@ function renderGame(v){
     return;
   }
   const r=g.req, k=KINDS[r.kind], ref=gameRef(), sel=state.sel;
-  let h=gameLastHtml(g.last)+dlyHtml(g)+(g.evt?`<div class="alert" role="status"><b>Händelse:</b> ${g.evt.text}</div>`:'')+`<div class="greq"><small>År ${2026+g.round} · steg ${g.round} av ${gTot()} · ny förfrågan${(g.reqs||[]).length>1?' (1 av 2)':g.reqs&&g.reqs.length===1&&r.comp?' (2 av 2)':''}</small><div class="headline" style="font-size:17px;margin:2px 0">${r.host}: ${r.from} vill ${isGen(r.kind)?'ansluta':'etablera'} ${ART[r.kind].toLowerCase()} på ${r.mw} MW</div><small>${k.desc}. Det är ${isGen(r.kind)?'produktion, så det som räknas är hur mycket produktion nätet tar emot':'förbrukning, så det som räknas är hur mycket last nätet klarar'}.</small></div>${score}
+  let h=gameLastHtml(g.last)+dlyHtml(g)+(g.evt?`<div class="alert" role="status"><b>Händelse:</b> ${g.evt.text}</div>`:'')+`<div class="greq"><small>År ${2026+g.round} · steg ${g.round} av ${gTot()} · ny förfrågan${(g.reqs||[]).length>1?' (1 av 2)':g.reqs&&g.reqs.length===1&&r.comp?' (2 av 2)':''}</small><div class="headline" style="font-size:17px;margin:2px 0">${r.host}: ${r.from} ${r.swap?`vill köpa ${r.mw} MW genom att lägga ned fabrik ${r.swap.fab} och ta över deras abonnemang`:`vill ${isGen(r.kind)?'ansluta':'etablera'} ${ART[r.kind].toLowerCase()} på ${r.mw} MW`}</div><small>${r.swap?`Fabriken är en del av kommunlasten i ${sname(r.swap.node)}. Datacentret får samma anslutningspunkt, så stationen väljs inte. Datacentret har jämn last dygnet runt, fabriken följer vanlig kommunlast.`:`${k.desc}. Det är ${isGen(r.kind)?'produktion, så det som räknas är hur mycket produktion nätet tar emot':'förbrukning, så det som räknas är hur mycket last nätet klarar'}.`} Det är ${isGen(r.kind)?'produktion, så det som räknas är hur mycket produktion nätet tar emot':'förbrukning, så det som räknas är hur mycket last nätet klarar'}.</small></div>${score}
     ${gamePendHtml()}${(g.reqs||[]).length>1?`<div class="alert" role="status"><b>Två förfrågningar kom samma år.</b> Kapaciteten kanske inte räcker till båda, så den ni godkänner först tar plats från den andra. Prata med varandra och välj vilken ni behandlar först:</div><div class="bact">${g.reqs.map((q,i)=>`<button type="button" data-gpick="${i}" aria-pressed="${g.req===q}" class="${g.req===q?'primary':''}">${q.host}: ${KINDS[q.kind].name.toLowerCase()} ${q.mw} MW</button>`).join('')}</div>`:r.comp?`<p class="help">Den andra förfrågningen samma år. Kapaciteten räknas efter ert förra beslut.</p>`:''}<p class="help">Prata med grannkommunerna och välj sedan station. Ni kan godkänna den i ${r.host}, föreslå en annan kommun eller avslå. Siffran är lediga MW i stationen just nu.</p><div class="gst">`;
-  h+=Object.keys(kk).sort((a,b)=>a.localeCompare(b)).map(km=>`<div class="gk"><b>${km}${km===r.host?' (förfrågan kom hit)':''}</b>${kk[km].map(id=>{const a=val(ref,id); return `<button type="button" data-gsel="${id}" aria-pressed="${sel===id}" class="${a>=r.mw?'ok':a>0?'warn':'bad'}">${sname(id)}<small>${a} MW ledigt</small></button>`}).join('')}</div>`).join('')+`</div>`;
+  if(!r.swap) h+=Object.keys(kk).sort((a,b)=>a.localeCompare(b)).map(km=>`<div class="gk"><b>${km}${km===r.host?' (förfrågan kom hit)':''}</b>${kk[km].map(id=>{const a=val(ref,id); return `<button type="button" data-gsel="${id}" aria-pressed="${sel===id}" class="${a>=r.mw?'ok':a>0?'warn':'bad'}">${sname(id)}<small>${a} MW ledigt</small></button>`}).join('')}</div>`).join('')+`</div>`; else h+='</div>';
+  if(r.swap){
+    const fits=gameSwapFits(r), aft=compute(gameSwapPlaced(r),state.mode,state.hour,state.crit,gameNet()), g2={};
+    for(const n of VL()){const kn=n.desc||'Utanför länet'; (g2[kn]=g2[kn]||[]).push(val(aft,n.id)-val(ref,n.id))}
+    const rows=Object.keys(g2).map(kn=>({kn,d:Math.min(...g2[kn])})).filter(x=>x.d!==0).sort((a,b)=>a.d-b.d);
+    h+=`<div class="gres"><b>Byte i ${sname(r.swap.node)}:</b> ${fits?'nätet klarar bytet':'bytet överbelastar nätet, eftersom datacentret har jämn last dygnet runt medan fabriken inte har det. Det går inte att godkänna utan nätförstärkning, så avslå eller välj något annat'}. ${rows.length?`Ändring i lediga MW per kommun: ${rows.map(x=>`<span class="${x.d<0?'neg':'pos'}">${x.kn} ${x.d>0?'+':''}${x.d}</span>`).join(' · ')}.`:'Ingen märkbar ändring i lediga MW.'}</div>`;
+    h+=`<div class="bact"><button class="primary" type="button" data-gact="ok" ${fits?'':'disabled'}>Godkänn bytet</button><button type="button" data-gact="no">Avslå</button><button type="button" data-gact="end">Avsluta spelet</button></div>`;
+    body.innerHTML=h; return;
+  }
   if(sel&&byId[sel]){
     const after=v.cur, g2={};
     for(const n of VL()){const kn=n.desc||'Utanför länet'; (g2[kn]=g2[kn]||[]).push(val(after,n.id)-val(ref,n.id))}
