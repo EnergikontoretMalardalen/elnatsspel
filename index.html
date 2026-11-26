@@ -435,7 +435,7 @@ dialog#help[open]{display:flex;flex-direction:column}
     </ol>
 
     <h3 id="h-spel">Förfrågningsspelet</h3>
-    <p>När nätet är byggt startar <b>Starta förfrågningarna</b>. Spelet går från 2027 till 2040, ett år per steg. Ni väljer själva när ni går vidare till nästa år. Varje år slumpas ett av tre utfall: ingenting händer, en ny förfrågan till en kommun eller att en fabrik går i konkurs och frigör några MW. Ibland vill ett datacenter i stället köpa effekt genom att lägga ned en fabrik (högst 20 % av kommunlasten i stationen) och ta över dess abonnemang. Då väljs ingen station, och ni avgör bara om nätet klarar bytet, eftersom datacentret har jämn last dygnet runt.</p>
+    <p>När nätet är byggt startar <b>Starta förfrågningarna</b>. Spelet går från 2027 till 2040, ett år per steg. Ni väljer själva när ni går vidare till nästa år. Varje år slumpas ett av tre utfall: ingenting händer, en ny förfrågan till en kommun eller att en fabrik går i konkurs och frigör några MW. Ibland vill ett datacenter i stället köpa effekt genom att lägga ned en fabrik (högst 20 % av kommunlasten i stationen) och ta över dess abonnemang. Då väljs ingen station, och ni avgör bara om nätet klarar bytet, eftersom datacentret har jämn last dygnet runt. Förfrågningarna kommer i en fördefinierad ordning: alla grupper och alla omgångar får samma typ av händelse samma år, oavsett vad ni beslutar. Vill ni ha en annan ordning lägger ni till <code>?ordning=5</code> (valfritt tal) i adressen.</p>
     <ul>
       <li><b>Förfrågan:</b> till exempel ett datacenter på 60 MW i Heby. Prata med grannkommunerna, välj station (i kommunen som fick förfrågan eller i en annan) och klicka <i>Godkänn här</i>, eller <i>Avslå</i>. Raden under visar hur lediga MW ändras i varje kommun.</li>
       <li><b>Två samtidigt:</b> ibland kommer två förfrågningar samma år. Ni väljer vilken ni behandlar först, och den som godkänns först tar kapacitet från den andra.</li>
@@ -461,9 +461,9 @@ dialog#help[open]{display:flex;flex-direction:column}
     <p>Siffran för ledig kapacitet och ledningsbelastningen är ett DC-lastflöde: effekten delar sig efter ledningarnas reaktans, utan spänning, reaktiv effekt eller förluster. <i>Simulera nu</i> räknar i stället AC-flöde med Newton-Raphson. Förfrågningar, konkurser och namn slumpas, och väntetiderna 3 och 8 år är påhittade. Kostnader, tillstånd och markintrång ingår inte. Spelet illustrerar en princip och är inget beslutsunderlag; anslutningar beslutas av nätägaren och Svenska kraftnät.</p>
   </div>
 </dialog>
-<script src="map.js?v=20270102"></script>
-<script src="sim.js?v=20270102"></script>
-<script src="shp.js?v=20270102"></script>
+<script src="map.js?v=20270103"></script>
+<script src="sim.js?v=20270103"></script>
+<script src="shp.js?v=20270103"></script>
 <script>
 
 const ART = {kommun:'En kommunlast',dc:'Ett datacenter',batt:'En batterifabrik',h2:'En elektrolysör',ladd:'En laddhubb',vind:'En vindpark',sol:'En solpark',kv:'Ett kraftvärmeverk'};
@@ -1190,7 +1190,15 @@ const GAME_TOTAL=14, GAME_MAX=24;   /* antal år (steg): 2027–2040, och efter 
 const gTot=()=>(state.game&&state.game.total)||GAME_TOTAL;
 const GAME_OPTS=[['dc',[40,60,80]],['batt',[30,50,70]],['h2',[40,60]],['ladd',[15,25,35]],['vind',[40,60,90]],['sol',[20,30,50]]];
 const GAME_SRC=['Ett utländskt bolag','Ett lokalt industriföretag','En energikoncern','Ett logistikföretag','Ett nystartat teknikbolag','Ett kommunalt bolag'];
-const rnd=a=>a[Math.floor(Math.random()*a.length)];
+/* Fördefinierad ordning: allt slumpat i spelet dras ur en slumpgenerator som seedas per år (seed + årtal + del).
+   Alla grupper och alla omgångar får därför samma förfrågningar i samma ordning, oavsett vad som beslutats tidigare.
+   Annan ordning: lägg till ?ordning=N i adressen. */
+const GAME_SEED=(()=>{const n=parseInt(new URLSearchParams(location.search).get('ordning'),10); return n>0?n:2027})();
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let RNG=Math.random;
+const gameRng=(g,salt)=>mulberry(((g.seed||GAME_SEED)*7919+g.round*131+salt*17)|0);
+const withRng=(f,fn)=>{const o=RNG; RNG=f; try{return fn()}finally{RNG=o}};
+const rnd=a=>a[Math.floor(RNG()*a.length)];
 function gameKommuner(){const m={}; for(const n of VL()) if(n.id[0]==='R'&&stObj(n.id)&&isLoadR(stObj(n.id))){const k=n.desc||'Utanför länet'; (m[k]=m[k]||[]).push(n.id)} return m}
 function gameCanStart(){return Object.keys(gameKommuner()).length>0&&state.add.length>0}
 const GAME_COMP=0.3;   /* sannolikhet för två förfrågningar samma år */
@@ -1200,7 +1208,7 @@ function gameSwapReq(host){
   const cand=[];
   for(const id of (gameKommuner()[host]||[])) for(const u of state.placed) if(u.node===id&&u.kind==='kommun'&&!gPend(u.until)&&Math.floor(u.mw*0.2)>=2) cand.push({id,u});
   if(!cand.length) return null;
-  const c=rnd(cand), mx=Math.floor(c.u.mw*0.2), mn=Math.max(2,Math.ceil(c.u.mw*0.05)), mw=mn+Math.floor(Math.random()*(mx-mn+1));
+  const c=rnd(cand), mx=Math.floor(c.u.mw*0.2), mn=Math.max(2,Math.ceil(c.u.mw*0.05)), mw=mn+Math.floor(RNG()*(mx-mn+1));
   return {kind:'dc',mw,host,from:'Ett datacenter',swap:{node:c.id,unit:c.u.id,fab:rnd(GAME_FAB)}};
 }
 /* belastningen efter bytet: fabriken minskar och datacentret tillkommer i samma station */
@@ -1214,18 +1222,20 @@ function gameSwapFits(r){
 }
 function gameSetReq(i){const g=state.game, r=g.reqs[i]; g.req=r; g.pend=null; state.sel=null;   /* vid byte styrs stationen av fabriken */ state.kind=r.kind; state.mw=r.mw; state.flex=false; state.metric=isGen(r.kind)?'I':'U'}
 function gameNext(){
-  const g=state.game, km=Object.keys(gameKommuner()); if(!km.length) return;
+  const g=state.game, km=Object.keys(gameKommuner()).sort((a,b)=>a.localeCompare(b)); if(!km.length) return;
   g.req=null; g.evt=null; state.sel=null;
+  RNG=gameRng(g,1);
   /* varje år: slumpa inget / ny förfrågan / konkurs (första året alltid förfrågan) */
-  const r=Math.random(); let type=g.round===1?'req':r<0.3?'none':r<0.8?'req':'bk';
-  if(type==='bk'&&!gameBankrupt()) type='req';
+  const r=RNG(); let type=g.round===1?'req':r<0.3?'none':r<0.8?'req':'bk';
+  if(type==='bk'&&!withRng(gameRng(g,2),gameBankrupt)) type='req';
   if(type==='req'){
-    const last=g.log.length?g.log[g.log.length-1].host:null;
+    const last=g.lastHost||null;
     const host=rnd(km.length>1?km.filter(k=>k!==last):km), [kind,mws]=rnd(GAME_OPTS), mw=rnd(mws);
-    const sw=Math.random()<GAME_SWAP?gameSwapReq(host):null;
+    const sw=RNG()<GAME_SWAP?withRng(gameRng(g,5),()=>gameSwapReq(host)):null; g.lastHost=host;
     g.reqs=[sw||{kind,mw,host,from:rnd(GAME_SRC)}];
     /* ibland kommer en andra förfrågan samma år (från ett steg 2): då konkurrerar de om samma kapacitet */
-    if(g.round>=2&&km.length>1&&Math.random()<GAME_COMP){
+    RNG=gameRng(g,4);
+    if(g.round>=2&&km.length>1&&RNG()<GAME_COMP){
       const [k2,m2]=rnd(GAME_OPTS); g.reqs.push({kind:k2,mw:rnd(m2),host:rnd(km.filter(k=>k!==host)),from:rnd(GAME_SRC)});
     }
     if(g.reqs.length>1) g.reqs.forEach(q=>q.comp=true);
@@ -1243,7 +1253,7 @@ function gameBankrupt(){
     if(fac.length&&Math.floor(tot*0.1)>=1) cand.push({id,tot,fac});
   }
   if(!cand.length) return false;
-  const c=rnd(cand), u=rnd(c.fac), n=1+Math.floor(Math.random()*Math.floor(c.tot*0.1)), take=Math.min(n,u.mw);
+  const c=rnd(cand), u=rnd(c.fac), n=1+Math.floor(RNG()*Math.floor(c.tot*0.1)), take=Math.min(n,u.mw);
   if(!u.fab) u.fab=rnd(GAME_FAB);
   const kommun=(byId[c.id]&&byId[c.id].desc)||'Utanför länet';
   u.mw-=take; if(u.mw<=0) state.placed=state.placed.filter(p=>p!==u);
@@ -1256,12 +1266,12 @@ const GAME_DLY={
   early:{line:['Ett nytt arbetssätt för byggnationen gör att ledningen blir klar ett år tidigare än beräknat.'],up:['Ett nytt arbetssätt för byggnation gör att spänningshöjningen blir klar ett år tidigare än beräknat.']}
 };
 function gameDelays(){
-  const g=state.game; g.dly=[]; g.touched=g.touched||[];
+  const g=state.game; RNG=gameRng(g,3); g.dly=[]; g.touched=g.touched||[];
   const ms={};
   state.add.forEach(a=>{ if(a.mid&&gPend(a.until)) ms[a.mid]={kind:'line',until:a.until}; if(a.rf&&a.rf.mid&&gPend(a.rf.until)&&!ms[a.rf.mid]) ms[a.rf.mid]={kind:'up',until:a.rf.until}});
   for(const mid of Object.keys(ms)){
-    if(g.touched.includes(+mid)||Math.random()>=0.2) continue;
-    const m=ms[mid], early=Math.random()<0.3&&m.until-1>g.round, d=early?-1:1;
+    if(g.touched.includes(+mid)||RNG()>=0.2) continue;
+    const m=ms[mid], early=RNG()<0.3&&m.until-1>g.round, d=early?-1:1;
     g.touched.push(+mid);
     state.add.forEach(a=>{ if(a.mid==mid&&a.until) a.until+=d; if(a.rf&&a.rf.mid==mid) a.rf.until+=d });
     state.placed.forEach(q=>{ if(q.mid==mid&&q.until) q.until+=d });
@@ -1270,7 +1280,7 @@ function gameDelays(){
     g.dly.push(txt); g.events=g.events||[]; g.events.push({round:g.round,text:txt});
   }
 }
-function gameStart(){state.add.forEach(a=>{delete a.until;delete a.rf}); state.placed.forEach(p=>{delete p.until}); state.game={round:1,log:[],req:null,last:null,pend:null,evt:null,events:[],cur:null,quiet:0}; gameNext(); render()}
+function gameStart(){state.add.forEach(a=>{delete a.until;delete a.rf}); state.placed.forEach(p=>{delete p.until}); state.game={seed:GAME_SEED,round:1,log:[],req:null,last:null,pend:null,evt:null,events:[],cur:null,quiet:0}; gameNext(); render()}
 function gameEnd(){state.game=null; state.sel=null; render()}
 const gPend=u=>!!(state.game&&u&&state.game.round<u);   /* åtgärd som ännu inte är byggd: visas grå och 20 % */
 const GAME_YEARS={up:5,line:8}, UPV={from:70,to:130,k:1.8};   /* tidsåtgång i år: förstärkning respektive ny ledning (förstärkningens 3 år är en gissning) */
